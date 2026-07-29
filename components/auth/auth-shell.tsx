@@ -2,6 +2,7 @@ type AuthShellProps = {
   title: string;
   description: string;
   children: React.ReactNode;
+  notice?: React.ReactNode;
   footer?: React.ReactNode;
 };
 
@@ -9,6 +10,7 @@ export function AuthShell({
   title,
   description,
   children,
+  notice,
   footer,
 }: AuthShellProps) {
   return (
@@ -18,6 +20,11 @@ export function AuthShell({
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           <p className="text-sm text-foreground/70">{description}</p>
         </div>
+        {notice ? (
+          <div className="mb-6 rounded-lg border border-foreground/10 bg-foreground/5 px-4 py-3 text-sm text-foreground/80">
+            {notice}
+          </div>
+        ) : null}
         {children}
         {footer ? (
           <div className="mt-6 text-center text-sm text-foreground/70">

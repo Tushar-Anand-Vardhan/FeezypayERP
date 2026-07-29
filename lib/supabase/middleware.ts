@@ -1,7 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const AUTH_ROUTES = ["/login", "/signup"];
+const AUTH_ROUTES = [
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/signup/confirm",
+];
 const PROTECTED_PREFIX = "/dashboard";
 
 function isAuthRoute(pathname: string) {

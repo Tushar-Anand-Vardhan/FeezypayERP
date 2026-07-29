@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
 import { AuthField } from "@/components/auth/auth-field";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { PasswordChecklist } from "@/components/auth/password-checklist";
@@ -10,45 +10,54 @@ import { SubmitButton } from "@/components/auth/submit-button";
 import {
   formatAuthError,
   getPasswordValidationError,
-  validateEmail,
 } from "@/lib/auth/validation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function SignupPage() {
+export default function ResetPasswordContent() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<{
-    email?: string;
-    password?: string;
-  }>({});
+  const [fieldError, setFieldError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    if (searchParams.get("recovery") === "1") {
+      setSessionReady(true);
+      window.history.replaceState(null, "", "/reset-password");
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setSessionReady(true);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [searchParams]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
 
-    const nextFieldErrors: { email?: string; password?: string } = {};
-    const emailError = validateEmail(email);
-    if (emailError) {
-      nextFieldErrors.email = emailError;
-    }
     const passwordError = getPasswordValidationError(password);
     if (passwordError) {
-      nextFieldErrors.password = passwordError;
-    }
-
-    if (Object.keys(nextFieldErrors).length > 0) {
-      setFieldErrors(nextFieldErrors);
+      setFieldError(passwordError);
       return;
     }
 
-    setFieldErrors({});
+    setFieldError(null);
     setLoading(true);
 
     const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
       setFormError(formatAuthError(error));
@@ -56,51 +65,42 @@ export default function SignupPage() {
       return;
     }
 
-    if (data.session) {
-      router.push("/dashboard");
-      router.refresh();
-      return;
-    }
-
-    router.push(`/signup/confirm?email=${encodeURIComponent(email)}`);
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
   }
 
   return (
     <AuthShell
-      title="Create an account"
-      description="Sign up with your email and password."
+      title="Choose a new password"
+      description="Enter a new password for your account."
+      notice={
+        sessionReady
+          ? "Reset link verified. Choose a new password below."
+          : "Open the reset link from your email to continue."
+      }
       footer={
         <>
-          Already have an account?{" "}
+          Back to{" "}
           <Link
             href="/login"
             className="font-medium text-foreground underline-offset-4 hover:underline"
           >
-            Sign in
+            login
           </Link>
         </>
       }
     >
       <form className="space-y-5" onSubmit={handleSubmit} noValidate>
-        <AuthField
-          id="email"
-          label="Email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={setEmail}
-          error={fieldErrors.email}
-        />
-
         <div className="space-y-2">
           <AuthField
             id="password"
-            label="Password"
+            label="New password"
             type="password"
             autoComplete="new-password"
             value={password}
             onChange={setPassword}
-            error={fieldErrors.password}
+            error={fieldError}
             describedBy="password-checklist"
           />
           <div id="password-checklist">
@@ -112,7 +112,9 @@ export default function SignupPage() {
           <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
         ) : null}
 
-        <SubmitButton loading={loading}>Create account</SubmitButton>
+        <SubmitButton loading={loading} disabled={!sessionReady}>
+          Update password
+        </SubmitButton>
       </form>
     </AuthShell>
   );

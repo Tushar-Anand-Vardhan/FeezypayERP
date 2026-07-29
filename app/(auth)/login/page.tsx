@@ -3,21 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { AuthField } from "@/components/auth/auth-field";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { SubmitButton } from "@/components/auth/submit-button";
+import { formatAuthError, validateEmail } from "@/lib/auth/validation";
 import { createClient } from "@/lib/supabase/client";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function validateEmail(email: string) {
-  if (!email.trim()) {
-    return "Email is required.";
-  }
-  if (!EMAIL_PATTERN.test(email)) {
-    return "Please enter a valid email address.";
-  }
-  return null;
-}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -58,7 +48,7 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setFormError(error.message);
+      setFormError(formatAuthError(error));
       setLoading(false);
       return;
     }
@@ -84,62 +74,39 @@ export default function LoginPage() {
       }
     >
       <form className="space-y-5" onSubmit={handleSubmit} noValidate>
-        <div className="space-y-2">
-          <label htmlFor="email" className="block text-sm font-medium">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className="w-full rounded-lg border border-foreground/15 bg-background px-3 py-2.5 text-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/10"
-            aria-invalid={Boolean(fieldErrors.email)}
-            aria-describedby={fieldErrors.email ? "email-error" : undefined}
-          />
-          {fieldErrors.email ? (
-            <p id="email-error" className="text-sm text-red-600 dark:text-red-400">
-              {fieldErrors.email}
-            </p>
-          ) : null}
-        </div>
+        <AuthField
+          id="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={setEmail}
+          error={fieldErrors.email}
+        />
 
         <div className="space-y-2">
-          <label htmlFor="password" className="block text-sm font-medium">
-            Password
-          </label>
-          <input
+          <AuthField
             id="password"
-            name="password"
+            label="Password"
             type="password"
             autoComplete="current-password"
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="w-full rounded-lg border border-foreground/15 bg-background px-3 py-2.5 text-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/10"
-            aria-invalid={Boolean(fieldErrors.password || formError)}
-            aria-describedby={
-              fieldErrors.password || formError ? "password-error" : undefined
-            }
+            onChange={setPassword}
+            error={fieldErrors.password}
           />
-          {fieldErrors.password ? (
-            <p
-              id="password-error"
-              className="text-sm text-red-600 dark:text-red-400"
+          <div className="text-right">
+            <Link
+              href="/forgot-password"
+              className="text-sm font-medium text-foreground/70 underline-offset-4 hover:text-foreground hover:underline"
             >
-              {fieldErrors.password}
-            </p>
-          ) : null}
-          {!fieldErrors.password && formError ? (
-            <p
-              id="password-error"
-              className="text-sm text-red-600 dark:text-red-400"
-            >
-              {formError}
-            </p>
-          ) : null}
+              Forgot password?
+            </Link>
+          </div>
         </div>
+
+        {formError ? (
+          <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
+        ) : null}
 
         <SubmitButton loading={loading}>Sign in</SubmitButton>
       </form>

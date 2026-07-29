@@ -4,18 +4,25 @@ type SubmitButtonProps = {
   children: React.ReactNode;
   loading?: boolean;
   disabled?: boolean;
+  type?: "submit" | "button";
+  onClick?: () => void;
+  fullWidth?: boolean;
 };
 
 export function SubmitButton({
   children,
   loading = false,
   disabled = false,
+  type = "submit",
+  onClick,
+  fullWidth = true,
 }: SubmitButtonProps) {
   return (
     <button
-      type="submit"
+      type={type}
+      onClick={onClick}
       disabled={disabled || loading}
-      className="flex w-full items-center justify-center gap-2 rounded-lg bg-foreground px-4 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+      className={`flex items-center justify-center gap-2 rounded-lg bg-foreground px-4 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 ${fullWidth ? "w-full" : ""}`}
     >
       {loading ? (
         <>
