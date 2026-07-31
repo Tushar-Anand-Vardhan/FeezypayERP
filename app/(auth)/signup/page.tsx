@@ -12,6 +12,10 @@ import {
   getPasswordValidationError,
   validateEmail,
 } from "@/lib/auth/validation";
+import {
+  fetchUserOnboardingStatus,
+  getPostAuthDestination,
+} from "@/lib/auth/routing";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
@@ -57,7 +61,8 @@ export default function SignupPage() {
     }
 
     if (data.session) {
-      router.push("/dashboard");
+      const onboardingStatus = await fetchUserOnboardingStatus(supabase);
+      router.push(getPostAuthDestination(onboardingStatus));
       router.refresh();
       return;
     }

@@ -7,6 +7,10 @@ import { AuthField } from "@/components/auth/auth-field";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { formatAuthError, validateEmail } from "@/lib/auth/validation";
+import {
+  fetchUserOnboardingStatus,
+  getPostAuthDestination,
+} from "@/lib/auth/routing";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -53,7 +57,8 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
+    const onboardingStatus = await fetchUserOnboardingStatus(supabase);
+    router.push(getPostAuthDestination(onboardingStatus));
     router.refresh();
   }
 
