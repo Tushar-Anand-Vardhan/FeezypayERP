@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 
 export const formControlClassName =
   "w-full rounded-lg border border-foreground/15 bg-background px-3 py-2.5 text-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/10";
@@ -13,6 +13,7 @@ type FormFieldProps = {
   error?: string | null;
   describedBy?: string;
   required?: boolean;
+  onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
 };
 
 export function FormField({
@@ -25,6 +26,7 @@ export function FormField({
   error,
   describedBy,
   required = false,
+  onKeyDown,
 }: FormFieldProps) {
   const errorId = error ? `${id}-error` : undefined;
 
@@ -41,6 +43,7 @@ export function FormField({
         autoComplete={autoComplete}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onKeyDown={onKeyDown}
         className={formControlClassName}
         aria-invalid={Boolean(error)}
         aria-describedby={[describedBy, errorId].filter(Boolean).join(" ") || undefined}

@@ -1,4 +1,5 @@
 import { AppHeader } from "@/components/dashboard/app-header";
+import { OnboardingStepper } from "@/components/onboarding/onboarding-stepper";
 
 export default function OnboardingLayout({
   children,
@@ -8,6 +9,7 @@ export default function OnboardingLayout({
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <AppHeader />
+      <OnboardingStepper />
       {children}
     </div>
   );
