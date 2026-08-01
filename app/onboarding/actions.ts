@@ -298,6 +298,10 @@ export async function getTermsStepDataAction(): Promise<TermsStepDataResult> {
     return { success: false, error: academicYearResult.error };
   }
 
+  if ("missing" in academicYearResult) {
+    return { success: true, blocked: true };
+  }
+
   const { data: terms, error: termsError } = await supabase
     .from("terms")
     .select("name, start_date, end_date")
@@ -352,6 +356,13 @@ export async function saveTermsAction(
 
   if ("error" in academicYearResult) {
     return { success: false, error: academicYearResult.error };
+  }
+
+  if ("missing" in academicYearResult) {
+    return {
+      success: false,
+      error: "Complete School Identity first to set your academic year.",
+    };
   }
 
   let rows: TermFormRow[] = [];
