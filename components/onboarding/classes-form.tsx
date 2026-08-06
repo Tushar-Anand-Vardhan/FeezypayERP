@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
-import { SubmitButton } from "@/components/auth/submit-button";
-import { OrderedNameList } from "@/components/onboarding/chip-list";
 import { FormField } from "@/components/form/form-field";
+import { WizardActions } from "@/components/onboarding/wizard-actions";
 import {
   getClassesStepDataAction,
   saveClassesAction,
@@ -25,7 +24,6 @@ export function ClassesForm() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState(false);
-  const [academicYearLabel, setAcademicYearLabel] = useState("");
   const [classes, setClasses] = useState<ClassFormRow[]>([]);
   const [savedSectionCountByClassId, setSavedSectionCountByClassId] = useState<
     Record<string, number>
@@ -34,7 +32,9 @@ export function ClassesForm() {
   const [fieldErrors, setFieldErrors] = useState<ClassFieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [loadingAction, setLoadingAction] = useState<"save" | "next" | null>(null);
+  const [loadingAction, setLoadingAction] = useState<"save" | "next" | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -62,7 +62,6 @@ export function ClassesForm() {
       }
 
       setBlocked(false);
-      setAcademicYearLabel(result.academicYearLabel);
       setClasses(result.classes);
       setSavedSectionCountByClassId(result.sectionCountByClassId);
       setInitialLoading(false);
@@ -106,10 +105,6 @@ export function ClassesForm() {
       delete next.newClassName;
       return next;
     });
-  }
-
-  function handleAddClass() {
-    addClassName(newClassName);
   }
 
   function handleNewClassKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -215,14 +210,17 @@ export function ClassesForm() {
     return true;
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSaveAndExit() {
     setLoadingAction("save");
-    await performSave("save");
+    const saved = await performSave("save");
+    if (saved) {
+      router.push("/dashboard");
+      router.refresh();
+    }
     setLoadingAction(null);
   }
 
-  async function handleNext() {
+  async function handleContinue() {
     setLoadingAction("next");
     const saved = await performSave("next");
     if (saved) {
@@ -231,9 +229,14 @@ export function ClassesForm() {
     setLoadingAction(null);
   }
 
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void handleContinue();
+  }
+
   if (initialLoading) {
     return (
-      <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
         <p className="text-sm text-muted">Loading classes…</p>
       </main>
     );
@@ -241,7 +244,7 @@ export function ClassesForm() {
 
   if (loadError) {
     return (
-      <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
         <p className="text-sm text-feezy-coral">{loadError}</p>
       </main>
     );
@@ -249,15 +252,15 @@ export function ClassesForm() {
 
   if (blocked) {
     return (
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
         <div className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
-          <h1 className="text-2xl font-semibold tracking-tight">Classes</h1>
-          <p className="text-sm text-muted">
-            Complete Term Structure first.
-          </p>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">
+            Classes
+          </h1>
+          <p className="text-sm text-muted">Complete Term Structure first.</p>
           <Link
             href="/onboarding/terms"
-            className="inline-flex text-sm font-medium text-foreground underline-offset-4 hover:underline"
+            className="inline-flex text-sm font-medium text-feezy-coral underline-offset-4 hover:underline"
           >
             Go to Term Structure
           </Link>
@@ -267,15 +270,15 @@ export function ClassesForm() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
       <div className="space-y-8">
         <div className="space-y-2">
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Classes</h1>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">
+            Classes
+          </h1>
           <p className="text-sm text-muted">
-            Add the classes for academic year{" "}
-            <span className="font-medium text-foreground">{academicYearLabel}</span>.
-            You can save partial progress and come back later. Display order is saved
-            as zero-based positions (0, 1, 2, …).
+            Add the grades your school runs. Use a quick pick or add them one by
+            one.
           </p>
         </div>
 
@@ -283,92 +286,120 @@ export function ClassesForm() {
           <fieldset className="space-y-3">
             <legend className="text-sm font-medium">Quick picks</legend>
             <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => applyPreset(CLASS_PRESET_1_10)}
-                className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted transition hover:border-border"
-              >
-                1–10
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset(CLASS_PRESET_1_12)}
-                className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted transition hover:border-border"
-              >
-                1–12
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset(CLASS_PRESET_NURSERY_12)}
-                className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted transition hover:border-border"
-              >
-                Nursery–12
-              </button>
+              {[
+                { label: "1–10", preset: CLASS_PRESET_1_10 },
+                { label: "1–12", preset: CLASS_PRESET_1_12 },
+                { label: "Nursery–12", preset: CLASS_PRESET_NURSERY_12 },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => applyPreset(item.preset)}
+                  className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted transition hover:border-feezy-magenta/40 hover:text-foreground"
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
           </fieldset>
 
-          <OrderedNameList
-            items={classes.map((row) => row.name)}
-            newItemValue={newClassName}
-            onNewItemValueChange={setNewClassName}
-            onAddItem={handleAddClass}
-            onNewItemKeyDown={handleNewClassKeyDown}
-            onMoveItem={moveClass}
-            onRemoveItem={removeClass}
-            fieldErrors={fieldErrors}
-            addFieldId="newClassName"
-            addFieldLabel="Add a class"
-            addFieldErrorKey="newClassName"
-            itemErrorKeyPrefix="class"
-            listLabel="Class list"
-            emptyMessage="No classes added yet."
-            addHelpText="Press Enter or click Add to append a chip."
-            renderAddField={(props) => (
-              <FormField
-                id={props.id}
-                label={props.label}
-                value={props.value}
-                onChange={props.onChange}
-                onKeyDown={props.onKeyDown}
-                error={props.error}
-                describedBy={props.describedBy}
-              />
+          <div className="space-y-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <FormField
+                  id="newClassName"
+                  label="Add a class"
+                  value={newClassName}
+                  onChange={setNewClassName}
+                  onKeyDown={handleNewClassKeyDown}
+                  error={fieldErrors.newClassName}
+                  describedBy="newClassName-help"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => addClassName(newClassName)}
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-feezy-indigo px-4 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                Add
+              </button>
+            </div>
+            <p id="newClassName-help" className="text-xs text-muted">
+              Press Enter or click Add.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-sm font-medium">Your classes</h2>
+            {classes.length === 0 ? (
+              <p className="text-sm text-muted">No classes added yet.</p>
+            ) : (
+              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {classes.map((classRow, index) => (
+                  <li
+                    key={classRow.id ?? `new-${index}-${classRow.name}`}
+                    className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm"
+                  >
+                    <div className="space-y-1">
+                      <p className="font-medium text-foreground">
+                        {classRow.name}
+                      </p>
+                      {fieldErrors[`class-${index}`] ? (
+                        <p className="text-sm text-feezy-coral">
+                          {fieldErrors[`class-${index}`]}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="mt-auto flex items-center gap-2">
+                      <button
+                        type="button"
+                        aria-label={`Move ${classRow.name} earlier`}
+                        disabled={index === 0}
+                        onClick={() => moveClass(index, -1)}
+                        className="rounded-lg border border-border px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Move ${classRow.name} later`}
+                        disabled={index === classes.length - 1}
+                        onClick={() => moveClass(index, 1)}
+                        className="rounded-lg border border-border px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Remove ${classRow.name}`}
+                        onClick={() => removeClass(index)}
+                        className="rounded-lg border border-border px-2 py-1 text-sm"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
-          />
+          </div>
 
           {fieldErrors.form ? (
             <p className="text-sm text-feezy-coral">{fieldErrors.form}</p>
           ) : null}
-
           {formError ? (
             <p className="text-sm text-feezy-coral">{formError}</p>
           ) : null}
-
           {successMessage ? (
-            <p className="text-sm text-emerald-600">
-              {successMessage}
-            </p>
+            <p className="text-sm text-emerald-600">{successMessage}</p>
           ) : null}
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/onboarding/terms"
-              className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-surface-strong"
-            >
-              Back
-            </Link>
-            <SubmitButton loading={loadingAction === "save"}>
-              Save classes
-            </SubmitButton>
-            <SubmitButton
-              type="button"
-              loading={loadingAction === "next"}
-              disabled={loadingAction === "save"}
-              onClick={handleNext}
-            >
-              Next
-            </SubmitButton>
-          </div>
+          <WizardActions
+            backHref="/onboarding/terms"
+            loadingAction={loadingAction}
+            onSaveAndExit={handleSaveAndExit}
+            onContinue={handleContinue}
+          />
         </form>
       </div>
     </main>

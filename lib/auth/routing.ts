@@ -83,10 +83,7 @@ export function resolveAuthenticatedRouteRedirect(
     return getPostAuthDestination(onboardingStatus);
   }
 
-  if (isDashboardRoute(pathname) && onboardingStatus !== "completed") {
-    return DEFAULT_ONBOARDING_PATH;
-  }
-
+  // Dashboard is reachable during onboarding (Save & Exit). Features stay locked in UI.
   if (isOnboardingRoute(pathname) && onboardingStatus === "completed") {
     return "/dashboard";
   }

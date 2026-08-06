@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
-import { SubmitButton } from "@/components/auth/submit-button";
-import { ChipListRow } from "@/components/onboarding/chip-list";
+import { FormEvent, KeyboardEvent, useEffect, useId, useState } from "react";
 import { FormField, formControlClassName } from "@/components/form/form-field";
+import { WizardActions } from "@/components/onboarding/wizard-actions";
 import {
   getSectionsStepDataAction,
   saveSectionsAction,
@@ -27,6 +26,11 @@ type ClassSectionsState = {
   newSectionName: string;
 };
 
+type SectionModalState = {
+  classId: string;
+  sectionIndex: number;
+} | null;
+
 function toPayload(classes: ClassSectionsState[]): ClassSectionsFormRow[] {
   return classes.map((classRow) => ({
     classId: classRow.classId,
@@ -43,24 +47,24 @@ function sectionCountLabel(count: number) {
   return count === 1 ? "1 section" : `${count} sections`;
 }
 
-function capacitySummary(capacity: string) {
-  const trimmed = capacity.trim();
-  return trimmed ? `Capacity: ${trimmed}` : "No capacity set";
-}
-
 export function SectionsForm() {
   const router = useRouter();
+  const modalTitleId = useId();
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState(false);
-  const [academicYearLabel, setAcademicYearLabel] = useState("");
   const [classes, setClasses] = useState<ClassSectionsState[]>([]);
-  const [expandedClassId, setExpandedClassId] = useState<string | null>(null);
   const [bulkSectionNames, setBulkSectionNames] = useState("");
   const [fieldErrors, setFieldErrors] = useState<SectionFieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [loadingAction, setLoadingAction] = useState<"save" | "next" | null>(null);
+  const [loadingAction, setLoadingAction] = useState<"save" | "next" | null>(
+    null,
+  );
+  const [sectionModal, setSectionModal] = useState<SectionModalState>(null);
+  const [modalName, setModalName] = useState("");
+  const [modalCapacity, setModalCapacity] = useState("");
+  const [modalError, setModalError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,13 +92,15 @@ export function SectionsForm() {
       }
 
       setBlocked(false);
-      setAcademicYearLabel(result.academicYearLabel);
       setClasses(
         result.classes.map((classRow) => ({
           classId: classRow.id,
           className: classRow.name,
           capacity: classRow.capacity,
-          sections: classRow.sections,
+          sections: classRow.sections.map((section) => ({
+            name: section.name,
+            capacity: section.capacity,
+          })),
           newSectionName: "",
         })),
       );
@@ -108,117 +114,161 @@ export function SectionsForm() {
     };
   }, []);
 
-  function updateClassSections(
-    classId: string,
-    updater: (current: ClassSectionsState) => ClassSectionsState,
-  ) {
+  function updateClassCapacity(classId: string, capacity: string) {
     setClasses((current) =>
-      current.map((classRow) =>
-        classRow.classId === classId ? updater(classRow) : classRow,
+      current.map((row) =>
+        row.classId === classId ? { ...row, capacity } : row,
       ),
     );
   }
 
-  function toggleClass(classId: string) {
-    setExpandedClassId((current) => (current === classId ? null : classId));
+  function updateNewSectionName(classId: string, value: string) {
+    setClasses((current) =>
+      current.map((row) =>
+        row.classId === classId ? { ...row, newSectionName: value } : row,
+      ),
+    );
   }
 
-  function addSection(classId: string, rawName: string) {
-    const trimmed = rawName.trim();
+  function addSection(classId: string) {
+    setClasses((current) =>
+      current.map((row) => {
+        if (row.classId !== classId) {
+          return row;
+        }
 
-    if (!trimmed) {
-      setFieldErrors((current) => ({
-        ...current,
-        [`class-${classId}-newSectionName`]: "Section name cannot be empty.",
-      }));
+        const trimmed = row.newSectionName.trim();
+        if (!trimmed) {
+          return row;
+        }
+
+        const duplicate = row.sections.some(
+          (section) => section.name.toLowerCase() === trimmed.toLowerCase(),
+        );
+        if (duplicate) {
+          return row;
+        }
+
+        return {
+          ...row,
+          sections: [...row.sections, { name: trimmed, capacity: "" }],
+          newSectionName: "",
+        };
+      }),
+    );
+  }
+
+  function handleNewSectionKeyDown(
+    classId: string,
+    event: KeyboardEvent<HTMLInputElement>,
+  ) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      addSection(classId);
+    }
+  }
+
+  function removeSection(classId: string, sectionIndex: number) {
+    setClasses((current) =>
+      current.map((row) =>
+        row.classId === classId
+          ? {
+              ...row,
+              sections: row.sections.filter((_, index) => index !== sectionIndex),
+            }
+          : row,
+      ),
+    );
+  }
+
+  function openSectionModal(classId: string, sectionIndex: number) {
+    const classRow = classes.find((row) => row.classId === classId);
+    const section = classRow?.sections[sectionIndex];
+    if (!section) {
       return;
     }
 
-    updateClassSections(classId, (classRow) => {
-      const duplicateIndex = classRow.sections.findIndex(
-        (section) => section.name.trim().toLowerCase() === trimmed.toLowerCase(),
-      );
+    setModalName(section.name);
+    setModalCapacity(section.capacity);
+    setModalError(null);
+    setSectionModal({ classId, sectionIndex });
+  }
 
-      if (duplicateIndex >= 0) {
-        setFieldErrors((current) => ({
-          ...current,
-          [`class-${classId}-newSectionName`]:
-            "This section name already exists for this class.",
-          [`class-${classId}-section-${duplicateIndex}-name`]:
-            "This section name duplicates another in this class.",
-        }));
-        return classRow;
+  function closeSectionModal() {
+    setSectionModal(null);
+    setModalError(null);
+  }
+
+  function saveSectionModal() {
+    if (!sectionModal) {
+      return;
+    }
+
+    const trimmedName = modalName.trim();
+    if (!trimmedName) {
+      setModalError("Section name cannot be empty.");
+      return;
+    }
+
+    const classRow = classes.find((row) => row.classId === sectionModal.classId);
+    if (!classRow) {
+      return;
+    }
+
+    const duplicate = classRow.sections.some(
+      (section, index) =>
+        index !== sectionModal.sectionIndex &&
+        section.name.toLowerCase() === trimmedName.toLowerCase(),
+    );
+
+    if (duplicate) {
+      setModalError("This section name already exists in this class.");
+      return;
+    }
+
+    if (modalCapacity.trim()) {
+      const capacity = Number(modalCapacity);
+      if (!Number.isInteger(capacity) || capacity <= 0) {
+        setModalError("Capacity must be a positive integer.");
+        return;
       }
+    }
 
-      setFieldErrors((current) => {
-        const next = { ...current };
-        delete next[`class-${classId}-newSectionName`];
-        return next;
-      });
+    setClasses((current) =>
+      current.map((row) => {
+        if (row.classId !== sectionModal.classId) {
+          return row;
+        }
 
-      return {
-        ...classRow,
-        sections: [...classRow.sections, { name: trimmed }],
-        newSectionName: "",
-      };
-    });
+        return {
+          ...row,
+          sections: row.sections.map((section, index) =>
+            index === sectionModal.sectionIndex
+              ? { name: trimmedName, capacity: modalCapacity.trim() }
+              : section,
+          ),
+        };
+      }),
+    );
+
+    closeSectionModal();
   }
 
-  function renameSection(classId: string, index: number, nextName: string) {
-    updateClassSections(classId, (classRow) => ({
-      ...classRow,
-      sections: classRow.sections.map((section, rowIndex) =>
-        rowIndex === index ? { ...section, name: nextName } : section,
-      ),
-    }));
-  }
-
-  function removeSection(classId: string, index: number) {
-    updateClassSections(classId, (classRow) => ({
-      ...classRow,
-      sections: classRow.sections.filter((_, rowIndex) => rowIndex !== index),
-    }));
-  }
-
-  function moveSection(classId: string, index: number, direction: -1 | 1) {
-    updateClassSections(classId, (classRow) => {
-      const targetIndex = index + direction;
-      if (targetIndex < 0 || targetIndex >= classRow.sections.length) {
-        return classRow;
-      }
-
-      const nextSections = [...classRow.sections];
-      [nextSections[index], nextSections[targetIndex]] = [
-        nextSections[targetIndex],
-        nextSections[index],
-      ];
-
-      return { ...classRow, sections: nextSections };
-    });
-  }
-
-  function applyBulkSections() {
+  function applyBulk() {
     const names = parseBulkSectionNames(bulkSectionNames);
     if (names.length === 0) {
-      setFieldErrors((current) => ({
-        ...current,
-        bulkSectionNames: "Enter at least one section name.",
-      }));
       return;
     }
-
-    setFieldErrors((current) => {
-      const next = { ...current };
-      delete next.bulkSectionNames;
-      return next;
-    });
 
     setClasses((current) => {
       const payload = applyBulkSectionsToEmptyClasses(toPayload(current), names);
-      return current.map((classRow, index) => ({
-        ...classRow,
-        sections: payload[index]?.sections ?? classRow.sections,
-      }));
+      return current.map((row) => {
+        const updated = payload.find((item) => item.classId === row.classId);
+        return {
+          ...row,
+          sections: updated?.sections ?? row.sections,
+        };
+      });
     });
   }
 
@@ -256,14 +306,17 @@ export function SectionsForm() {
     return true;
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSaveAndExit() {
     setLoadingAction("save");
-    await performSave("save");
+    const saved = await performSave("save");
+    if (saved) {
+      router.push("/dashboard");
+      router.refresh();
+    }
     setLoadingAction(null);
   }
 
-  async function handleNext() {
+  async function handleContinue() {
     setLoadingAction("next");
     const saved = await performSave("next");
     if (saved) {
@@ -272,9 +325,14 @@ export function SectionsForm() {
     setLoadingAction(null);
   }
 
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void handleContinue();
+  }
+
   if (initialLoading) {
     return (
-      <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
         <p className="text-sm text-muted">Loading sections…</p>
       </main>
     );
@@ -282,7 +340,7 @@ export function SectionsForm() {
 
   if (loadError) {
     return (
-      <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
         <p className="text-sm text-feezy-coral">{loadError}</p>
       </main>
     );
@@ -290,13 +348,15 @@ export function SectionsForm() {
 
   if (blocked) {
     return (
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
         <div className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
-          <h1 className="text-2xl font-semibold tracking-tight">Sections</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">
+            Sections
+          </h1>
           <p className="text-sm text-muted">Complete Classes first.</p>
           <Link
             href="/onboarding/classes"
-            className="inline-flex text-sm font-medium text-foreground underline-offset-4 hover:underline"
+            className="inline-flex text-sm font-medium text-feezy-coral underline-offset-4 hover:underline"
           >
             Go to Classes
           </Link>
@@ -305,229 +365,241 @@ export function SectionsForm() {
     );
   }
 
+  const activeClass = sectionModal
+    ? classes.find((row) => row.classId === sectionModal.classId)
+    : null;
+
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
       <div className="space-y-8">
         <div className="space-y-2">
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Sections</h1>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">
+            Sections
+          </h1>
           <p className="text-sm text-muted">
-            Academic year{" "}
-            <span className="font-medium text-foreground">{academicYearLabel}</span>.
-            Bulk-apply is a one-time fill shortcut only; every section stays fully
-            editable after that.
+            Add sections per class. If you set a class capacity, section
+            capacities must add up to the same total.
           </p>
         </div>
 
         <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-          <div className="space-y-1">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-              <label htmlFor="bulkSectionNames" className="sr-only">
-                Apply same sections to every class
-              </label>
-              <span className="text-sm font-medium sm:whitespace-nowrap">
-                Apply same sections to every class
-              </span>
+          <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
+            <label
+              htmlFor="bulkSectionNames"
+              className="block text-sm font-medium"
+            >
+              Bulk fill empty classes
+            </label>
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row">
               <input
                 id="bulkSectionNames"
-                type="text"
                 value={bulkSectionNames}
                 onChange={(event) => setBulkSectionNames(event.target.value)}
                 placeholder="A, B, C"
-                className={`${formControlClassName} flex-1`}
-                aria-invalid={Boolean(fieldErrors.bulkSectionNames)}
+                className={formControlClassName}
               />
               <button
                 type="button"
-                onClick={applyBulkSections}
-                className="inline-flex items-center justify-center rounded-lg bg-foreground px-4 py-2.5 text-sm font-medium text-background transition hover:opacity-90"
+                onClick={applyBulk}
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-border px-4 text-sm font-semibold transition hover:bg-surface-strong"
               >
-                Apply
+                Apply to empty classes
               </button>
             </div>
-            <p className="text-xs text-foreground/60">
-              Fills only classes with no sections yet.
+            <p className="mt-2 text-xs text-muted">
+              Only fills classes that do not have sections yet.
             </p>
-            {fieldErrors.bulkSectionNames ? (
-              <p className="text-sm text-feezy-coral">
-                {fieldErrors.bulkSectionNames}
-              </p>
-            ) : null}
           </div>
 
-          <div className="space-y-3">
+          <ul className="grid gap-4 sm:grid-cols-2">
             {classes.map((classRow) => {
-              const isExpanded = expandedClassId === classRow.classId;
-              const sectionCount = classRow.sections.length;
+              const sectionSum = classRow.sections.reduce((sum, section) => {
+                const value = Number(section.capacity);
+                return Number.isInteger(value) && value > 0 ? sum + value : sum;
+              }, 0);
 
               return (
-                <section
+                <li
                   key={classRow.classId}
-                  className="overflow-hidden rounded-2xl border border-border"
+                  className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm"
                 >
-                  <button
-                    type="button"
-                    onClick={() => toggleClass(classRow.classId)}
-                    aria-expanded={isExpanded}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-surface-strong"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{classRow.className}</p>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                        <span
-                          className={
-                            sectionCount === 0
-                              ? "text-feezy-coral"
-                              : "text-foreground/60"
-                          }
-                        >
-                          {sectionCountLabel(sectionCount)}
-                        </span>
-                        <span className="text-foreground/60">
-                          {capacitySummary(classRow.capacity)}
-                        </span>
-                      </div>
-                    </div>
-                    <span aria-hidden="true" className="text-sm text-foreground/50">
-                      {isExpanded ? "−" : "+"}
-                    </span>
-                  </button>
+                  <div className="space-y-1">
+                    <h2 className="font-display text-lg font-semibold tracking-tight">
+                      {classRow.className}
+                    </h2>
+                    <p className="text-xs text-muted">
+                      {sectionCountLabel(classRow.sections.length)}
+                      {classRow.capacity.trim()
+                        ? ` · sections total ${sectionSum || 0} / ${classRow.capacity.trim()}`
+                        : ""}
+                    </p>
+                  </div>
 
-                  {isExpanded ? (
-                    <div className="space-y-4 border-t border-border px-4 py-4">
-                      {fieldErrors[`class-${classRow.classId}-form`] ? (
-                        <p className="text-sm text-feezy-coral">
-                          {fieldErrors[`class-${classRow.classId}-form`]}
-                        </p>
-                      ) : null}
+                  <FormField
+                    id={`capacity-${classRow.classId}`}
+                    label="Class capacity"
+                    value={classRow.capacity}
+                    onChange={(value) =>
+                      updateClassCapacity(classRow.classId, value)
+                    }
+                    error={fieldErrors[`class-${classRow.classId}-capacity`]}
+                  />
 
-                      <div className="max-w-xs space-y-2">
-                        <label
-                          htmlFor={`capacity-${classRow.classId}`}
-                          className="block text-sm font-medium"
-                        >
-                          Class capacity (optional)
-                        </label>
-                        <input
-                          id={`capacity-${classRow.classId}`}
-                          type="number"
-                          min={1}
-                          value={classRow.capacity}
-                          onChange={(event) =>
-                            updateClassSections(classRow.classId, (current) => ({
-                              ...current,
-                              capacity: event.target.value,
-                            }))
-                          }
-                          className={formControlClassName}
-                          aria-invalid={Boolean(
-                            fieldErrors[`class-${classRow.classId}-capacity`],
-                          )}
-                        />
-                        {fieldErrors[`class-${classRow.classId}-capacity`] ? (
-                          <p className="text-sm text-feezy-coral">
-                            {fieldErrors[`class-${classRow.classId}-capacity`]}
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                        <div className="flex-1">
-                          <FormField
-                            id={`new-section-${classRow.classId}`}
-                            label="Add a section"
-                            value={classRow.newSectionName}
-                            onChange={(value) =>
-                              updateClassSections(classRow.classId, (current) => ({
-                                ...current,
-                                newSectionName: value,
-                              }))
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Sections</p>
+                    {classRow.sections.length === 0 ? (
+                      <p className="text-sm text-muted">No sections yet.</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {classRow.sections.map((section, sectionIndex) => (
+                          <button
+                            key={`${classRow.classId}-${sectionIndex}-${section.name}`}
+                            type="button"
+                            onClick={() =>
+                              openSectionModal(classRow.classId, sectionIndex)
                             }
-                            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-                              if (event.key === "Enter") {
-                                event.preventDefault();
-                                addSection(classRow.classId, classRow.newSectionName);
-                              }
-                            }}
-                            error={fieldErrors[`class-${classRow.classId}-newSectionName`]}
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            addSection(classRow.classId, classRow.newSectionName)
-                          }
-                          className="inline-flex items-center justify-center rounded-lg bg-foreground px-4 py-2.5 text-sm font-medium text-background transition hover:opacity-90"
-                        >
-                          Add
-                        </button>
+                            className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-strong px-3 py-1.5 text-sm font-medium transition hover:border-feezy-magenta/40"
+                          >
+                            <span>{section.name}</span>
+                            {section.capacity ? (
+                              <span className="text-xs text-muted">
+                                {section.capacity}
+                              </span>
+                            ) : null}
+                          </button>
+                        ))}
                       </div>
+                    )}
+                    {fieldErrors[
+                      `class-${classRow.classId}-form`
+                    ] ? (
+                      <p className="text-sm text-feezy-coral">
+                        {fieldErrors[`class-${classRow.classId}-form`]}
+                      </p>
+                    ) : null}
+                  </div>
 
-                      {classRow.sections.length === 0 ? (
-                        <p className="text-sm text-foreground/60">
-                          No sections added yet.
-                        </p>
-                      ) : (
-                        <ul className="space-y-2">
-                          {classRow.sections.map((section, index) => (
-                            <ChipListRow
-                              key={`${classRow.classId}-${index}-${section.name}`}
-                              label={section.name}
-                              editableLabel
-                              onLabelChange={(value) =>
-                                renameSection(classRow.classId, index, value)
-                              }
-                              error={
-                                fieldErrors[
-                                  `class-${classRow.classId}-section-${index}-name`
-                                ]
-                              }
-                              disableMoveUp={index === 0}
-                              disableMoveDown={index === classRow.sections.length - 1}
-                              onMoveUp={() => moveSection(classRow.classId, index, -1)}
-                              onMoveDown={() => moveSection(classRow.classId, index, 1)}
-                              onRemove={() => removeSection(classRow.classId, index)}
-                            />
-                          ))}
-                        </ul>
-                      )}
+                  <div className="mt-auto flex flex-col gap-2 sm:flex-row sm:items-end">
+                    <div className="flex-1">
+                      <label
+                        htmlFor={`new-section-${classRow.classId}`}
+                        className="mb-2 block text-sm font-medium"
+                      >
+                        Add section
+                      </label>
+                      <input
+                        id={`new-section-${classRow.classId}`}
+                        value={classRow.newSectionName}
+                        onChange={(event) =>
+                          updateNewSectionName(
+                            classRow.classId,
+                            event.target.value,
+                          )
+                        }
+                        onKeyDown={(event) =>
+                          handleNewSectionKeyDown(classRow.classId, event)
+                        }
+                        placeholder="A"
+                        className={formControlClassName}
+                      />
                     </div>
-                  ) : null}
-                </section>
+                    <button
+                      type="button"
+                      onClick={() => addSection(classRow.classId)}
+                      className="inline-flex h-11 items-center justify-center rounded-xl bg-feezy-indigo px-4 text-sm font-semibold text-white transition hover:brightness-110"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
 
           {formError ? (
             <p className="text-sm text-feezy-coral">{formError}</p>
           ) : null}
-
           {successMessage ? (
-            <p className="text-sm text-emerald-600">
-              {successMessage}
-            </p>
+            <p className="text-sm text-emerald-600">{successMessage}</p>
           ) : null}
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/onboarding/classes"
-              className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-surface-strong"
-            >
-              Back
-            </Link>
-            <SubmitButton loading={loadingAction === "save"}>
-              Save sections
-            </SubmitButton>
-            <SubmitButton
-              type="button"
-              loading={loadingAction === "next"}
-              disabled={loadingAction === "save"}
-              onClick={handleNext}
-            >
-              Next
-            </SubmitButton>
-          </div>
+          <WizardActions
+            backHref="/onboarding/classes"
+            loadingAction={loadingAction}
+            onSaveAndExit={handleSaveAndExit}
+            onContinue={handleContinue}
+          />
         </form>
       </div>
+
+      {sectionModal && activeClass ? (
+        <div
+          className="feezy-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 px-4"
+          role="presentation"
+          onClick={closeSectionModal}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={modalTitleId}
+            className="feezy-modal-panel w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-lg"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2
+              id={modalTitleId}
+              className="font-display text-xl font-semibold tracking-tight"
+            >
+              Edit section · {activeClass.className}
+            </h2>
+            <div className="mt-5 space-y-4">
+              <FormField
+                id="modal-section-name"
+                label="Section name"
+                value={modalName}
+                onChange={setModalName}
+                required
+              />
+              <FormField
+                id="modal-section-capacity"
+                label="Section capacity"
+                value={modalCapacity}
+                onChange={setModalCapacity}
+              />
+              {modalError ? (
+                <p className="text-sm text-feezy-coral">{modalError}</p>
+              ) : null}
+            </div>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  removeSection(sectionModal.classId, sectionModal.sectionIndex);
+                  closeSectionModal();
+                }}
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-border px-4 text-sm font-semibold text-feezy-coral transition hover:bg-surface-strong"
+              >
+                Remove section
+              </button>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeSectionModal}
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-border px-4 text-sm font-semibold transition hover:bg-surface-strong"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveSectionModal}
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-feezy-magenta px-4 text-sm font-semibold text-white transition hover:brightness-110"
+                >
+                  Save section
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

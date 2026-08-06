@@ -1,12 +1,9 @@
-export const BOARD_OPTIONS = [
-  "CBSE",
-  "ICSE",
-  "State",
-  "IB",
-  "Other",
-] as const;
+export const BOARD_PRESETS = ["CBSE", "ICSE", "State", "IB"] as const;
+
+export const BOARD_OPTIONS = [...BOARD_PRESETS, "Other"] as const;
 
 export type BoardOption = (typeof BOARD_OPTIONS)[number];
+export type BoardPreset = (typeof BOARD_PRESETS)[number];
 
 export const MONTH_OPTIONS = [
   { value: 1, label: "January" },
@@ -43,6 +40,7 @@ export type SchoolIdentityFormValues = {
   contactPhone: string;
   contactEmail: string;
   board: BoardOption | "";
+  boardOther: string;
   affiliationNumber: string;
   academicYearStartMonth: string;
 };
@@ -50,6 +48,41 @@ export type SchoolIdentityFormValues = {
 export type SchoolIdentityFieldErrors = Partial<
   Record<keyof SchoolIdentityFormValues | "logo", string>
 >;
+
+export function isBoardPreset(value: string): value is BoardPreset {
+  return (BOARD_PRESETS as readonly string[]).includes(value);
+}
+
+export function boardSelectionFromStored(board: string | null): {
+  board: BoardOption | "";
+  boardOther: string;
+} {
+  if (!board) {
+    return { board: "", boardOther: "" };
+  }
+
+  if (isBoardPreset(board)) {
+    return { board, boardOther: "" };
+  }
+
+  return { board: "Other", boardOther: board };
+}
+
+export function resolveBoardForSave(
+  board: BoardOption | "",
+  boardOther: string,
+): string | null {
+  if (!board) {
+    return null;
+  }
+
+  if (board === "Other") {
+    const custom = boardOther.trim();
+    return custom || null;
+  }
+
+  return board;
+}
 
 export function trimSchoolIdentityValues(
   values: SchoolIdentityFormValues,
@@ -63,6 +96,7 @@ export function trimSchoolIdentityValues(
     contactPhone: values.contactPhone.trim(),
     contactEmail: values.contactEmail.trim(),
     board: values.board,
+    boardOther: values.boardOther.trim(),
     affiliationNumber: values.affiliationNumber.trim(),
     academicYearStartMonth: values.academicYearStartMonth.trim(),
   };
@@ -83,7 +117,11 @@ export function validateLogoFile(file: File | null) {
     return null;
   }
 
-  if (!LOGO_ALLOWED_MIME_TYPES.includes(file.type as (typeof LOGO_ALLOWED_MIME_TYPES)[number])) {
+  if (
+    !LOGO_ALLOWED_MIME_TYPES.includes(
+      file.type as (typeof LOGO_ALLOWED_MIME_TYPES)[number],
+    )
+  ) {
     return "Logo must be a JPEG, PNG, WebP, or GIF image.";
   }
 
@@ -130,6 +168,8 @@ export function validateSchoolIdentityForm(
 
   if (!trimmed.board) {
     errors.board = "Board is required.";
+  } else if (trimmed.board === "Other" && !trimmed.boardOther) {
+    errors.boardOther = "Enter your board name.";
   }
 
   if (!trimmed.academicYearStartMonth) {

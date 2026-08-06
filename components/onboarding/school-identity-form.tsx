@@ -3,11 +3,12 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FormField, FormSelect } from "@/components/form/form-field";
-import { SubmitButton } from "@/components/auth/submit-button";
+import { WizardActions } from "@/components/onboarding/wizard-actions";
 import { validateEmail } from "@/lib/auth/validation";
 import {
   BOARD_OPTIONS,
   MONTH_OPTIONS,
+  boardSelectionFromStored,
   trimSchoolIdentityValues,
   validateLogoFile,
   validateSchoolIdentityForm,
@@ -26,6 +27,7 @@ const emptyValues: SchoolIdentityFormValues = {
   contactPhone: "",
   contactEmail: "",
   board: "",
+  boardOther: "",
   affiliationNumber: "",
   academicYearStartMonth: "",
 };
@@ -109,6 +111,7 @@ export function SchoolIdentityForm() {
       }
 
       const loaded = school as LoadedSchool;
+      const boardSelection = boardSelectionFromStored(loaded.board);
 
       if (!cancelled) {
         setValues({
@@ -119,7 +122,8 @@ export function SchoolIdentityForm() {
           addressPincode: loaded.address_pincode ?? "",
           contactPhone: loaded.contact_phone ?? "",
           contactEmail: loaded.contact_email ?? "",
-          board: (loaded.board as SchoolIdentityFormValues["board"]) ?? "",
+          board: boardSelection.board,
+          boardOther: boardSelection.boardOther,
           affiliationNumber: loaded.affiliation_number ?? "",
           academicYearStartMonth: loaded.academic_year_start_month
             ? String(loaded.academic_year_start_month)
@@ -195,6 +199,7 @@ export function SchoolIdentityForm() {
     formData.set("contactPhone", trimmed.contactPhone);
     formData.set("contactEmail", trimmed.contactEmail);
     formData.set("board", trimmed.board);
+    formData.set("boardOther", trimmed.boardOther);
     formData.set("affiliationNumber", trimmed.affiliationNumber);
     formData.set("academicYearStartMonth", trimmed.academicYearStartMonth);
 
@@ -229,20 +234,28 @@ export function SchoolIdentityForm() {
     return true;
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSaveAndExit() {
     setLoadingAction("save");
-    await performSave();
+    const saved = await performSave();
+    if (saved) {
+      router.push("/dashboard");
+      router.refresh();
+    }
     setLoadingAction(null);
   }
 
-  async function handleNext() {
+  async function handleContinue() {
     setLoadingAction("next");
     const saved = await performSave();
     if (saved) {
       router.push("/onboarding/terms");
     }
     setLoadingAction(null);
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void handleContinue();
   }
 
   if (initialLoading) {
@@ -269,8 +282,8 @@ export function SchoolIdentityForm() {
             School identity
           </h1>
           <p className="text-sm text-muted">
-            Tell us about your school. You can save and return to update these details
-            anytime before onboarding is complete.
+            Tell us about your school. Save & exit anytime — you can resume from
+            the dashboard.
           </p>
         </div>
 
@@ -318,7 +331,7 @@ export function SchoolIdentityForm() {
               }}
               className="block w-full text-sm text-muted file:mr-4 file:rounded-lg file:border-0 file:bg-foreground file:px-4 file:py-2 file:text-sm file:font-medium file:text-background"
             />
-            <p className="text-xs text-foreground/60">
+            <p className="text-xs text-muted">
               JPEG, PNG, WebP, or GIF. Maximum size 2 MB.
             </p>
             {fieldErrors.logo ? (
@@ -389,7 +402,9 @@ export function SchoolIdentityForm() {
               id="board"
               label="Board"
               value={values.board}
-              onChange={(value) => updateField("board", value as SchoolIdentityFormValues["board"])}
+              onChange={(value) =>
+                updateField("board", value as SchoolIdentityFormValues["board"])
+              }
               error={fieldErrors.board}
               placeholder="Select a board"
               required
@@ -409,6 +424,17 @@ export function SchoolIdentityForm() {
               error={fieldErrors.affiliationNumber}
             />
           </div>
+
+          {values.board === "Other" ? (
+            <FormField
+              id="boardOther"
+              label="Custom board name"
+              value={values.boardOther}
+              onChange={(value) => updateField("boardOther", value)}
+              error={fieldErrors.boardOther}
+              required
+            />
+          ) : null}
 
           <FormSelect
             id="academicYearStartMonth"
@@ -431,24 +457,14 @@ export function SchoolIdentityForm() {
           ) : null}
 
           {successMessage ? (
-            <p className="text-sm text-emerald-600">
-              {successMessage}
-            </p>
+            <p className="text-sm text-emerald-600">{successMessage}</p>
           ) : null}
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <SubmitButton loading={loadingAction === "save"}>
-              Save school identity
-            </SubmitButton>
-            <SubmitButton
-              type="button"
-              loading={loadingAction === "next"}
-              disabled={loadingAction === "save"}
-              onClick={handleNext}
-            >
-              Next
-            </SubmitButton>
-          </div>
+          <WizardActions
+            loadingAction={loadingAction}
+            onSaveAndExit={handleSaveAndExit}
+            onContinue={handleContinue}
+          />
         </form>
       </div>
     </main>

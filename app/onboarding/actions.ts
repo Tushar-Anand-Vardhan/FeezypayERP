@@ -16,6 +16,7 @@ import {
   BOARD_OPTIONS,
   LOGO_ALLOWED_MIME_TYPES,
   LOGO_MAX_BYTES,
+  resolveBoardForSave,
   trimSchoolIdentityValues,
   type BoardOption,
   type SchoolIdentityFormValues,
@@ -26,6 +27,8 @@ import {
   type ClassSectionsFormRow,
 } from "@/lib/onboarding/sections";
 import {
+  materializeTermDate,
+  parseAcademicYearStartYear,
   trimTermRows,
   validateTermsForm,
   type TermFormRow,
@@ -44,6 +47,7 @@ type TermsStepDataResult =
       success: true;
       blocked: false;
       academicYearLabel: string;
+      academicYearStartMonth: number;
       whatsappReportFollowsTerms: boolean;
       terms: TermFormRow[];
     }
@@ -84,7 +88,7 @@ type SectionsStepDataResult =
         id: string;
         name: string;
         capacity: string;
-        sections: Array<{ name: string }>;
+        sections: Array<{ name: string; capacity: string }>;
       }>;
     }
   | { success: false; error: string };
@@ -133,6 +137,8 @@ function validateServerSchoolIdentityForm(
 
   if (!trimmed.board || !BOARD_OPTIONS.includes(trimmed.board as BoardOption)) {
     fieldErrors.board = "Board is required.";
+  } else if (trimmed.board === "Other" && !trimmed.boardOther) {
+    fieldErrors.boardOther = "Enter your board name.";
   }
 
   const month = Number(trimmed.academicYearStartMonth);
@@ -166,6 +172,7 @@ export async function saveSchoolIdentityAction(
     contactPhone: String(formData.get("contactPhone") ?? ""),
     contactEmail: String(formData.get("contactEmail") ?? ""),
     board: String(formData.get("board") ?? "") as BoardOption | "",
+    boardOther: String(formData.get("boardOther") ?? ""),
     affiliationNumber: String(formData.get("affiliationNumber") ?? ""),
     academicYearStartMonth: String(formData.get("academicYearStartMonth") ?? ""),
   };
@@ -230,6 +237,15 @@ export async function saveSchoolIdentityAction(
     logoPath = objectPath;
   }
 
+  const boardValue = resolveBoardForSave(trimmed.board, trimmed.boardOther);
+  if (!boardValue) {
+    return {
+      success: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors: { board: "Board is required." },
+    };
+  }
+
   const updatePayload: Record<string, string | number | null> = {
     name: trimmed.name,
     address_street: trimmed.addressStreet,
@@ -238,7 +254,7 @@ export async function saveSchoolIdentityAction(
     address_pincode: trimmed.addressPincode,
     contact_phone: trimmed.contactPhone,
     contact_email: trimmed.contactEmail,
-    board: trimmed.board,
+    board: boardValue,
     affiliation_number: trimmed.affiliationNumber || null,
     academic_year_start_month: Number(trimmed.academicYearStartMonth),
     updated_at: new Date().toISOString(),
@@ -257,7 +273,19 @@ export async function saveSchoolIdentityAction(
     return { success: false, error: updateError.message };
   }
 
+  const academicYearResult = await getActiveAcademicYearForSchool(
+    supabase,
+    schoolId,
+    Number(trimmed.academicYearStartMonth),
+    { createIfMissing: true },
+  );
+
+  if ("error" in academicYearResult) {
+    return { success: false, error: academicYearResult.error };
+  }
+
   revalidatePath("/onboarding", "layout");
+  revalidatePath("/dashboard");
 
   return {
     success: true,
@@ -304,9 +332,9 @@ export async function getTermsStepDataAction(): Promise<TermsStepDataResult> {
 
   const { data: terms, error: termsError } = await supabase
     .from("terms")
-    .select("name, start_date, end_date")
+    .select("name, start_month, start_day, end_month, end_day, start_date, end_date")
     .eq("academic_year_id", academicYearResult.academicYear.id)
-    .order("start_date", { ascending: true });
+    .order("start_month", { ascending: true });
 
   if (termsError) {
     return { success: false, error: termsError.message };
@@ -316,12 +344,31 @@ export async function getTermsStepDataAction(): Promise<TermsStepDataResult> {
     success: true,
     blocked: false,
     academicYearLabel: academicYearResult.academicYear.label,
+    academicYearStartMonth: school.academic_year_start_month,
     whatsappReportFollowsTerms: school.whatsapp_report_follows_terms,
-    terms: (terms ?? []).map((term) => ({
-      name: term.name,
-      startDate: term.start_date,
-      endDate: term.end_date,
-    })),
+    terms: (terms ?? []).map((term) => {
+      if (term.start_month != null && term.start_day != null) {
+        return {
+          name: term.name,
+          startMonth: String(term.start_month),
+          startDay: String(term.start_day),
+          endMonth: String(term.end_month),
+          endDay: String(term.end_day),
+        };
+      }
+
+      // Legacy rows that only have full dates.
+      const start = term.start_date ? new Date(`${term.start_date}T00:00:00`) : null;
+      const end = term.end_date ? new Date(`${term.end_date}T00:00:00`) : null;
+
+      return {
+        name: term.name,
+        startMonth: start ? String(start.getMonth() + 1) : "",
+        startDay: start ? String(start.getDate()) : "",
+        endMonth: end ? String(end.getMonth() + 1) : "",
+        endDay: end ? String(end.getDate()) : "",
+      };
+    }),
   };
 }
 
@@ -352,6 +399,7 @@ export async function saveTermsAction(
     supabase,
     schoolId,
     school.academic_year_start_month,
+    { createIfMissing: false },
   );
 
   if ("error" in academicYearResult) {
@@ -374,7 +422,10 @@ export async function saveTermsAction(
   }
 
   const trimmedRows = trimTermRows(Array.isArray(rows) ? rows : []);
-  const fieldErrors = validateTermsForm(trimmedRows);
+  const fieldErrors = validateTermsForm(
+    trimmedRows,
+    school.academic_year_start_month,
+  );
   if (Object.keys(fieldErrors).length > 0) {
     return {
       success: false,
@@ -385,6 +436,10 @@ export async function saveTermsAction(
 
   const whatsappReportFollowsTerms =
     String(formData.get("whatsappReportFollowsTerms") ?? "true") === "true";
+
+  const startYear =
+    parseAcademicYearStartYear(academicYearResult.academicYear.label) ??
+    new Date().getFullYear();
 
   const { error: deleteError } = await supabase
     .from("terms")
@@ -397,12 +452,42 @@ export async function saveTermsAction(
 
   if (trimmedRows.length > 0) {
     const { error: insertError } = await supabase.from("terms").insert(
-      trimmedRows.map((row) => ({
-        academic_year_id: academicYearResult.academicYear.id,
-        name: row.name,
-        start_date: row.startDate,
-        end_date: row.endDate,
-      })),
+      trimmedRows.map((row) => {
+        const startMonth = Number(row.startMonth);
+        const startDay = Number(row.startDay);
+        const endMonth = Number(row.endMonth);
+        const endDay = Number(row.endDay);
+        const startDate = materializeTermDate(
+          startMonth,
+          startDay,
+          school.academic_year_start_month,
+          startYear,
+        );
+        const endDate = materializeTermDate(
+          endMonth,
+          endDay,
+          school.academic_year_start_month,
+          startYear,
+        );
+
+        const toIsoDate = (date: Date) => {
+          const y = date.getFullYear();
+          const m = String(date.getMonth() + 1).padStart(2, "0");
+          const d = String(date.getDate()).padStart(2, "0");
+          return `${y}-${m}-${d}`;
+        };
+
+        return {
+          academic_year_id: academicYearResult.academicYear.id,
+          name: row.name,
+          start_month: startMonth,
+          start_day: startDay,
+          end_month: endMonth,
+          end_day: endDay,
+          start_date: toIsoDate(startDate),
+          end_date: toIsoDate(endDate),
+        };
+      }),
     );
 
     if (insertError) {
@@ -689,7 +774,7 @@ export async function getSectionsStepDataAction(): Promise<SectionsStepDataResul
 
   const { data: sections, error: sectionsError } = await supabase
     .from("sections")
-    .select("class_id, name, display_order")
+    .select("class_id, name, display_order, capacity")
     .in("class_id", classIds)
     .order("display_order", { ascending: true });
 
@@ -697,7 +782,10 @@ export async function getSectionsStepDataAction(): Promise<SectionsStepDataResul
     return { success: false, error: sectionsError.message };
   }
 
-  const sectionsByClassId = new Map<string, Array<{ name: string }>>();
+  const sectionsByClassId = new Map<
+    string,
+    Array<{ name: string; capacity: string }>
+  >();
 
   for (const classId of classIds) {
     sectionsByClassId.set(classId, []);
@@ -711,6 +799,10 @@ export async function getSectionsStepDataAction(): Promise<SectionsStepDataResul
 
     rows.push({
       name: section.name,
+      capacity:
+        section.capacity === null || section.capacity === undefined
+          ? ""
+          : String(section.capacity),
     });
   }
 
@@ -842,6 +934,7 @@ export async function saveSectionsAction(
         class_id: classRow.id,
         name: section.name,
         display_order: index,
+        capacity: section.capacity ? Number(section.capacity) : null,
       })),
     );
 

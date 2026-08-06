@@ -62,3 +62,31 @@ body {
 .feezy-rise-delay-3 {
   animation-delay: 0.3s;
 }
+
+@keyframes feezy-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes feezy-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.feezy-modal-backdrop {
+  animation: feezy-backdrop-in 0.2s ease-out both;
+}
+
+.feezy-modal-panel {
+  animation: feezy-modal-in 0.22s ease-out both;
+}
