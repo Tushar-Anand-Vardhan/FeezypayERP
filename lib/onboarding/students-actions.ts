@@ -387,33 +387,21 @@ export async function saveStudentsAction(formData: FormData): Promise<Result> {
     }
   }
 
-  // Close active admissions for this school (do not delete global persons).
+  // Diff by admission number within this school; never wipe global persons.
   const { data: existingAdmissions } = await supabase
     .from("student_admissions")
-    .select("id")
-    .eq("school_id", schoolId)
-    .eq("status", "active");
+    .select("id, admission_number, student_profile_id, status")
+    .eq("school_id", schoolId);
 
-  const existingAdmissionIds = (existingAdmissions ?? []).map((row) => row.id);
-  if (existingAdmissionIds.length > 0) {
-    await supabase
-      .from("student_academic_years")
-      .update({
-        status: "withdrawn",
-        left_on: new Date().toISOString().slice(0, 10),
-      })
-      .in("admission_id", existingAdmissionIds)
-      .eq("status", "active");
-
-    await supabase
-      .from("student_admissions")
-      .update({
-        status: "withdrawn",
-        exited_on: new Date().toISOString().slice(0, 10),
-        updated_at: new Date().toISOString(),
-      })
-      .in("id", existingAdmissionIds);
-  }
+  const admissionByNumber = new Map(
+    (existingAdmissions ?? []).map((row) => [
+      row.admission_number.toLowerCase(),
+      row,
+    ]),
+  );
+  const keepAdmissionIds = new Set<string>();
+  const today = new Date().toISOString().slice(0, 10);
+  const academicYearId = classesResult.academicYear.id;
 
   for (const row of trimmed) {
     const pair = sectionByPair.get(pairKey(row.className, row.sectionName));
@@ -429,40 +417,111 @@ export async function saveStudentsAction(formData: FormData): Promise<Result> {
       return { success: false, error: resolved.error };
     }
 
-    const { data: admission, error: admissionError } = await supabase
-      .from("student_admissions")
-      .insert({
-        student_profile_id: resolved.studentProfileId,
-        school_id: schoolId,
-        admission_number: row.admissionNumber,
-        admitted_on: new Date().toISOString().slice(0, 10),
-        status: "active",
-      })
-      .select("id")
-      .single();
-
-    if (admissionError || !admission) {
+    const existing = admissionByNumber.get(row.admissionNumber.toLowerCase());
+    if (
+      existing &&
+      existing.student_profile_id !== resolved.studentProfileId
+    ) {
       return {
         success: false,
-        error: admissionError?.message ?? "Could not save admission.",
+        error: `Admission number ${row.admissionNumber} is already linked to a different student.`,
       };
     }
 
-    const { error: yearError } = await supabase
-      .from("student_academic_years")
-      .insert({
-        admission_id: admission.id,
-        academic_year_id: classesResult.academicYear.id,
-        class_id: pair.classId,
-        section_id: pair.sectionId,
-        enrolled_on: new Date().toISOString().slice(0, 10),
-        status: "active",
-        enrollment_type: "new_admission",
-      });
+    let admissionId = existing?.id;
 
-    if (yearError) {
-      return { success: false, error: yearError.message };
+    if (admissionId) {
+      const { error: updateError } = await supabase
+        .from("student_admissions")
+        .update({
+          student_profile_id: resolved.studentProfileId,
+          status: "active",
+          exited_on: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", admissionId);
+      if (updateError) {
+        return { success: false, error: updateError.message };
+      }
+
+      const { data: yearRows } = await supabase
+        .from("student_academic_years")
+        .select("id")
+        .eq("admission_id", admissionId)
+        .eq("academic_year_id", academicYearId)
+        .eq("status", "active")
+        .is("left_on", null)
+        .limit(1);
+
+      const yearId = yearRows?.[0]?.id;
+      if (yearId) {
+        const { error: yearUpdateError } = await supabase
+          .from("student_academic_years")
+          .update({
+            class_id: pair.classId,
+            section_id: pair.sectionId,
+            status: "active",
+            left_on: null,
+          })
+          .eq("id", yearId);
+        if (yearUpdateError) {
+          return { success: false, error: yearUpdateError.message };
+        }
+      } else {
+        const { error: yearInsertError } = await supabase
+          .from("student_academic_years")
+          .insert({
+            admission_id: admissionId,
+            academic_year_id: academicYearId,
+            class_id: pair.classId,
+            section_id: pair.sectionId,
+            enrolled_on: today,
+            status: "active",
+            enrollment_type: "new_admission",
+          });
+        if (yearInsertError) {
+          return { success: false, error: yearInsertError.message };
+        }
+      }
+    } else {
+      const { data: admission, error: admissionError } = await supabase
+        .from("student_admissions")
+        .insert({
+          student_profile_id: resolved.studentProfileId,
+          school_id: schoolId,
+          admission_number: row.admissionNumber,
+          admitted_on: today,
+          status: "active",
+        })
+        .select("id")
+        .single();
+
+      if (admissionError || !admission) {
+        return {
+          success: false,
+          error: admissionError?.message ?? "Could not save admission.",
+        };
+      }
+      admissionId = admission.id;
+
+      const { error: yearError } = await supabase
+        .from("student_academic_years")
+        .insert({
+          admission_id: admissionId,
+          academic_year_id: academicYearId,
+          class_id: pair.classId,
+          section_id: pair.sectionId,
+          enrolled_on: today,
+          status: "active",
+          enrollment_type: "new_admission",
+        });
+
+      if (yearError) {
+        return { success: false, error: yearError.message };
+      }
     }
+
+    keepAdmissionIds.add(admissionId);
 
     const primaryGuardian = row.guardians[0];
     if (primaryGuardian?.fullName) {
@@ -524,6 +583,30 @@ export async function saveStudentsAction(formData: FormData): Promise<Result> {
         { onConflict: "student_profile_id,parent_profile_id" },
       );
     }
+  }
+
+  const toEnd = (existingAdmissions ?? [])
+    .filter((row) => row.status === "active" && !keepAdmissionIds.has(row.id))
+    .map((row) => row.id);
+
+  if (toEnd.length > 0) {
+    await supabase
+      .from("student_academic_years")
+      .update({
+        status: "withdrawn",
+        left_on: today,
+      })
+      .in("admission_id", toEnd)
+      .eq("status", "active");
+
+    await supabase
+      .from("student_admissions")
+      .update({
+        status: "withdrawn",
+        exited_on: today,
+        updated_at: new Date().toISOString(),
+      })
+      .in("id", toEnd);
   }
 
   revalidatePath("/onboarding", "layout");

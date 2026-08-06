@@ -1,4 +1,8 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FeezypayERP
+
+School ERP (Next.js + Supabase). **Technical source of truth:** [`docs/MASTER.md`](docs/MASTER.md). **Phase 0.5 COMPLETE** — review: [`docs/architecture/phase-05-architecture-review.md`](docs/architecture/phase-05-architecture-review.md). **User journeys:** [`docs/architecture/user-journeys.md`](docs/architecture/user-journeys.md). Architecture index under [`docs/architecture/`](docs/architecture/). Keep these updated across the project lifecycle.
+
+This project was bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
