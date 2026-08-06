@@ -68,8 +68,14 @@ export async function getOnboardingProgress(
       countRows(supabase, "subjects", { school_id: schoolId }),
       countRows(supabase, "houses", { school_id: schoolId }),
       countRows(supabase, "clubs", { school_id: schoolId }),
-      countRows(supabase, "teachers", { school_id: schoolId }),
-      countRows(supabase, "students", { school_id: schoolId }),
+      countRows(supabase, "teacher_employments", {
+        school_id: schoolId,
+        status: "active",
+      }),
+      countRows(supabase, "student_admissions", {
+        school_id: schoolId,
+        status: "active",
+      }),
       academicYearId
         ? countRows(supabase, "exam_definitions", {
             academic_year_id: academicYearId,

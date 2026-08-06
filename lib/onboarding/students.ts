@@ -12,6 +12,8 @@ export type StudentFormRow = {
   dateOfBirth: string;
   gender: "" | "male" | "female" | "other";
   admissionNumber: string;
+  aadhaar: string;
+  email: string;
   className: string;
   sectionName: string;
   guardians: GuardianFormRow[];
@@ -24,6 +26,8 @@ export const STUDENT_CSV_HEADERS = [
   "date_of_birth",
   "gender",
   "admission_number",
+  "aadhaar",
+  "email",
   "class",
   "section",
   "guardian_name",
@@ -51,6 +55,8 @@ export function emptyStudent(): StudentFormRow {
     dateOfBirth: "",
     gender: "",
     admissionNumber: "",
+    aadhaar: "",
+    email: "",
     className: "",
     sectionName: "",
     guardians: [emptyGuardian()],
@@ -69,6 +75,8 @@ export function studentRowFromCsv(row: Record<string, string>): StudentFormRow {
     dateOfBirth: row.date_of_birth ?? "",
     gender,
     admissionNumber: row.admission_number ?? "",
+    aadhaar: row.aadhaar ?? "",
+    email: row.email ?? "",
     className: row.class ?? "",
     sectionName: row.section ?? "",
     guardians: [
@@ -92,6 +100,8 @@ export function trimStudentRows(rows: StudentFormRow[]): StudentFormRow[] {
     dateOfBirth: row.dateOfBirth.trim(),
     gender: row.gender,
     admissionNumber: row.admissionNumber.trim(),
+    aadhaar: row.aadhaar.trim(),
+    email: row.email.trim(),
     className: row.className.trim(),
     sectionName: row.sectionName.trim(),
     guardians: row.guardians.map((guardian) => ({
@@ -125,6 +135,7 @@ export function validateStudentRows(
     ),
   );
   const admissionSeen = new Map<string, number>();
+  const aadhaarSeen = new Map<string, number>();
 
   trimmed.forEach((row, index) => {
     if (!row.fullName) {
@@ -138,6 +149,16 @@ export function validateStudentRows(
         errors[`student-${index}-admissionNumber`] = "Duplicate admission number.";
       } else {
         admissionSeen.set(key, index);
+      }
+    }
+    if (row.aadhaar) {
+      const digits = row.aadhaar.replace(/\D/g, "");
+      if (digits.length !== 12) {
+        errors[`student-${index}-aadhaar`] = "Aadhaar must be exactly 12 digits.";
+      } else if (aadhaarSeen.has(digits)) {
+        errors[`student-${index}-aadhaar`] = "Duplicate Aadhaar in this list.";
+      } else {
+        aadhaarSeen.set(digits, index);
       }
     }
     if (!row.className || !row.sectionName) {

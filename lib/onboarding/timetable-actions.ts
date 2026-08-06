@@ -63,7 +63,13 @@ export async function getTimetableStepDataAction(): Promise<TimetableStepData> {
         .in("class_id", classIds)
         .order("display_order"),
       supabase.from("subjects").select("id, name").eq("school_id", schoolId),
-      supabase.from("teachers").select("id, full_name").eq("school_id", schoolId),
+      supabase
+        .from("teacher_employments")
+        .select(
+          "id, teacher_profiles(persons(full_name))",
+        )
+        .eq("school_id", schoolId)
+        .eq("status", "active"),
       supabase
         .from("period_definitions")
         .select("period_number, start_time, end_time")
@@ -111,10 +117,29 @@ export async function getTimetableStepDataAction(): Promise<TimetableStepData> {
       classTeacherId: section.class_teacher_id ?? "",
     })),
     subjects: subjects ?? [],
-    teachers: (teachers ?? []).map((row) => ({
-      id: row.id,
-      name: row.full_name,
-    })),
+    teachers: (teachers ?? []).map((row) => {
+      const profile = row.teacher_profiles as
+        | {
+            persons:
+              | { full_name: string }
+              | { full_name: string }[]
+              | null;
+          }
+        | {
+            persons:
+              | { full_name: string }
+              | { full_name: string }[]
+              | null;
+          }[]
+        | null;
+      const resolvedProfile = Array.isArray(profile) ? profile[0] : profile;
+      const personRaw = resolvedProfile?.persons;
+      const person = Array.isArray(personRaw) ? personRaw[0] : personRaw;
+      return {
+        id: row.id,
+        name: person?.full_name ?? "Teacher",
+      };
+    }),
     slots: (slots ?? []).map((slot) => ({
       sectionId: slot.section_id,
       dayOfWeek: slot.day_of_week,

@@ -13,6 +13,7 @@ import {
 import {
   STAFF_CSV_HEADERS,
   staffRowFromCsv,
+  validateStaffDraft,
   validateStaffRows,
   type StaffFieldErrors,
   type StaffFormRow,
@@ -22,6 +23,7 @@ const EMPTY_TEACHER: StaffFormRow = {
   fullName: "",
   phone: "",
   email: "",
+  aadhaar: "",
   employeeCode: "",
   designation: "",
   departmentName: "",
@@ -83,6 +85,7 @@ export function StaffForm() {
             fullName,
             phone,
             email,
+            aadhaar,
             employeeCode,
             designation,
             departmentName,
@@ -92,6 +95,7 @@ export function StaffForm() {
             fullName,
             phone,
             email,
+            aadhaar,
             employeeCode,
             designation,
             departmentName,
@@ -110,8 +114,9 @@ export function StaffForm() {
   }, []);
 
   function addTeacher() {
-    if (!draft.fullName.trim()) {
-      setFieldErrors({ draftName: "Name is required." });
+    const errors = validateStaffDraft(draft, subjectNames, teachers);
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
     setTeachers((current) => [...current, { ...draft }]);
@@ -280,6 +285,15 @@ export function StaffForm() {
                 }
               />
               <FormField
+                id="staff-aadhaar"
+                label="Aadhaar (optional)"
+                value={draft.aadhaar}
+                onChange={(value) =>
+                  setDraft((current) => ({ ...current, aadhaar: value }))
+                }
+                error={fieldErrors["draft-aadhaar"]}
+              />
+              <FormField
                 id="staff-phone"
                 label="Phone"
                 value={draft.phone}
@@ -305,11 +319,16 @@ export function StaffForm() {
               />
               <FormField
                 id="staff-department"
-                label="Department"
+                label={draft.isHod ? "Department (required for HOD)" : "Department"}
                 value={draft.departmentName}
                 onChange={(value) =>
                   setDraft((current) => ({ ...current, departmentName: value }))
                 }
+                error={
+                  fieldErrors.draftDepartmentName ||
+                  fieldErrors["draft-departmentName"]
+                }
+                required={draft.isHod}
               />
             </div>
             {departments.length > 0 ? (
@@ -321,6 +340,9 @@ export function StaffForm() {
 
             <fieldset className="space-y-2">
               <legend className="text-sm font-medium">Subjects taught</legend>
+              <p className="text-xs text-muted">
+                Select all that apply. A teacher can teach more than one subject.
+              </p>
               <ul className="grid gap-2 sm:grid-cols-2">
                 {subjects.map((subject) => (
                   <li key={subject.id}>
@@ -352,6 +374,11 @@ export function StaffForm() {
               />
               Head of department
             </label>
+            {draft.isHod ? (
+              <p className="text-xs text-muted">
+                HOD requires a department name above (which department they lead).
+              </p>
+            ) : null}
 
             <button
               type="button"
@@ -377,11 +404,23 @@ export function StaffForm() {
                         "Priya Sharma",
                         "9999999999",
                         "priya@school.edu",
+                        "123412341234",
                         "T001",
                         "Teacher",
                         "Science",
                         "Physics|Chemistry",
                         "false",
+                      ],
+                      [
+                        "Amit Verma",
+                        "9888888888",
+                        "amit@school.edu",
+                        "432143214321",
+                        "T002",
+                        "HOD",
+                        "Science",
+                        "Physics|Chemistry|Biology",
+                        "true",
                       ],
                     ],
                   )
@@ -398,8 +437,12 @@ export function StaffForm() {
               }
             />
             <p className="text-xs text-muted">
-              Import is blocked if any row is invalid. Subjects must be pipe-separated
-              and match your catalog.
+              Import is blocked if any row is invalid. For multiple subjects, join
+              catalog names with a pipe:{" "}
+              <span className="font-medium text-foreground">
+                Physics|Chemistry|Math
+              </span>
+              . HOD rows (`is_hod=true`) must include a department.
             </p>
             {csvErrors.length > 0 ? (
               <ul className="space-y-1 rounded-xl border border-feezy-coral/30 bg-feezy-coral/5 p-3 text-sm text-feezy-coral">

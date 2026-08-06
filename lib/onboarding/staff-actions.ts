@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { hashAadhaar } from "@/lib/identity/aadhaar";
 import { getActiveYearClassesForSchool } from "@/lib/onboarding/school-classes-server";
 import { getAuthenticatedSchoolContext } from "@/lib/onboarding/server-context";
 import {
@@ -20,14 +21,132 @@ export type StaffStepData =
       blocked: false;
       subjects: Array<{ id: string; name: string }>;
       departments: Array<{ id: string; name: string }>;
-      teachers: Array<
-        StaffFormRow & {
-          id: string;
-        }
-      >;
+      teachers: Array<StaffFormRow & { id: string }>;
     }
   | { success: true; blocked: true }
   | { success: false; error: string };
+
+type PersonHit = {
+  id: string;
+  email: string | null;
+  aadhaar_hash: string | null;
+};
+
+async function resolvePersonAndTeacherProfile(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  row: StaffFormRow,
+): Promise<
+  | { personId: string; teacherProfileId: string }
+  | { error: string }
+> {
+  const aadhaar = row.aadhaar ? hashAadhaar(row.aadhaar) : null;
+
+  const { data: matches, error: lookupError } = await supabase.rpc(
+    "find_person_by_identity",
+    {
+      p_email: row.email || null,
+      p_aadhaar_hash: aadhaar?.hash ?? null,
+    },
+  );
+
+  if (lookupError) {
+    return { error: lookupError.message };
+  }
+
+  const hit = (Array.isArray(matches) ? matches[0] : matches) as
+    | PersonHit
+    | undefined;
+
+  if (hit) {
+    if (
+      aadhaar &&
+      hit.aadhaar_hash &&
+      hit.aadhaar_hash !== aadhaar.hash
+    ) {
+      return {
+        error: `Email ${row.email} is already linked to a different Aadhaar.`,
+      };
+    }
+    if (
+      row.email &&
+      hit.email &&
+      hit.email.toLowerCase() !== row.email.toLowerCase() &&
+      aadhaar &&
+      hit.aadhaar_hash === aadhaar.hash
+    ) {
+      return {
+        error: `Aadhaar is already linked to a different email (${hit.email}).`,
+      };
+    }
+
+    const { data: profiles } = await supabase.rpc(
+      "get_teacher_profile_for_person",
+      { p_person_id: hit.id },
+    );
+    const profile = Array.isArray(profiles) ? profiles[0] : profiles;
+
+    if (profile?.id) {
+      await supabase.rpc("update_person_record", {
+        p_person_id: hit.id,
+        p_full_name: row.fullName,
+        p_phone: row.phone || null,
+        p_email: row.email || hit.email,
+        p_aadhaar_hash: aadhaar?.hash ?? null,
+        p_aadhaar_last4: aadhaar?.last4 ?? null,
+      });
+
+      return { personId: hit.id, teacherProfileId: profile.id };
+    }
+
+    const { data: createdProfileId, error: profileError } = await supabase.rpc(
+      "create_teacher_profile_record",
+      { p_person_id: hit.id },
+    );
+
+    if (profileError || !createdProfileId) {
+      return {
+        error: profileError?.message ?? "Could not create teacher profile.",
+      };
+    }
+
+    return { personId: hit.id, teacherProfileId: createdProfileId as string };
+  }
+
+  const { data: personId, error: personError } = await supabase.rpc(
+    "create_person_record",
+    {
+      p_full_name: row.fullName,
+      p_email: row.email || null,
+      p_phone: row.phone || null,
+      p_aadhaar_hash: aadhaar?.hash ?? null,
+      p_aadhaar_last4: aadhaar?.last4 ?? null,
+    },
+  );
+
+  if (personError || !personId) {
+    if (personError?.code === "23505") {
+      return {
+        error:
+          "A person with this email or Aadhaar already exists but could not be matched cleanly. Check for conflicts.",
+      };
+    }
+    return { error: personError?.message ?? "Could not create person." };
+  }
+
+  const { data: profileId, error: profileError } = await supabase.rpc(
+    "create_teacher_profile_record",
+    { p_person_id: personId },
+  );
+
+  if (profileError || !profileId) {
+    return {
+      error: profileError?.message ?? "Could not create teacher profile.",
+    };
+  }
+
+  return { personId: personId as string, teacherProfileId: profileId as string };
+}
 
 export async function getStaffStepDataAction(): Promise<StaffStepData> {
   const context = await getAuthenticatedSchoolContext();
@@ -44,7 +163,7 @@ export async function getStaffStepDataAction(): Promise<StaffStepData> {
     return { success: false, error: classesResult.error };
   }
 
-  const [{ data: subjects }, { data: departments }, { data: teachers }] =
+  const [{ data: subjects }, { data: departments }, { data: employments }] =
     await Promise.all([
       supabase
         .from("subjects")
@@ -57,12 +176,12 @@ export async function getStaffStepDataAction(): Promise<StaffStepData> {
         .eq("school_id", schoolId)
         .order("name"),
       supabase
-        .from("teachers")
+        .from("teacher_employments")
         .select(
-          "id, full_name, phone, email, employee_code, designation, is_hod, department_id, teacher_subjects(subject_id, subjects(name))",
+          "id, employee_code, designation, is_hod, department_id, teacher_profiles(person_id, persons(full_name, phone, email, aadhaar_last4)), employment_subjects(subject_id, subjects(name))",
         )
         .eq("school_id", schoolId)
-        .order("full_name"),
+        .eq("status", "active"),
     ]);
 
   if ((subjects ?? []).length === 0) {
@@ -78,19 +197,60 @@ export async function getStaffStepDataAction(): Promise<StaffStepData> {
     blocked: false,
     subjects: subjects ?? [],
     departments: departments ?? [],
-    teachers: (teachers ?? []).map((teacher) => {
-      const subjectLinks = Array.isArray(teacher.teacher_subjects)
-        ? teacher.teacher_subjects
+    teachers: (employments ?? []).map((employment) => {
+      const profile = employment.teacher_profiles as
+        | {
+            persons:
+              | {
+                  full_name: string;
+                  phone: string | null;
+                  email: string | null;
+                  aadhaar_last4: string | null;
+                }
+              | {
+                  full_name: string;
+                  phone: string | null;
+                  email: string | null;
+                  aadhaar_last4: string | null;
+                }[]
+              | null;
+          }
+        | {
+            persons:
+              | {
+                  full_name: string;
+                  phone: string | null;
+                  email: string | null;
+                  aadhaar_last4: string | null;
+                }
+              | {
+                  full_name: string;
+                  phone: string | null;
+                  email: string | null;
+                  aadhaar_last4: string | null;
+                }[]
+              | null;
+          }[]
+        | null;
+
+      const resolvedProfile = Array.isArray(profile) ? profile[0] : profile;
+      const personRaw = resolvedProfile?.persons;
+      const person = Array.isArray(personRaw) ? personRaw[0] : personRaw;
+
+      const subjectLinks = Array.isArray(employment.employment_subjects)
+        ? employment.employment_subjects
         : [];
+
       return {
-        id: teacher.id,
-        fullName: teacher.full_name,
-        phone: teacher.phone ?? "",
-        email: teacher.email ?? "",
-        employeeCode: teacher.employee_code ?? "",
-        designation: teacher.designation ?? "",
-        departmentName: teacher.department_id
-          ? (departmentById.get(teacher.department_id) ?? "")
+        id: employment.id,
+        fullName: person?.full_name ?? "",
+        phone: person?.phone ?? "",
+        email: person?.email ?? "",
+        aadhaar: person?.aadhaar_last4 ? `********${person.aadhaar_last4}` : "",
+        employeeCode: employment.employee_code ?? "",
+        designation: employment.designation ?? "",
+        departmentName: employment.department_id
+          ? (departmentById.get(employment.department_id) ?? "")
           : "",
         subjectNames: subjectLinks
           .map((link) => {
@@ -104,7 +264,7 @@ export async function getStaffStepDataAction(): Promise<StaffStepData> {
             return subject?.name ?? "";
           })
           .filter(Boolean),
-        isHod: teacher.is_hod,
+        isHod: employment.is_hod,
       };
     }),
   };
@@ -125,6 +285,12 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
   } catch {
     return { success: false, error: "Could not read teacher data." };
   }
+
+  // Masked aadhaar from reload should not be re-hashed; clear fake values.
+  rows = rows.map((row) => ({
+    ...row,
+    aadhaar: row.aadhaar.includes("*") ? "" : row.aadhaar,
+  }));
 
   const { data: subjects } = await supabase
     .from("subjects")
@@ -152,25 +318,21 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
 
   if (intent === "save" && trimmed.length === 0) {
     const { count } = await supabase
-      .from("teachers")
+      .from("teacher_employments")
       .select("id", { count: "exact", head: true })
-      .eq("school_id", schoolId);
+      .eq("school_id", schoolId)
+      .eq("status", "active");
     if ((count ?? 0) > 0) {
       return {
         success: false,
         error:
-          "Saving an empty staff list would remove all teachers. Add at least one teacher, or keep existing rows.",
+          "Saving an empty staff list would end all active employments. Add at least one teacher, or keep existing rows.",
       };
     }
   }
 
   const departmentNames = Array.from(
-    new Set(
-      trimmed
-        .map((row) => row.departmentName)
-        .filter(Boolean)
-        .map((name) => name),
-    ),
+    new Set(trimmed.map((row) => row.departmentName).filter(Boolean)),
   );
 
   const { data: existingDepartments } = await supabase
@@ -190,72 +352,102 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
         .select("id, name")
         .single();
       if (error || !inserted) {
-        return { success: false, error: error?.message ?? "Could not create department." };
+        return {
+          success: false,
+          error: error?.message ?? "Could not create department.",
+        };
       }
       departmentIdByName.set(inserted.name.toLowerCase(), inserted.id);
     }
   }
 
-  const { data: existingTeachers } = await supabase
-    .from("teachers")
-    .select("id")
-    .eq("school_id", schoolId);
+  // Soft-end employments removed from the list; upsert the rest in place.
+  const { data: existingEmployments } = await supabase
+    .from("teacher_employments")
+    .select("id, teacher_profile_id")
+    .eq("school_id", schoolId)
+    .eq("status", "active");
 
-  const existingIds = (existingTeachers ?? []).map((row) => row.id);
-  if (existingIds.length > 0) {
-    const { error: linkDeleteError } = await supabase
-      .from("teacher_subjects")
-      .delete()
-      .in("teacher_id", existingIds);
-    if (linkDeleteError) {
-      return { success: false, error: linkDeleteError.message };
-    }
-
-    const { error: teachersDeleteError } = await supabase
-      .from("teachers")
-      .delete()
-      .eq("school_id", schoolId);
-    if (teachersDeleteError) {
-      return { success: false, error: teachersDeleteError.message };
-    }
-  }
-
+  const keepEmploymentIds = new Set<string>();
   const createdEmails: string[] = [];
 
   for (const row of trimmed) {
-    const { data: teacher, error } = await supabase
-      .from("teachers")
-      .insert({
-        school_id: schoolId,
-        full_name: row.fullName,
-        phone: row.phone || null,
-        email: row.email || null,
-        employee_code: row.employeeCode || null,
-        designation: row.designation || null,
-        department_id: row.departmentName
-          ? departmentIdByName.get(row.departmentName.toLowerCase()) ?? null
-          : null,
-        is_hod: row.isHod,
-      })
-      .select("id, email")
-      .single();
-
-    if (error || !teacher) {
-      return { success: false, error: error?.message ?? "Could not save teacher." };
+    const resolved = await resolvePersonAndTeacherProfile(supabase, row);
+    if ("error" in resolved) {
+      return { success: false, error: resolved.error };
     }
+
+    const existing = (existingEmployments ?? []).find(
+      (rowEmployment) =>
+        rowEmployment.teacher_profile_id === resolved.teacherProfileId,
+    );
+
+    let employmentId = existing?.id;
+
+    if (employmentId) {
+      const { error: updateError } = await supabase
+        .from("teacher_employments")
+        .update({
+          employee_code: row.employeeCode || null,
+          designation: row.designation || null,
+          department_id: row.departmentName
+            ? (departmentIdByName.get(row.departmentName.toLowerCase()) ?? null)
+            : null,
+          is_hod: row.isHod,
+          status: "active",
+          left_on: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", employmentId);
+      if (updateError) {
+        return { success: false, error: updateError.message };
+      }
+
+      await supabase
+        .from("employment_subjects")
+        .delete()
+        .eq("employment_id", employmentId);
+    } else {
+      const { data: employment, error: employmentError } = await supabase
+        .from("teacher_employments")
+        .insert({
+          teacher_profile_id: resolved.teacherProfileId,
+          school_id: schoolId,
+          employee_code: row.employeeCode || null,
+          designation: row.designation || null,
+          department_id: row.departmentName
+            ? (departmentIdByName.get(row.departmentName.toLowerCase()) ?? null)
+            : null,
+          is_hod: row.isHod,
+          status: "active",
+          joined_on: new Date().toISOString().slice(0, 10),
+        })
+        .select("id")
+        .single();
+
+      if (employmentError || !employment) {
+        return {
+          success: false,
+          error: employmentError?.message ?? "Could not save employment.",
+        };
+      }
+      employmentId = employment.id;
+    }
+
+    keepEmploymentIds.add(employmentId);
 
     if (row.subjectNames.length > 0) {
       const links = row.subjectNames
         .map((name) => subjectByName.get(name.toLowerCase()))
         .filter((id): id is string => Boolean(id))
         .map((subjectId) => ({
-          teacher_id: teacher.id,
+          employment_id: employmentId!,
           subject_id: subjectId,
         }));
 
       if (links.length > 0) {
         const { error: linkError } = await supabase
-          .from("teacher_subjects")
+          .from("employment_subjects")
           .insert(links);
         if (linkError) {
           return { success: false, error: linkError.message };
@@ -263,13 +455,26 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
       }
     }
 
-    if (teacher.email) {
-      createdEmails.push(teacher.email);
+    if (row.email) {
+      createdEmails.push(row.email);
     }
   }
 
-  // Option 1A: password reset emails only work for addresses that already have
-  // an auth user. New teacher emails won't receive a setup link until invited.
+  const toEnd = (existingEmployments ?? [])
+    .map((row) => row.id)
+    .filter((id) => !keepEmploymentIds.has(id));
+
+  if (toEnd.length > 0) {
+    await supabase
+      .from("teacher_employments")
+      .update({
+        status: "ended",
+        left_on: new Date().toISOString().slice(0, 10),
+        updated_at: new Date().toISOString(),
+      })
+      .in("id", toEnd);
+  }
+
   if (createdEmails.length > 0) {
     const authClient = await createClient();
     const origin =

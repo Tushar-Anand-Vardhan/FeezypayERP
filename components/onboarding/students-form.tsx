@@ -278,6 +278,23 @@ export function StudentsForm() {
                 required
               />
               <FormField
+                id="student-aadhaar"
+                label="Aadhaar (optional)"
+                value={draft.aadhaar}
+                onChange={(value) =>
+                  setDraft((current) => ({ ...current, aadhaar: value }))
+                }
+                error={fieldErrors["draft-aadhaar"]}
+              />
+              <FormField
+                id="student-email"
+                label="Email (optional)"
+                value={draft.email}
+                onChange={(value) =>
+                  setDraft((current) => ({ ...current, email: value }))
+                }
+              />
+              <FormField
                 id="student-dob"
                 label="Date of birth"
                 type="date"
@@ -471,6 +488,8 @@ export function StudentsForm() {
                         "2015-04-12",
                         "male",
                         "ADM001",
+                        "123456789012",
+                        "",
                         classSections[0]?.className ?? "Class 1",
                         classSections[0]?.sectionName ?? "A",
                         "Ravi Patel",

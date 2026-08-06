@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { hashAadhaar } from "@/lib/identity/aadhaar";
 import { getActiveYearClassesForSchool } from "@/lib/onboarding/school-classes-server";
 import { getAuthenticatedSchoolContext } from "@/lib/onboarding/server-context";
 import {
@@ -27,6 +28,105 @@ export type StudentsStepData =
     }
   | { success: true; blocked: true }
   | { success: false; error: string };
+
+type PersonHit = {
+  id: string;
+  email: string | null;
+  aadhaar_hash: string | null;
+};
+
+async function resolveStudentPerson(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  row: StudentFormRow,
+): Promise<{ personId: string; studentProfileId: string } | { error: string }> {
+  const aadhaar = row.aadhaar ? hashAadhaar(row.aadhaar) : null;
+
+  const { data: matches, error: lookupError } = await supabase.rpc(
+    "find_person_by_identity",
+    {
+      p_email: row.email || null,
+      p_aadhaar_hash: aadhaar?.hash ?? null,
+    },
+  );
+
+  if (lookupError) {
+    return { error: lookupError.message };
+  }
+
+  const hit = (Array.isArray(matches) ? matches[0] : matches) as
+    | PersonHit
+    | undefined;
+
+  if (hit) {
+    if (aadhaar && hit.aadhaar_hash && hit.aadhaar_hash !== aadhaar.hash) {
+      return {
+        error: `Identity conflict for ${row.fullName}: email/Aadhaar mismatch.`,
+      };
+    }
+
+    const { data: profiles } = await supabase.rpc(
+      "get_student_profile_for_person",
+      { p_person_id: hit.id },
+    );
+    const profile = Array.isArray(profiles) ? profiles[0] : profiles;
+
+    await supabase.rpc("update_person_record", {
+      p_person_id: hit.id,
+      p_full_name: row.fullName,
+      p_date_of_birth: row.dateOfBirth || null,
+      p_gender: row.gender || null,
+      p_email: row.email || hit.email,
+      p_aadhaar_hash: aadhaar?.hash ?? null,
+      p_aadhaar_last4: aadhaar?.last4 ?? null,
+    });
+
+    if (profile?.id) {
+      return { personId: hit.id, studentProfileId: profile.id };
+    }
+
+    const { data: createdId, error } = await supabase.rpc(
+      "create_student_profile_record",
+      { p_person_id: hit.id },
+    );
+    if (error || !createdId) {
+      return { error: error?.message ?? "Could not create student profile." };
+    }
+    return { personId: hit.id, studentProfileId: createdId as string };
+  }
+
+  const { data: personId, error: personError } = await supabase.rpc(
+    "create_person_record",
+    {
+      p_full_name: row.fullName,
+      p_date_of_birth: row.dateOfBirth || null,
+      p_gender: row.gender || null,
+      p_email: row.email || null,
+      p_aadhaar_hash: aadhaar?.hash ?? null,
+      p_aadhaar_last4: aadhaar?.last4 ?? null,
+    },
+  );
+
+  if (personError || !personId) {
+    return { error: personError?.message ?? "Could not create person." };
+  }
+
+  const { data: profileId, error: profileError } = await supabase.rpc(
+    "create_student_profile_record",
+    { p_person_id: personId },
+  );
+
+  if (profileError || !profileId) {
+    return {
+      error: profileError?.message ?? "Could not create student profile.",
+    };
+  }
+
+  return {
+    personId: personId as string,
+    studentProfileId: profileId as string,
+  };
+}
 
 export async function getStudentsStepDataAction(): Promise<StudentsStepData> {
   const context = await getAuthenticatedSchoolContext();
@@ -65,13 +165,13 @@ export async function getStudentsStepDataAction(): Promise<StudentsStepData> {
     sectionName: section.name,
   }));
 
-  const { data: students } = await supabase
-    .from("students")
+  const { data: admissions } = await supabase
+    .from("student_admissions")
     .select(
-      "full_name, date_of_birth, gender, admission_number, student_guardians(relationship, guardians(full_name, phone, whatsapp_number, email, whatsapp_opt_in)), student_section_enrollments(status, left_on, class_id, section_id)",
+      "admission_number, student_profiles(id, persons(full_name, date_of_birth, gender, email, aadhaar_last4), student_parent_links(relationship, parent_profiles(persons(full_name, phone, email)))), student_academic_years(status, left_on, class_id, section_id)",
     )
     .eq("school_id", schoolId)
-    .order("full_name");
+    .eq("status", "active");
 
   const sectionNameById = new Map(sections.map((row) => [row.id, row.name]));
 
@@ -79,51 +179,127 @@ export async function getStudentsStepDataAction(): Promise<StudentsStepData> {
     success: true,
     blocked: false,
     classSections,
-    students: (students ?? []).map((student) => {
-      const enrollments = Array.isArray(student.student_section_enrollments)
-        ? student.student_section_enrollments
+    students: (admissions ?? []).map((admission) => {
+      const profileRaw = admission.student_profiles as
+        | {
+            id: string;
+            persons:
+              | {
+                  full_name: string;
+                  date_of_birth: string | null;
+                  gender: string | null;
+                  email: string | null;
+                  aadhaar_last4: string | null;
+                }
+              | {
+                  full_name: string;
+                  date_of_birth: string | null;
+                  gender: string | null;
+                  email: string | null;
+                  aadhaar_last4: string | null;
+                }[]
+              | null;
+            student_parent_links: unknown;
+          }
+        | {
+            id: string;
+            persons:
+              | {
+                  full_name: string;
+                  date_of_birth: string | null;
+                  gender: string | null;
+                  email: string | null;
+                  aadhaar_last4: string | null;
+                }
+              | {
+                  full_name: string;
+                  date_of_birth: string | null;
+                  gender: string | null;
+                  email: string | null;
+                  aadhaar_last4: string | null;
+                }[]
+              | null;
+            student_parent_links: unknown;
+          }[]
+        | null;
+
+      const profile = Array.isArray(profileRaw) ? profileRaw[0] : profileRaw;
+      const personRaw = profile?.persons;
+      const person = Array.isArray(personRaw) ? personRaw[0] : personRaw;
+
+      const years = Array.isArray(admission.student_academic_years)
+        ? admission.student_academic_years
         : [];
-      const active = enrollments.find(
+      const active = years.find(
         (row) => row.status === "active" && !row.left_on,
       );
-      const guardians = Array.isArray(student.student_guardians)
-        ? student.student_guardians
+
+      const links = Array.isArray(profile?.student_parent_links)
+        ? profile.student_parent_links
         : [];
 
       return {
-        fullName: student.full_name,
-        dateOfBirth: student.date_of_birth ?? "",
-        gender: (student.gender as "" | "male" | "female" | "other") ?? "",
-        admissionNumber: student.admission_number,
+        fullName: person?.full_name ?? "",
+        dateOfBirth: person?.date_of_birth ?? "",
+        gender: (person?.gender as "" | "male" | "female" | "other") ?? "",
+        admissionNumber: admission.admission_number,
+        aadhaar: person?.aadhaar_last4
+          ? `********${person.aadhaar_last4}`
+          : "",
+        email: person?.email ?? "",
         className: active ? (classNameById.get(active.class_id) ?? "") : "",
         sectionName: active
           ? (sectionNameById.get(active.section_id) ?? "")
           : "",
-        guardians: guardians.map((link) => {
-          const guardian = link.guardians as
-            | {
-                full_name: string;
-                phone: string | null;
-                whatsapp_number: string | null;
-                email: string | null;
-                whatsapp_opt_in: boolean;
-              }
-            | {
-                full_name: string;
-                phone: string | null;
-                whatsapp_number: string | null;
-                email: string | null;
-                whatsapp_opt_in: boolean;
-              }[]
-            | null;
-          const resolved = Array.isArray(guardian) ? guardian[0] : guardian;
+        guardians: links.map((link) => {
+          const typed = link as {
+            relationship: string;
+            parent_profiles:
+              | {
+                  persons:
+                    | {
+                        full_name: string;
+                        phone: string | null;
+                        email: string | null;
+                      }
+                    | {
+                        full_name: string;
+                        phone: string | null;
+                        email: string | null;
+                      }[]
+                    | null;
+                }
+              | {
+                  persons:
+                    | {
+                        full_name: string;
+                        phone: string | null;
+                        email: string | null;
+                      }
+                    | {
+                        full_name: string;
+                        phone: string | null;
+                        email: string | null;
+                      }[]
+                    | null;
+                }[]
+              | null;
+          };
+          const parentProfile = Array.isArray(typed.parent_profiles)
+            ? typed.parent_profiles[0]
+            : typed.parent_profiles;
+          const parentPersonRaw = parentProfile?.persons;
+          const parentPerson = Array.isArray(parentPersonRaw)
+            ? parentPersonRaw[0]
+            : parentPersonRaw;
+
           return {
-            fullName: resolved?.full_name ?? "",
-            relationship: link.relationship,
-            phone: resolved?.phone ?? "",
-            whatsappNumber: resolved?.whatsapp_number ?? "",
-            email: resolved?.email ?? "",
-            whatsappOptIn: resolved?.whatsapp_opt_in ?? false,
+            fullName: parentPerson?.full_name ?? "",
+            relationship: typed.relationship,
+            phone: parentPerson?.phone ?? "",
+            whatsappNumber: parentPerson?.phone ?? "",
+            email: parentPerson?.email ?? "",
+            whatsappOptIn: false,
           };
         }),
       };
@@ -146,6 +322,11 @@ export async function saveStudentsAction(formData: FormData): Promise<Result> {
   } catch {
     return { success: false, error: "Could not read student data." };
   }
+
+  rows = rows.map((row) => ({
+    ...row,
+    aadhaar: row.aadhaar?.includes("*") ? "" : (row.aadhaar ?? ""),
+  }));
 
   const classesResult = await getActiveYearClassesForSchool(supabase, schoolId);
   if ("error" in classesResult) {
@@ -193,59 +374,45 @@ export async function saveStudentsAction(formData: FormData): Promise<Result> {
 
   if (intent === "save" && trimmed.length === 0) {
     const { count } = await supabase
-      .from("students")
+      .from("student_admissions")
       .select("id", { count: "exact", head: true })
-      .eq("school_id", schoolId);
+      .eq("school_id", schoolId)
+      .eq("status", "active");
     if ((count ?? 0) > 0) {
       return {
         success: false,
         error:
-          "Saving an empty student list would remove all students. Add at least one student, or keep existing rows.",
+          "Saving an empty student list would close all active admissions. Add at least one student, or keep existing rows.",
       };
     }
   }
 
-  const { data: existingStudents } = await supabase
-    .from("students")
+  // Close active admissions for this school (do not delete global persons).
+  const { data: existingAdmissions } = await supabase
+    .from("student_admissions")
     .select("id")
-    .eq("school_id", schoolId);
-  const existingIds = (existingStudents ?? []).map((row) => row.id);
-  if (existingIds.length > 0) {
-    const { data: guardianLinks } = await supabase
-      .from("student_guardians")
-      .select("guardian_id")
-      .in("student_id", existingIds);
-    const guardianIds = Array.from(
-      new Set((guardianLinks ?? []).map((row) => row.guardian_id).filter(Boolean)),
-    );
+    .eq("school_id", schoolId)
+    .eq("status", "active");
 
-    const { error: enrollmentDeleteError } = await supabase
-      .from("student_section_enrollments")
-      .delete()
-      .in("student_id", existingIds);
-    if (enrollmentDeleteError) {
-      return { success: false, error: enrollmentDeleteError.message };
-    }
+  const existingAdmissionIds = (existingAdmissions ?? []).map((row) => row.id);
+  if (existingAdmissionIds.length > 0) {
+    await supabase
+      .from("student_academic_years")
+      .update({
+        status: "withdrawn",
+        left_on: new Date().toISOString().slice(0, 10),
+      })
+      .in("admission_id", existingAdmissionIds)
+      .eq("status", "active");
 
-    const { error: linkDeleteError } = await supabase
-      .from("student_guardians")
-      .delete()
-      .in("student_id", existingIds);
-    if (linkDeleteError) {
-      return { success: false, error: linkDeleteError.message };
-    }
-
-    const { error: studentsDeleteError } = await supabase
-      .from("students")
-      .delete()
-      .eq("school_id", schoolId);
-    if (studentsDeleteError) {
-      return { success: false, error: studentsDeleteError.message };
-    }
-
-    if (guardianIds.length > 0) {
-      await supabase.from("guardians").delete().in("id", guardianIds);
-    }
+    await supabase
+      .from("student_admissions")
+      .update({
+        status: "withdrawn",
+        exited_on: new Date().toISOString().slice(0, 10),
+        updated_at: new Date().toISOString(),
+      })
+      .in("id", existingAdmissionIds);
   }
 
   for (const row of trimmed) {
@@ -257,63 +424,34 @@ export async function saveStudentsAction(formData: FormData): Promise<Result> {
       };
     }
 
-    const { data: student, error: studentError } = await supabase
-      .from("students")
+    const resolved = await resolveStudentPerson(supabase, row);
+    if ("error" in resolved) {
+      return { success: false, error: resolved.error };
+    }
+
+    const { data: admission, error: admissionError } = await supabase
+      .from("student_admissions")
       .insert({
+        student_profile_id: resolved.studentProfileId,
         school_id: schoolId,
-        full_name: row.fullName,
-        date_of_birth: row.dateOfBirth || null,
-        gender: row.gender || null,
         admission_number: row.admissionNumber,
+        admitted_on: new Date().toISOString().slice(0, 10),
         status: "active",
       })
       .select("id")
       .single();
 
-    if (studentError || !student) {
+    if (admissionError || !admission) {
       return {
         success: false,
-        error: studentError?.message ?? "Could not save student.",
+        error: admissionError?.message ?? "Could not save admission.",
       };
     }
 
-    const primaryGuardian = row.guardians[0];
-    if (primaryGuardian?.fullName) {
-      const { data: guardian, error: guardianError } = await supabase
-        .from("guardians")
-        .insert({
-          school_id: schoolId,
-          full_name: primaryGuardian.fullName,
-          phone: primaryGuardian.phone || null,
-          whatsapp_number: primaryGuardian.whatsappNumber || null,
-          email: primaryGuardian.email || null,
-          whatsapp_opt_in: primaryGuardian.whatsappOptIn,
-        })
-        .select("id")
-        .single();
-
-      if (guardianError || !guardian) {
-        return {
-          success: false,
-          error: guardianError?.message ?? "Could not save guardian.",
-        };
-      }
-
-      const { error: linkError } = await supabase.from("student_guardians").insert({
-        student_id: student.id,
-        guardian_id: guardian.id,
-        relationship: primaryGuardian.relationship || "parent",
-        is_primary: true,
-      });
-      if (linkError) {
-        return { success: false, error: linkError.message };
-      }
-    }
-
-    const { error: enrollmentError } = await supabase
-      .from("student_section_enrollments")
+    const { error: yearError } = await supabase
+      .from("student_academic_years")
       .insert({
-        student_id: student.id,
+        admission_id: admission.id,
         academic_year_id: classesResult.academicYear.id,
         class_id: pair.classId,
         section_id: pair.sectionId,
@@ -322,8 +460,69 @@ export async function saveStudentsAction(formData: FormData): Promise<Result> {
         enrollment_type: "new_admission",
       });
 
-    if (enrollmentError) {
-      return { success: false, error: enrollmentError.message };
+    if (yearError) {
+      return { success: false, error: yearError.message };
+    }
+
+    const primaryGuardian = row.guardians[0];
+    if (primaryGuardian?.fullName) {
+      const { data: parentMatches } = await supabase.rpc(
+        "find_person_by_identity",
+        {
+          p_email: primaryGuardian.email || null,
+          p_aadhaar_hash: null,
+        },
+      );
+      const parentHit = (
+        Array.isArray(parentMatches) ? parentMatches[0] : parentMatches
+      ) as PersonHit | undefined;
+
+      let parentPersonId = parentHit?.id;
+      if (!parentPersonId) {
+        const { data: createdParentId, error: parentPersonError } =
+          await supabase.rpc("create_person_record", {
+            p_full_name: primaryGuardian.fullName,
+            p_phone: primaryGuardian.phone || null,
+            p_email: primaryGuardian.email || null,
+          });
+        if (parentPersonError || !createdParentId) {
+          return {
+            success: false,
+            error: parentPersonError?.message ?? "Could not save parent.",
+          };
+        }
+        parentPersonId = createdParentId as string;
+      } else {
+        await supabase.rpc("update_person_record", {
+          p_person_id: parentPersonId,
+          p_full_name: primaryGuardian.fullName,
+          p_phone: primaryGuardian.phone || null,
+          p_email: primaryGuardian.email || parentHit?.email,
+        });
+      }
+
+      const { data: parentProfileId, error: parentProfileError } =
+        await supabase.rpc("create_parent_profile_record", {
+          p_person_id: parentPersonId,
+        });
+
+      if (parentProfileError || !parentProfileId) {
+        return {
+          success: false,
+          error:
+            parentProfileError?.message ?? "Could not create parent profile.",
+        };
+      }
+
+      await supabase.from("student_parent_links").upsert(
+        {
+          student_profile_id: resolved.studentProfileId,
+          parent_profile_id: parentProfileId,
+          relationship: primaryGuardian.relationship || "parent",
+          is_primary: true,
+        },
+        { onConflict: "student_profile_id,parent_profile_id" },
+      );
     }
   }
 

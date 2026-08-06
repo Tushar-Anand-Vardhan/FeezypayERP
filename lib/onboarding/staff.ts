@@ -2,6 +2,7 @@ export type StaffFormRow = {
   fullName: string;
   phone: string;
   email: string;
+  aadhaar: string;
   employeeCode: string;
   designation: string;
   departmentName: string;
@@ -15,6 +16,7 @@ export const STAFF_CSV_HEADERS = [
   "full_name",
   "phone",
   "email",
+  "aadhaar",
   "employee_code",
   "designation",
   "department",
@@ -27,6 +29,7 @@ export function trimStaffRows(rows: StaffFormRow[]): StaffFormRow[] {
     fullName: row.fullName.trim(),
     phone: row.phone.trim(),
     email: row.email.trim(),
+    aadhaar: row.aadhaar.trim(),
     employeeCode: row.employeeCode.trim(),
     designation: row.designation.trim(),
     departmentName: row.departmentName.trim(),
@@ -40,6 +43,7 @@ export function staffRowFromCsv(row: Record<string, string>): StaffFormRow {
     fullName: row.full_name ?? "",
     phone: row.phone ?? "",
     email: row.email ?? "",
+    aadhaar: row.aadhaar ?? "",
     employeeCode: row.employee_code ?? "",
     designation: row.designation ?? "",
     departmentName: row.department ?? "",
@@ -70,6 +74,7 @@ export function validateStaffRows(
   }
 
   const emailSeen = new Map<string, number>();
+  const aadhaarSeen = new Map<string, number>();
   const codeSeen = new Map<string, number>();
 
   trimmed.forEach((row, index) => {
@@ -86,6 +91,16 @@ export function validateStaffRows(
         } else {
           emailSeen.set(key, index);
         }
+      }
+    }
+    if (row.aadhaar) {
+      const digits = row.aadhaar.replace(/\D/g, "");
+      if (digits.length !== 12) {
+        errors[`staff-${index}-aadhaar`] = "Aadhaar must be exactly 12 digits.";
+      } else if (aadhaarSeen.has(digits)) {
+        errors[`staff-${index}-aadhaar`] = "Duplicate Aadhaar in this list.";
+      } else {
+        aadhaarSeen.set(digits, index);
       }
     }
     if (row.employeeCode) {
@@ -105,9 +120,30 @@ export function validateStaffRows(
     }
     if (row.isHod && !row.departmentName) {
       errors[`staff-${index}-departmentName`] =
-        "HOD teachers need a department.";
+        "Select which department this HOD leads.";
     }
   });
 
   return errors;
+}
+
+export function validateStaffDraft(
+  draft: StaffFormRow,
+  availableSubjects: string[],
+  existing: StaffFormRow[],
+): StaffFieldErrors {
+  const errors = validateStaffRows([draft, ...existing], availableSubjects);
+  const remapped: StaffFieldErrors = {};
+  for (const [key, value] of Object.entries(errors)) {
+    if (key.startsWith("staff-0-")) {
+      remapped[`draft-${key.slice("staff-0-".length)}`] = value;
+    }
+  }
+  if (!draft.fullName.trim()) {
+    remapped.draftName = "Name is required.";
+  }
+  if (draft.isHod && !draft.departmentName.trim()) {
+    remapped.draftDepartmentName = "Select which department this HOD leads.";
+  }
+  return remapped;
 }
