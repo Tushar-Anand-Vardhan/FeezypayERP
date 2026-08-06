@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { SubmitButton } from "@/components/auth/submit-button";
 import { FormField } from "@/components/form/form-field";
+import { WizardActions } from "@/components/onboarding/wizard-actions";
 import {
   getSubjectsStepDataAction,
   saveSubjectsStepAction,
@@ -494,16 +494,22 @@ export function SubjectsForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+  }
+
+  async function handleSaveAndExit() {
     setLoadingAction("save");
-    await performSave("save");
+    const saved = await performSave("save");
+    if (saved) {
+      router.push("/dashboard");
+    }
     setLoadingAction(null);
   }
 
-  async function handleNext() {
+  async function handleContinue() {
     setLoadingAction("next");
     const saved = await performSave("next");
     if (saved) {
-      router.push("/onboarding/staff");
+      router.push("/onboarding/houses-clubs");
     }
     setLoadingAction(null);
   }
@@ -529,12 +535,12 @@ export function SubjectsForm() {
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
         <div className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <h1 className="text-2xl font-semibold tracking-tight">Subjects</h1>
-          <p className="text-sm text-muted">Complete Classes first.</p>
+          <p className="text-sm text-muted">Complete Sections first.</p>
           <Link
-            href="/onboarding/classes"
+            href="/onboarding/sections"
             className="inline-flex text-sm font-medium text-foreground underline-offset-4 hover:underline"
           >
-            Go to Classes
+            Go to Sections
           </Link>
         </div>
       </main>
@@ -892,23 +898,12 @@ export function SubjectsForm() {
             </p>
           ) : null}
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/onboarding/classes"
-              className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-surface-strong"
-            >
-              Back
-            </Link>
-            <SubmitButton loading={loadingAction === "save"}>Save subjects</SubmitButton>
-            <SubmitButton
-              type="button"
-              loading={loadingAction === "next"}
-              disabled={loadingAction === "save"}
-              onClick={handleNext}
-            >
-              Next
-            </SubmitButton>
-          </div>
+          <WizardActions
+            backHref="/onboarding/sections"
+            loadingAction={loadingAction}
+            onSaveAndExit={handleSaveAndExit}
+            onContinue={handleContinue}
+          />
         </form>
       </div>
     </main>

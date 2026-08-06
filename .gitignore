@@ -42,3 +42,6 @@ next-env.d.ts
 
 #cursor
 .cursor/
+
+# supabase CLI local temp
+supabase/.temp/

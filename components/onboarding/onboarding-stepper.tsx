@@ -12,7 +12,7 @@ export function OnboardingStepper() {
       aria-label="Onboarding steps"
       className="border-b border-border bg-surface"
     >
-      <ol className="mx-auto flex max-w-3xl flex-wrap gap-2 px-4 py-3.5 sm:px-6">
+      <ol className="mx-auto flex max-w-5xl gap-2 overflow-x-auto px-4 py-3.5 sm:flex-wrap sm:px-6">
         {ONBOARDING_STEPS.map((step, index) => {
           const isActive = pathname === step.href;
 

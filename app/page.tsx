@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { BrandMark } from "@/components/brand/brand-mark";
+import { createClient } from "@/lib/supabase/server";
 
 const highlights = [
   {
@@ -16,7 +18,7 @@ const highlights = [
   },
 ];
 
-export default function Home() {
+function MarketingLanding() {
   return (
     <div className="flex min-h-full flex-1 flex-col bg-background text-foreground">
       <header className="border-b border-border bg-surface">
@@ -90,4 +92,15 @@ export default function Home() {
       </main>
     </div>
   );
+}
+
+export default async function Home() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+
+  if (data?.claims) {
+    redirect("/dashboard");
+  }
+
+  return <MarketingLanding />;
 }

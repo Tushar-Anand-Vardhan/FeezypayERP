@@ -1,5 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { DEFAULT_ONBOARDING_PATH } from "@/lib/onboarding/steps";
 
 export type OnboardingStatus = "in_progress" | "completed";
 
@@ -30,12 +29,13 @@ export function isProtectedAppRoute(pathname: string) {
 
 export function getPostAuthDestination(
   onboardingStatus: OnboardingStatus | null,
-): "/dashboard" | "/onboarding/school-identity" {
+): "/dashboard" | "/onboarding" {
   if (onboardingStatus === "completed") {
     return "/dashboard";
   }
 
-  return DEFAULT_ONBOARDING_PATH;
+  // `/onboarding` resolves to the earliest incomplete step.
+  return "/onboarding";
 }
 
 export async function fetchUserOnboardingStatus(
@@ -76,7 +76,8 @@ export function resolveAuthenticatedRouteRedirect(
   onboardingStatus: OnboardingStatus | null,
 ): string | null {
   if (pathname === "/onboarding") {
-    return DEFAULT_ONBOARDING_PATH;
+    // Let the onboarding index page compute the resume step.
+    return null;
   }
 
   if (isAuthRoute(pathname)) {

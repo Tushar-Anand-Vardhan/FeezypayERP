@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/dashboard/app-header";
+import { getOnboardingProgress } from "@/lib/onboarding/progress";
 import { DEFAULT_ONBOARDING_PATH } from "@/lib/onboarding/steps";
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,6 +20,7 @@ export default async function DashboardPage() {
 
   let schoolName: string | null = null;
   let onboardingComplete = false;
+  let onboardingResumeHref: string = DEFAULT_ONBOARDING_PATH;
 
   if (userId) {
     const { data: profile } = await supabase
@@ -36,6 +38,16 @@ export default async function DashboardPage() {
 
       schoolName = school?.name ?? null;
       onboardingComplete = school?.onboarding_status === "completed";
+
+      if (!onboardingComplete) {
+        const progress = await getOnboardingProgress(
+          supabase,
+          profile.school_id,
+        );
+        if (!("error" in progress)) {
+          onboardingResumeHref = progress.nextHref;
+        }
+      }
     }
   }
 
@@ -60,7 +72,7 @@ export default async function DashboardPage() {
               complete.
             </p>
             <Link
-              href={DEFAULT_ONBOARDING_PATH}
+              href={onboardingResumeHref}
               className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-feezy-magenta px-5 text-sm font-semibold text-white transition hover:brightness-110"
             >
               Continue onboarding
