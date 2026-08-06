@@ -275,7 +275,7 @@ export function SectionsForm() {
   if (initialLoading) {
     return (
       <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
-        <p className="text-sm text-foreground/70">Loading sections…</p>
+        <p className="text-sm text-muted">Loading sections…</p>
       </main>
     );
   }
@@ -283,7 +283,7 @@ export function SectionsForm() {
   if (loadError) {
     return (
       <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
-        <p className="text-sm text-red-600 dark:text-red-400">{loadError}</p>
+        <p className="text-sm text-feezy-coral">{loadError}</p>
       </main>
     );
   }
@@ -291,9 +291,9 @@ export function SectionsForm() {
   if (blocked) {
     return (
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
-        <div className="space-y-4 rounded-2xl border border-foreground/10 bg-background p-6 shadow-sm">
+        <div className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <h1 className="text-2xl font-semibold tracking-tight">Sections</h1>
-          <p className="text-sm text-foreground/70">Complete Classes first.</p>
+          <p className="text-sm text-muted">Complete Classes first.</p>
           <Link
             href="/onboarding/classes"
             className="inline-flex text-sm font-medium text-foreground underline-offset-4 hover:underline"
@@ -309,8 +309,8 @@ export function SectionsForm() {
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
       <div className="space-y-8">
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Sections</h1>
-          <p className="text-sm text-foreground/70">
+          <h1 className="font-display text-3xl font-semibold tracking-tight">Sections</h1>
+          <p className="text-sm text-muted">
             Academic year{" "}
             <span className="font-medium text-foreground">{academicYearLabel}</span>.
             Bulk-apply is a one-time fill shortcut only; every section stays fully
@@ -348,7 +348,7 @@ export function SectionsForm() {
               Fills only classes with no sections yet.
             </p>
             {fieldErrors.bulkSectionNames ? (
-              <p className="text-sm text-red-600 dark:text-red-400">
+              <p className="text-sm text-feezy-coral">
                 {fieldErrors.bulkSectionNames}
               </p>
             ) : null}
@@ -362,13 +362,13 @@ export function SectionsForm() {
               return (
                 <section
                   key={classRow.classId}
-                  className="overflow-hidden rounded-2xl border border-foreground/10"
+                  className="overflow-hidden rounded-2xl border border-border"
                 >
                   <button
                     type="button"
                     onClick={() => toggleClass(classRow.classId)}
                     aria-expanded={isExpanded}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-foreground/5"
+                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-surface-strong"
                   >
                     <div className="space-y-1">
                       <p className="text-sm font-medium">{classRow.className}</p>
@@ -376,7 +376,7 @@ export function SectionsForm() {
                         <span
                           className={
                             sectionCount === 0
-                              ? "text-amber-700 dark:text-amber-300"
+                              ? "text-feezy-coral"
                               : "text-foreground/60"
                           }
                         >
@@ -393,9 +393,9 @@ export function SectionsForm() {
                   </button>
 
                   {isExpanded ? (
-                    <div className="space-y-4 border-t border-foreground/10 px-4 py-4">
+                    <div className="space-y-4 border-t border-border px-4 py-4">
                       {fieldErrors[`class-${classRow.classId}-form`] ? (
-                        <p className="text-sm text-red-600 dark:text-red-400">
+                        <p className="text-sm text-feezy-coral">
                           {fieldErrors[`class-${classRow.classId}-form`]}
                         </p>
                       ) : null}
@@ -424,7 +424,7 @@ export function SectionsForm() {
                           )}
                         />
                         {fieldErrors[`class-${classRow.classId}-capacity`] ? (
-                          <p className="text-sm text-red-600 dark:text-red-400">
+                          <p className="text-sm text-feezy-coral">
                             {fieldErrors[`class-${classRow.classId}-capacity`]}
                           </p>
                         ) : null}
@@ -498,11 +498,11 @@ export function SectionsForm() {
           </div>
 
           {formError ? (
-            <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
+            <p className="text-sm text-feezy-coral">{formError}</p>
           ) : null}
 
           {successMessage ? (
-            <p className="text-sm text-emerald-600 dark:text-emerald-400">
+            <p className="text-sm text-emerald-600">
               {successMessage}
             </p>
           ) : null}
@@ -510,7 +510,7 @@ export function SectionsForm() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
               href="/onboarding/classes"
-              className="inline-flex items-center justify-center rounded-lg border border-foreground/15 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-foreground/5"
+              className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-surface-strong"
             >
               Back
             </Link>

@@ -71,7 +71,7 @@ export default function LoginPage() {
           Don&apos;t have an account?{" "}
           <Link
             href="/signup"
-            className="font-medium text-foreground underline-offset-4 hover:underline"
+            className="font-medium text-feezy-coral underline-offset-4 transition hover:text-foreground hover:underline"
           >
             Sign up
           </Link>
@@ -102,7 +102,7 @@ export default function LoginPage() {
           <div className="text-right">
             <Link
               href="/forgot-password"
-              className="text-sm font-medium text-foreground/70 underline-offset-4 hover:text-foreground hover:underline"
+              className="text-sm font-medium text-muted underline-offset-4 transition hover:text-feezy-coral hover:underline"
             >
               Forgot password?
             </Link>
@@ -110,7 +110,7 @@ export default function LoginPage() {
         </div>
 
         {formError ? (
-          <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
+          <p className="text-sm text-feezy-coral">{formError}</p>
         ) : null}
 
         <SubmitButton loading={loading}>Sign in</SubmitButton>

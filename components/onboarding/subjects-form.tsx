@@ -511,7 +511,7 @@ export function SubjectsForm() {
   if (initialLoading) {
     return (
       <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
-        <p className="text-sm text-foreground/70">Loading subjects…</p>
+        <p className="text-sm text-muted">Loading subjects…</p>
       </main>
     );
   }
@@ -519,7 +519,7 @@ export function SubjectsForm() {
   if (loadError) {
     return (
       <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
-        <p className="text-sm text-red-600 dark:text-red-400">{loadError}</p>
+        <p className="text-sm text-feezy-coral">{loadError}</p>
       </main>
     );
   }
@@ -527,9 +527,9 @@ export function SubjectsForm() {
   if (blocked) {
     return (
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
-        <div className="space-y-4 rounded-2xl border border-foreground/10 bg-background p-6 shadow-sm">
+        <div className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <h1 className="text-2xl font-semibold tracking-tight">Subjects</h1>
-          <p className="text-sm text-foreground/70">Complete Classes first.</p>
+          <p className="text-sm text-muted">Complete Classes first.</p>
           <Link
             href="/onboarding/classes"
             className="inline-flex text-sm font-medium text-foreground underline-offset-4 hover:underline"
@@ -545,15 +545,15 @@ export function SubjectsForm() {
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
       <div className="space-y-8">
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Subjects</h1>
-          <p className="text-sm text-foreground/70">
+          <h1 className="font-display text-3xl font-semibold tracking-tight">Subjects</h1>
+          <p className="text-sm text-muted">
             Add each subject with the classes it applies to. Use the advanced
             panel below only when elective status differs by class.
           </p>
         </div>
 
         <form className="space-y-8" onSubmit={handleSubmit} noValidate>
-          <section className="space-y-4 rounded-2xl border border-foreground/10 p-4 sm:p-5">
+          <section className="space-y-4 rounded-2xl border border-border p-4 sm:p-5">
             <div className="space-y-1">
               <h2 className="text-base font-medium">
                 {editingIndex === null ? "Add subject" : "Edit subject"}
@@ -596,7 +596,7 @@ export function SubjectsForm() {
                 ))}
               </div>
               {draftErrors.draftType ? (
-                <p className="text-sm text-red-600 dark:text-red-400">
+                <p className="text-sm text-feezy-coral">
                   {draftErrors.draftType}
                 </p>
               ) : null}
@@ -609,14 +609,14 @@ export function SubjectsForm() {
                   <button
                     type="button"
                     onClick={selectAllDraftClasses}
-                    className="rounded-full border border-foreground/15 px-3 py-1.5 text-xs font-medium text-foreground/80 transition hover:border-foreground/30"
+                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted transition hover:border-border"
                   >
                     Select all
                   </button>
                   <button
                     type="button"
                     onClick={clearAllDraftClasses}
-                    className="rounded-full border border-foreground/15 px-3 py-1.5 text-xs font-medium text-foreground/80 transition hover:border-foreground/30"
+                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted transition hover:border-border"
                   >
                     Clear all
                   </button>
@@ -624,7 +624,7 @@ export function SubjectsForm() {
                 <ul className="grid gap-2 sm:grid-cols-2">
                   {classes.map((classRow) => (
                     <li key={classRow.id}>
-                      <label className="inline-flex items-center gap-2 rounded-xl border border-foreground/10 px-3 py-2 text-sm">
+                      <label className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm">
                         <input
                           type="checkbox"
                           checked={draft.classIds.includes(classRow.id)}
@@ -663,7 +663,7 @@ export function SubjectsForm() {
                 <button
                   type="button"
                   onClick={resetDraft}
-                  className="rounded-lg border border-foreground/15 px-4 py-2.5 text-sm font-medium"
+                  className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium"
                 >
                   Cancel edit
                 </button>
@@ -675,7 +675,7 @@ export function SubjectsForm() {
             <h2 className="text-base font-medium">Subject list</h2>
 
             {fieldErrors.form ? (
-              <p className="text-sm text-red-600 dark:text-red-400">{fieldErrors.form}</p>
+              <p className="text-sm text-feezy-coral">{fieldErrors.form}</p>
             ) : null}
 
             {subjects.length === 0 ? (
@@ -691,8 +691,8 @@ export function SubjectsForm() {
                       <div
                         className={`flex items-start gap-3 rounded-2xl border p-4 transition ${
                           isEditing
-                            ? "border-foreground/30 bg-foreground/5"
-                            : "border-foreground/10 hover:border-foreground/20"
+                            ? "border-border bg-surface-strong"
+                            : "border-border hover:border-border"
                         }`}
                       >
                         <button
@@ -713,7 +713,7 @@ export function SubjectsForm() {
                               {subjectTypeLabel(subject.type)}
                             </span>
                             {summary?.hasElective ? (
-                              <span className="rounded-full border border-foreground/15 px-2 py-0.5 text-xs text-foreground/70">
+                              <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted">
                                 {summary.allElective ? "Elective" : "Elective (some classes)"}
                               </span>
                             ) : null}
@@ -728,12 +728,12 @@ export function SubjectsForm() {
                                   : summary?.classLabel}
                           </p>
                           {fieldErrors[`subject-${index}-name`] ? (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                            <p className="mt-1 text-sm text-feezy-coral">
                               {fieldErrors[`subject-${index}-name`]}
                             </p>
                           ) : null}
                           {fieldErrors[`subject-${index}-type`] ? (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                            <p className="mt-1 text-sm text-feezy-coral">
                               {fieldErrors[`subject-${index}-type`]}
                             </p>
                           ) : null}
@@ -741,7 +741,7 @@ export function SubjectsForm() {
                         <button
                           type="button"
                           onClick={() => removeSubject(index)}
-                          className="shrink-0 rounded-lg border border-foreground/15 px-3 py-1.5 text-sm"
+                          className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-sm"
                         >
                           Remove
                         </button>
@@ -754,12 +754,12 @@ export function SubjectsForm() {
           </section>
 
           {showAdvanced ? (
-            <section className="overflow-hidden rounded-2xl border border-foreground/10">
+            <section className="overflow-hidden rounded-2xl border border-border">
               <button
                 type="button"
                 onClick={() => setAdvancedExpanded((current) => !current)}
                 aria-expanded={advancedExpanded}
-                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-foreground/5"
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-surface-strong"
               >
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
@@ -775,7 +775,7 @@ export function SubjectsForm() {
               </button>
 
               {advancedExpanded ? (
-                <div className="space-y-3 border-t border-foreground/10 px-4 py-4">
+                <div className="space-y-3 border-t border-border px-4 py-4">
                   {assignmentState.map((classRow) => {
                     const isExpanded = expandedClassId === classRow.classId;
                     const assignedCount = assignmentCountByClassId.get(classRow.classId) ?? 0;
@@ -783,13 +783,13 @@ export function SubjectsForm() {
                     return (
                       <section
                         key={classRow.classId}
-                        className="overflow-hidden rounded-2xl border border-foreground/10"
+                        className="overflow-hidden rounded-2xl border border-border"
                       >
                         <button
                           type="button"
                           onClick={() => toggleClass(classRow.classId)}
                           aria-expanded={isExpanded}
-                          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-foreground/5"
+                          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-surface-strong"
                         >
                           <div className="space-y-1">
                             <p className="text-sm font-medium">{classRow.className}</p>
@@ -807,9 +807,9 @@ export function SubjectsForm() {
                         </button>
 
                         {isExpanded ? (
-                          <div className="space-y-3 border-t border-foreground/10 px-4 py-4">
+                          <div className="space-y-3 border-t border-border px-4 py-4">
                             {fieldErrors[`class-${classRow.classId}-assignments`] ? (
-                              <p className="text-sm text-red-600 dark:text-red-400">
+                              <p className="text-sm text-feezy-coral">
                                 {fieldErrors[`class-${classRow.classId}-assignments`]}
                               </p>
                             ) : null}
@@ -822,7 +822,7 @@ export function SubjectsForm() {
                                 return (
                                   <li
                                     key={`${classRow.classId}-${subjectIndex}`}
-                                    className="flex flex-col gap-2 rounded-xl border border-foreground/10 p-3 sm:flex-row sm:items-center sm:justify-between"
+                                    className="flex flex-col gap-2 rounded-xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
                                   >
                                     <label className="inline-flex items-center gap-2 text-sm">
                                       <input
@@ -850,7 +850,7 @@ export function SubjectsForm() {
                                     <label
                                       className={`inline-flex items-center gap-2 text-sm ${
                                         assigned
-                                          ? "text-foreground/80"
+                                          ? "text-muted"
                                           : "cursor-not-allowed text-foreground/40"
                                       }`}
                                     >
@@ -883,11 +883,11 @@ export function SubjectsForm() {
           ) : null}
 
           {formError ? (
-            <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
+            <p className="text-sm text-feezy-coral">{formError}</p>
           ) : null}
 
           {successMessage ? (
-            <p className="text-sm text-emerald-600 dark:text-emerald-400">
+            <p className="text-sm text-emerald-600">
               {successMessage}
             </p>
           ) : null}
@@ -895,7 +895,7 @@ export function SubjectsForm() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
               href="/onboarding/classes"
-              className="inline-flex items-center justify-center rounded-lg border border-foreground/15 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-foreground/5"
+              className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-surface-strong"
             >
               Back
             </Link>

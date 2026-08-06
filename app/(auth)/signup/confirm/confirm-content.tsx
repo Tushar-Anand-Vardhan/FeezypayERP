@@ -61,7 +61,7 @@ export default function SignupConfirmContent() {
           Ready to sign in?{" "}
           <Link
             href="/login"
-            className="font-medium text-foreground underline-offset-4 hover:underline"
+            className="font-medium text-feezy-coral underline-offset-4 transition hover:text-foreground hover:underline"
           >
             Back to login
           </Link>
@@ -74,13 +74,13 @@ export default function SignupConfirmContent() {
         </p>
 
         {message ? (
-          <p className="text-sm text-emerald-600 dark:text-emerald-400">
+          <p className="text-sm text-emerald-600">
             {message}
           </p>
         ) : null}
 
         {error ? (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <p className="text-sm text-feezy-coral">{error}</p>
         ) : null}
 
         <SubmitButton

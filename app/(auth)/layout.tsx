@@ -22,7 +22,7 @@ export function AuthLink({
   return (
     <Link
       href={href}
-      className="font-medium text-foreground underline-offset-4 hover:underline"
+      className="font-medium text-feezy-coral underline-offset-4 transition hover:text-foreground hover:underline"
     >
       {children}
     </Link>

@@ -1,7 +1,7 @@
 import type { KeyboardEvent, ReactNode } from "react";
 
 export const formControlClassName =
-  "w-full rounded-lg border border-foreground/15 bg-background px-3 py-2.5 text-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/10";
+  "w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm text-foreground outline-none transition placeholder:text-muted/70 focus:border-feezy-indigo/40 focus:ring-2 focus:ring-feezy-indigo/15";
 
 type FormFieldProps = {
   id: string;
@@ -50,7 +50,7 @@ export function FormField({
         required={required}
       />
       {error ? (
-        <p id={errorId} className="text-sm text-red-600 dark:text-red-400">
+        <p id={errorId} className="text-sm text-feezy-coral">
           {error}
         </p>
       ) : null}
@@ -105,7 +105,7 @@ export function FormSelect({
         {children}
       </select>
       {error ? (
-        <p id={errorId} className="text-sm text-red-600 dark:text-red-400">
+        <p id={errorId} className="text-sm text-feezy-coral">
           {error}
         </p>
       ) : null}

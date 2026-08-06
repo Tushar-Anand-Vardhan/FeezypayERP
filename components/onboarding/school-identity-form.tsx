@@ -248,7 +248,7 @@ export function SchoolIdentityForm() {
   if (initialLoading) {
     return (
       <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
-        <p className="text-sm text-foreground/70">Loading your school details…</p>
+        <p className="text-sm text-muted">Loading your school details…</p>
       </main>
     );
   }
@@ -256,7 +256,7 @@ export function SchoolIdentityForm() {
   if (loadError) {
     return (
       <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
-        <p className="text-sm text-red-600 dark:text-red-400">{loadError}</p>
+        <p className="text-sm text-feezy-coral">{loadError}</p>
       </main>
     );
   }
@@ -265,14 +265,20 @@ export function SchoolIdentityForm() {
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
       <div className="space-y-8">
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">School identity</h1>
-          <p className="text-sm text-foreground/70">
+          <h1 className="font-display text-3xl font-semibold tracking-tight">
+            School identity
+          </h1>
+          <p className="text-sm text-muted">
             Tell us about your school. You can save and return to update these details
             anytime before onboarding is complete.
           </p>
         </div>
 
-        <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+        <form
+          className="space-y-6 rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8"
+          onSubmit={handleSubmit}
+          noValidate
+        >
           <FormField
             id="name"
             label="School name"
@@ -292,7 +298,7 @@ export function SchoolIdentityForm() {
                 <img
                   src={logoPreviewUrl ?? existingLogoUrl ?? ""}
                   alt="School logo preview"
-                  className="h-20 w-20 rounded-lg border border-foreground/10 object-cover"
+                  className="h-20 w-20 rounded-lg border border-border object-cover"
                 />
               </div>
             )}
@@ -310,13 +316,13 @@ export function SchoolIdentityForm() {
                   logo: logoError ?? undefined,
                 }));
               }}
-              className="block w-full text-sm text-foreground/80 file:mr-4 file:rounded-lg file:border-0 file:bg-foreground file:px-4 file:py-2 file:text-sm file:font-medium file:text-background"
+              className="block w-full text-sm text-muted file:mr-4 file:rounded-lg file:border-0 file:bg-foreground file:px-4 file:py-2 file:text-sm file:font-medium file:text-background"
             />
             <p className="text-xs text-foreground/60">
               JPEG, PNG, WebP, or GIF. Maximum size 2 MB.
             </p>
             {fieldErrors.logo ? (
-              <p className="text-sm text-red-600 dark:text-red-400">{fieldErrors.logo}</p>
+              <p className="text-sm text-feezy-coral">{fieldErrors.logo}</p>
             ) : null}
           </div>
 
@@ -421,11 +427,11 @@ export function SchoolIdentityForm() {
           </FormSelect>
 
           {formError ? (
-            <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
+            <p className="text-sm text-feezy-coral">{formError}</p>
           ) : null}
 
           {successMessage ? (
-            <p className="text-sm text-emerald-600 dark:text-emerald-400">
+            <p className="text-sm text-emerald-600">
               {successMessage}
             </p>
           ) : null}

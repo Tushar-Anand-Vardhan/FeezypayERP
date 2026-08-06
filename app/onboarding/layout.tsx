@@ -7,7 +7,7 @@ export default function OnboardingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-full flex-1 flex-col">
+    <div className="flex min-h-full flex-1 flex-col bg-background">
       <AppHeader />
       <OnboardingStepper />
       {children}

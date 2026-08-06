@@ -146,7 +146,7 @@ export function TermsForm() {
   if (initialLoading) {
     return (
       <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
-        <p className="text-sm text-foreground/70">Loading term structure…</p>
+        <p className="text-sm text-muted">Loading term structure…</p>
       </main>
     );
   }
@@ -154,7 +154,7 @@ export function TermsForm() {
   if (loadError) {
     return (
       <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
-        <p className="text-sm text-red-600 dark:text-red-400">{loadError}</p>
+        <p className="text-sm text-feezy-coral">{loadError}</p>
       </main>
     );
   }
@@ -162,9 +162,9 @@ export function TermsForm() {
   if (blocked) {
     return (
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
-        <div className="space-y-4 rounded-2xl border border-foreground/10 bg-background p-6 shadow-sm">
+        <div className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <h1 className="text-2xl font-semibold tracking-tight">Term structure</h1>
-          <p className="text-sm text-foreground/70">
+          <p className="text-sm text-muted">
             Complete School Identity first to set your academic year.
           </p>
           <Link
@@ -182,8 +182,8 @@ export function TermsForm() {
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
       <div className="space-y-8">
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Term structure</h1>
-          <p className="text-sm text-foreground/70">
+          <h1 className="font-display text-3xl font-semibold tracking-tight">Term structure</h1>
+          <p className="text-sm text-muted">
             Define the terms for academic year{" "}
             <span className="font-medium text-foreground">{academicYearLabel}</span>.
             You can save partial progress and come back later.
@@ -202,7 +202,7 @@ export function TermsForm() {
                   className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                     termCountMode === mode
                       ? "bg-foreground text-background"
-                      : "border border-foreground/15 text-foreground/80 hover:border-foreground/30"
+                      : "border border-border text-muted hover:border-border"
                   }`}
                 >
                   {mode === "2" ? "2 terms" : mode === "3" ? "3 terms" : "Custom"}
@@ -234,7 +234,7 @@ export function TermsForm() {
             {terms.map((term, index) => (
               <div
                 key={`term-${index}`}
-                className="space-y-4 rounded-2xl border border-foreground/10 p-5"
+                className="space-y-4 rounded-2xl border border-border p-5"
               >
                 <h2 className="text-base font-medium">Term {index + 1}</h2>
                 <FormField
@@ -269,28 +269,28 @@ export function TermsForm() {
             ))}
           </div>
 
-          <label className="flex items-start gap-3 rounded-2xl border border-foreground/10 p-4">
+          <label className="flex items-start gap-3 rounded-2xl border border-border p-4">
             <input
               type="checkbox"
               checked={whatsappReportFollowsTerms}
               onChange={(event) => setWhatsappReportFollowsTerms(event.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-foreground/20"
+              className="mt-1 h-4 w-4 rounded border-border"
             />
-            <span className="text-sm text-foreground/80">
+            <span className="text-sm text-muted">
               WhatsApp report schedules should follow the term calendar.
             </span>
           </label>
 
           {fieldErrors.form ? (
-            <p className="text-sm text-red-600 dark:text-red-400">{fieldErrors.form}</p>
+            <p className="text-sm text-feezy-coral">{fieldErrors.form}</p>
           ) : null}
 
           {formError ? (
-            <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
+            <p className="text-sm text-feezy-coral">{formError}</p>
           ) : null}
 
           {successMessage ? (
-            <p className="text-sm text-emerald-600 dark:text-emerald-400">
+            <p className="text-sm text-emerald-600">
               {successMessage}
             </p>
           ) : null}
@@ -298,7 +298,7 @@ export function TermsForm() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
               href="/onboarding/school-identity"
-              className="inline-flex items-center justify-center rounded-lg border border-foreground/15 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-foreground/5"
+              className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-surface-strong"
             >
               Back
             </Link>

@@ -14,8 +14,8 @@ export function PasswordChecklist({ password }: PasswordChecklistProps) {
           key={rule.id}
           className={
             rule.met
-              ? "text-emerald-600 dark:text-emerald-400"
-              : "text-foreground/60"
+              ? "text-emerald-600"
+              : "text-muted"
           }
         >
           <span aria-hidden="true">{rule.met ? "✓" : "○"}</span>{" "}

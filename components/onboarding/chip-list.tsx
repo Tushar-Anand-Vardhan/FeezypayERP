@@ -27,7 +27,7 @@ export function ChipListRow({
   onLabelChange,
 }: ChipListRowProps) {
   return (
-    <li className="flex flex-col gap-2 rounded-2xl border border-foreground/10 p-3 sm:flex-row sm:items-center sm:justify-between">
+    <li className="flex flex-col gap-2 rounded-2xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <div className="space-y-1">
           {editableLabel && onLabelChange ? (
@@ -39,12 +39,12 @@ export function ChipListRow({
               aria-invalid={Boolean(error)}
             />
           ) : (
-            <span className="inline-flex rounded-full bg-foreground/5 px-3 py-1 text-sm font-medium">
+            <span className="inline-flex rounded-full bg-surface-strong px-3 py-1 text-sm font-medium">
               {label}
             </span>
           )}
           {error ? (
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <p className="text-sm text-feezy-coral">{error}</p>
           ) : null}
         </div>
         {trailing}
@@ -55,7 +55,7 @@ export function ChipListRow({
           aria-label={`Move ${label} up`}
           disabled={disableMoveUp}
           onClick={onMoveUp}
-          className="rounded-lg border border-foreground/15 px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-lg border border-border px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
         >
           ↑
         </button>
@@ -64,7 +64,7 @@ export function ChipListRow({
           aria-label={`Move ${label} down`}
           disabled={disableMoveDown}
           onClick={onMoveDown}
-          className="rounded-lg border border-foreground/15 px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-lg border border-border px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-40"
         >
           ↓
         </button>
@@ -72,7 +72,7 @@ export function ChipListRow({
           type="button"
           aria-label={`Remove ${label}`}
           onClick={onRemove}
-          className="rounded-lg border border-foreground/15 px-2 py-1 text-sm"
+          className="rounded-lg border border-border px-2 py-1 text-sm"
         >
           ×
         </button>

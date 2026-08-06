@@ -84,7 +84,7 @@ export default function ResetPasswordContent() {
           Back to{" "}
           <Link
             href="/login"
-            className="font-medium text-foreground underline-offset-4 hover:underline"
+            className="font-medium text-feezy-coral underline-offset-4 transition hover:text-foreground hover:underline"
           >
             login
           </Link>
@@ -109,7 +109,7 @@ export default function ResetPasswordContent() {
         </div>
 
         {formError ? (
-          <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
+          <p className="text-sm text-feezy-coral">{formError}</p>
         ) : null}
 
         <SubmitButton loading={loading} disabled={!sessionReady}>
