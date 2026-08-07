@@ -27,7 +27,7 @@ function revalidate() {
 }
 
 const TEMPLATE_SELECT =
-  "id, code, name, description, board_id, academic_year_id, term_id, status, layout_config, include_grades, include_remarks, include_attendance, include_co_curricular, include_teacher_comments, include_principal_comments, include_signatures, pdf_generation_enabled, digital_signature_enabled, archived_at";
+  "id, code, name, description, board_id, academic_year_id, term_id, status, layout_config, include_grades, include_remarks, include_attendance, include_co_curricular, include_teacher_comments, include_principal_comments, include_signatures, include_achievements, include_behaviour, include_curriculum, include_observations, include_promotion, prefer_grade_calculation, pdf_generation_enabled, digital_signature_enabled, archived_at";
 
 export async function listReportCardTemplatesAction(options?: {
   includeArchived?: boolean;
@@ -141,6 +141,12 @@ export async function upsertReportCardTemplateAction(
     include_teacher_comments: input.includeTeacherComments ?? true,
     include_principal_comments: input.includePrincipalComments ?? true,
     include_signatures: input.includeSignatures ?? true,
+    include_achievements: input.includeAchievements ?? true,
+    include_behaviour: input.includeBehaviour ?? true,
+    include_curriculum: input.includeCurriculum ?? true,
+    include_observations: input.includeObservations ?? true,
+    include_promotion: input.includePromotion ?? true,
+    prefer_grade_calculation: input.preferGradeCalculation ?? true,
     pdf_generation_enabled: input.pdfGenerationEnabled ?? false,
     digital_signature_enabled: input.digitalSignatureEnabled ?? false,
     updated_by: actorId,
@@ -458,6 +464,12 @@ export async function cloneReportCardTemplateAsDraftAction(
       include_teacher_comments: source.include_teacher_comments,
       include_principal_comments: source.include_principal_comments,
       include_signatures: source.include_signatures,
+      include_achievements: source.include_achievements ?? true,
+      include_behaviour: source.include_behaviour ?? true,
+      include_curriculum: source.include_curriculum ?? true,
+      include_observations: source.include_observations ?? true,
+      include_promotion: source.include_promotion ?? true,
+      prefer_grade_calculation: source.prefer_grade_calculation ?? true,
       pdf_generation_enabled: source.pdf_generation_enabled,
       digital_signature_enabled: source.digital_signature_enabled,
       created_by: actorId,

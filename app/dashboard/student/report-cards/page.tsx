@@ -35,7 +35,7 @@ export default async function StudentReportCardsPage({
   const listed = await listReportCardIssuesAction({
     studentProfileId: resolved.context.studentProfileId,
     academicYearId: academicYearId ?? undefined,
-    status: "issued",
+    statuses: ["published", "issued", "locked"],
   });
   // Also show drafts that are student-visible statuses if any issued empty
   const rows = (listed.success ? listed.rows : []).map((r) => ({

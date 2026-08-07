@@ -555,8 +555,8 @@ Humans don’t “send” raw; they Publish in E18 → E19 delivers. Preference 
 | Publish | ◇ | ● | ● | ● | — | — | — | — |
 | Archive | ◇ | ● | ● | — | — | — | — | — |
 
-Issue certificate / report card = Create+Publish.  
-**RLS:** by school + subject person. **App:** template render; TC after transfer approve.
+Issue certificate / report card = Create+Publish. Teachers **fill** assigned narrative fields only (`document.report_card.fill`); they do not design templates or publish.  
+**RLS:** by school + subject person. **App:** template render; TC after transfer approve; pin E33 runs on assemble.
 
 ### 7.21 E21 — Reporting
 

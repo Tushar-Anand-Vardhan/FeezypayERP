@@ -2,12 +2,12 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-07 (Phase 3 — Grade Calculation Engine)  
+> **Last updated:** 2026-08-07 (Phase 3 — Report Card Engine)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
-> **Branch tip at last verification:** `main` @ `51ffdbe` (+ Grade Calculation local)  
-> **Current phase:** **Phase 3 — Grade Calculation Engine SHIPPED (§64)** (E33 deterministic finals from E31+E32). Recording §63 / Framework §62 / Curriculum §61 shipped.
+> **Branch tip at last verification:** `main` @ `34a65f7` (+ Report Card Phase 3 local)  
+> **Current phase:** **Phase 3 — Report Card Engine SHIPPED (§65)** (E20 assemble from E33+sources; template designer backend). Grade Calc §64 / Recording §63 / Framework §62 / Curriculum §61 shipped.
 
 ---
 
@@ -77,6 +77,7 @@
 62. [Phase 3 — Assessment Framework Engine](#62-phase-3--assessment-framework-engine)
 63. [Phase 3 — Assessment Recording Engine](#63-phase-3--assessment-recording-engine)
 64. [Phase 3 — Grade Calculation Engine](#64-phase-3--grade-calculation-engine)
+65. [Phase 3 — Report Card Engine](#65-phase-3--report-card-engine)
 
 ---
 
@@ -140,6 +141,7 @@
 | Assessment Framework change | [`docs/architecture/assessment-framework-engine.md`](architecture/assessment-framework-engine.md) + §62 + `lib/assessment-framework/` |
 | Assessment Recording change | [`docs/architecture/assessment-recording-engine.md`](architecture/assessment-recording-engine.md) + §63 + `lib/assessment-recording/` |
 | Grade Calculation change | [`docs/architecture/grade-calculation-engine.md`](architecture/grade-calculation-engine.md) + §64 + `lib/grade-calculation/` |
+| Report Card Engine change | [`docs/architecture/report-card-engine.md`](architecture/report-card-engine.md) + §65 + `lib/report-cards/` |
 | New feature PR | Must name owning engine + entity + events + AuthZ + versioning + audit + notify + AI + persona; **Phase 2+ also cite workflow ID(s)** from §41; respect §26 P0 + §54 P0; update maturity if shipping |
 
 **Conventions**
@@ -195,6 +197,7 @@
 - Assessment Framework Engine: [`docs/architecture/assessment-framework-engine.md`](architecture/assessment-framework-engine.md) — keep in sync with §62.
 - Assessment Recording Engine: [`docs/architecture/assessment-recording-engine.md`](architecture/assessment-recording-engine.md) — keep in sync with §63.
 - Grade Calculation Engine: [`docs/architecture/grade-calculation-engine.md`](architecture/grade-calculation-engine.md) — keep in sync with §64.
+- Report Card Engine (Phase 3): [`docs/architecture/report-card-engine.md`](architecture/report-card-engine.md) — keep in sync with §65.
 
 ---
 
@@ -307,6 +310,7 @@ Teachers, students, and parents exist as **global identity rows** (`persons` + r
 | AW | **Phase 3 — Assessment Framework Engine** | E31 year×class×subject evaluation plans, categories, formulas, version/clone — [`docs/architecture/assessment-framework-engine.md`](architecture/assessment-framework-engine.md) |
 | AX | **Phase 3 — Assessment Recording Engine** | E32 teacher evidence under framework categories; bulk marks; lock; append-only history — [`docs/architecture/assessment-recording-engine.md`](architecture/assessment-recording-engine.md) |
 | AY | **Phase 3 — Grade Calculation Engine** | E33 deterministic subject/term/overall results from framework + records — [`docs/architecture/grade-calculation-engine.md`](architecture/grade-calculation-engine.md) |
+| AZ | **Phase 3 — Report Card Engine** | E20 template designer + assemble from E33/attendance/behaviour/…; draft/published/locked; field assignments — [`docs/architecture/report-card-engine.md`](architecture/report-card-engine.md) |
 
 ### 3.3 Global Identity Steps 0–9 (gate status)
 
@@ -494,6 +498,7 @@ See §55 and authentication-platform.md. Staff save wires invites.
 | `20260807450000_assessment_framework_engine.sql` | E31 frameworks, categories, formulas, versions, audit + AuthZ seeds |
 | `20260807460000_assessment_recording_engine.sql` | E32 records, append-only marks, coverage, attachments, audit + AuthZ seeds |
 | `20260807470000_grade_calculation_engine.sql` | E33 runs, results, grace, optional subjects, exemptions, audit + AuthZ seeds |
+| `20260807480000_report_card_engine_phase3.sql` | E20 Phase 3: field assignments, new blocks, published/locked, E33 pin columns, AuthZ fill/lock |
 
 **Dropped legacy tables (must stay gone):** `teachers`, `teacher_subjects`, `students`, `guardians`, `student_guardians`, `student_section_enrollments` (+ `*_legacy` intermediates).
 
@@ -624,6 +629,7 @@ persons
 | `assessment_record_topics` / `_outcomes` | record | Curriculum coverage links (E30) |
 | `assessment_record_attachments` | record | Attachment metadata |
 | `assessment_recording_audit_log` | school | Local recording audit |
+| `report_card_template_field_assignments` | template | Teacher fillable narrative fields |
 | `grade_calculation_grace_rules` / `_optional_subjects` / `_exemptions` | school/year | E33 calculation config |
 | `grade_calculation_runs` | class/scope | Reproducible compute jobs + input snapshot + fingerprint |
 | `grade_calculation_results` | run | Subject / term / overall results (append/supersede) |
@@ -860,6 +866,7 @@ Keep [`deferred-identity-followups.md`](deferred-identity-followups.md) aligned 
 | F26 | Assessment Framework Engine (E31) | Backend `SHIPPED` (§62); teachers read-only; marks pin framework version next | [`assessment-framework-engine.md`](architecture/assessment-framework-engine.md) |
 | F27 | Assessment Recording Engine (E32) | Backend `SHIPPED` (§63); evidence under categories; append-only marks; HOD lock | [`assessment-recording-engine.md`](architecture/assessment-recording-engine.md) |
 | F28 | Grade Calculation Engine (E33) | Backend `SHIPPED` (§64); teachers never calculate; auditable reproducible runs | [`grade-calculation-engine.md`](architecture/grade-calculation-engine.md) |
+| F29 | Report Card Engine (E20 Phase 3) | Backend `SHIPPED` (§65); assemble from sources; template designer; draft/published/locked | [`report-card-engine.md`](architecture/report-card-engine.md) |
 | F11 | Split signup trigger for invited users | `SHIPPED` (§55) | §7.3 · §55 |
 | F12 | Onboarding form UI polish | `DEFERRED` | D11 |
 
@@ -1425,6 +1432,20 @@ Also: `npx tsc --noEmit` after calendar module land.
 | `npx tsc --noEmit` (grade-calculation modules) | PASS |
 | `supabase db push` | PENDING (user request) |
 
+### 15.46 Phase 3 — Report Card Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-report-card-phase3-validation.ts` · `npx tsc --noEmit` · migration `20260807480000` (not pushed unless requested)
+
+| Check | Result |
+|-------|--------|
+| AuthZ fill/lock + teacher fill-only | PASS |
+| New designer block types + field assignment validation | PASS |
+| Draft / published / locked gates | PASS |
+| No-duplication source_refs (E33 pins) | PASS |
+| Legacy ops smoke still PASS | PASS |
+| `npx tsc --noEmit` (report-cards modules) | PASS |
+| `supabase db push` | PENDING (user request) |
+
 ---
 
 ## 16. Key file index
@@ -1545,6 +1566,10 @@ Also: `npx tsc --noEmit` after calendar module land.
 - `lib/grade-calculation/**` ← Grade Calculation Engine module
 - `supabase/migrations/20260807470000_grade_calculation_engine.sql`
 - `scripts/smoke-grade-calculation-validation.ts`
+- `docs/architecture/report-card-engine.md` ← Phase 3 Report Card (E20)
+- `lib/report-cards/field-assignments-actions.ts` · enhanced `assemble.ts`
+- `supabase/migrations/20260807480000_report_card_engine_phase3.sql`
+- `scripts/smoke-report-card-phase3-validation.ts`
 - `docs/architecture/student-profile-engine.md` ← Student Profile aggregator
 - `lib/student-profile/**` ← Student Profile Engine module
 - `supabase/migrations/20260807230000_student_profile_engine.sql` ← SCHEMA-READY ops stubs
@@ -1683,6 +1708,10 @@ Also: `npx tsc --noEmit` after calendar module land.
 | `supabase/migrations/20260807470000_grade_calculation_engine.sql` | Runs, results, grace, optional, exemptions, AuthZ |
 | `docs/architecture/grade-calculation-engine.md` + MASTER §64 | Grade Calculation docs |
 | `scripts/smoke-grade-calculation-validation.ts` | Grade calculation validation smoke |
+| `lib/report-cards/field-assignments-actions.ts` · Phase 3 assemble | Report Card Engine Phase 3 |
+| `supabase/migrations/20260807480000_report_card_engine_phase3.sql` | Field assignments, lock, E33 pins |
+| `docs/architecture/report-card-engine.md` + MASTER §65 | Report Card Phase 3 docs |
+| `scripts/smoke-report-card-phase3-validation.ts` | Report card Phase 3 smoke |
 | `lib/attendance/**` | Attendance Engine backend |
 | `supabase/migrations/20260807250000_attendance_engine.sql` | Sessions, leave, audit; enrich records |
 | `docs/architecture/attendance-engine.md` + MASTER §44 | Attendance Engine docs |
@@ -1781,7 +1810,8 @@ Safe to keep for manual QA; delete when cleaning staging.
 27. Curriculum HOD/Teacher portal UI and `subjects.chapter_map` migration remain open after §61 backend.  
 28. E11 marks / E20 report cards should **pin `assessment_framework_version_id`** (E31); framework admin UI later; teachers never design frameworks.  
 29. Prefer **E32** assessment records for teacher evidence under framework categories; migrate Teacher Portal marks UI from E11 teacher-created defs gradually.  
-30. Report cards / portals should consume **published E33** grade results (not teacher-entered finals).
+30. Report cards / portals should consume **published E33** grade results (not teacher-entered finals).  
+31. Admin template designer UI and PDF/digital signatures remain open after §65 backend.
 
 ---
 
@@ -1815,6 +1845,7 @@ Before building remaining ERP features (fees, attendance, invites, portals, AI),
 | E31 | Assessment Framework | Year×class×subject evaluation plans + formulas |
 | E32 | Assessment Recording | Teacher evidence under categories; append-only marks |
 | E33 | Grade Calculation | Deterministic subject/term/overall results |
+| E20 | Document / Report Cards | Template designer + assemble from sources (Phase 3) |
 
 ### 18.3 Ownership review (2026-08-06) — outcomes
 
@@ -2998,26 +3029,26 @@ No silent overwrite of historical marks — corrections supersede. Config stays 
 
 ## 46. Phase 2 — Report Card Engine
 
-**Status:** Backend `SHIPPED` (2026-08-07). UI `NOT BUILT`. PDF media `NOT BUILT` (render job queued on issue).  
+**Status:** Backend `SHIPPED` (2026-08-07). **Extended by Phase 3 §65.** UI `NOT BUILT`. PDF media `NOT BUILT`.  
 **Canonical doc:** [`docs/architecture/report-card-engine.md`](architecture/report-card-engine.md)  
 **Module:** `lib/report-cards/**` (issue alongside templates)  
-**Migration:** `supabase/migrations/20260807270000_report_card_engine.sql` (pushed)  
+**Migration:** `supabase/migrations/20260807270000_report_card_engine.sql` (pushed) · Phase 3 `20260807480000`  
 **Workflows:** WF-PER-02 (issue); WF-PRI-09 (readiness); WF-TCH-08 (remarks); WF-PAR-06 / WF-STU-06 (consume)
 
 ### 46.1 Capabilities
 
 | Capability | Status |
 |------------|--------|
-| Generate from assessment data (E11) | `SHIPPED` (`source_refs.examResultIds`) |
+| Generate from assessment data | `SHIPPED` → prefer E33 (§65); E11 fallback |
 | Attendance summary (E12) | `SHIPPED` |
-| Teacher remarks (per-subject + card-level) | `SHIPPED` |
+| Teacher remarks (per-subject + card-level) | `SHIPPED` (+ field assignments §65) |
 | Co-curricular (house/club) | `SHIPPED` |
 | Behaviour (conduct incidents) | `SHIPPED` (E13 §48) |
 | Promotion status | `SHIPPED` |
 | Principal remarks | `SHIPPED` |
 | No duplicated assessment OLTP | Enforced (`source_refs` + presentation snapshot only) |
 | Version history | `SHIPPED` (`report_card_issue_versions`) |
-| Issue / reissue / revoke | `SHIPPED` |
+| Issue / reissue / revoke | `SHIPPED` (publish/lock in §65) |
 | PDF bytes / DigiLocker | `NOT BUILT` |
 
 ### 46.2 Tables
@@ -3026,15 +3057,15 @@ No silent overwrite of historical marks — corrections supersede. Config stays 
 
 ### 46.3 API
 
-`createReportCardDraftAction` · `regenerateReportCardDraftAction` · `updateReportCardRemarksAction` · `issueReportCardAction` · `revokeReportCardAction` · `previewReportCardAssemblyAction` · `listReportCardIssuesAction` · `getReportCardIssueAction` · `listReportCardVersionsAction` · `getReportCardVersionAction` · `listReportCardAuditAction`
+See §65 for Phase 3 API (fill / lock / field assignments). Legacy issue actions remain.
 
 ### 46.4 Tests
 
-`npx tsx scripts/smoke-report-card-ops-validation.ts`
+`npx tsx scripts/smoke-report-card-ops-validation.ts` · `scripts/smoke-report-card-phase3-validation.ts`
 
 ### 46.5 Placement rule
 
-Assemble from owning engines; never insert parallel `exam_results`. Issued versions are immutable; reissue opens a new version. Templates stay §35.
+Assemble from owning engines; never insert parallel `exam_results`. Published/locked versions are immutable; reissue opens a new version. Templates stay §35. **Phase 3 details: §65.**
 
 ---
 
@@ -3712,4 +3743,36 @@ Full gradebook UI, auto-promotion, live recalculation on every mark keystroke.
 
 ---
 
-*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§64 through Grade Calculation. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + portals + Curriculum + Assessment Framework + Recording + Grade Calculation shipped.*
+## 65. Phase 3 — Report Card Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Admin template designer UI `NOT BUILT`. PDF / digital signatures `FUTURE`.
+
+**Canonical doc:** [`docs/architecture/report-card-engine.md`](architecture/report-card-engine.md)
+
+### 65.1 Scope
+
+- Admin configures templates first (boards, scopes by grade/class, blocks, field assignments, signatures)
+- **Never** store duplicated academic information — assemble by reference
+- Sources: E33 assessment results, attendance, teacher remarks/fields, behaviour, co-curricular, achievements, promotion, curriculum completion, observation records
+- Teachers only fill **assigned** narrative fields (`document.report_card.fill`)
+- Multiple templates; different templates per class/section scope
+- Lifecycle: **draft → published → locked** (+ historical versions; legacy `issued` ≡ published)
+- Module: `lib/report-cards/**` · Migration `20260807480000_report_card_engine_phase3.sql`
+
+### 65.2 Placement rule
+
+E31 = plan, E32 = evidence, E33 = computed results, **E20 = document assembly**. Presentation snapshot is reprint-only — not a second marks store.
+
+### 65.3 Tests
+
+`npx tsx scripts/smoke-report-card-phase3-validation.ts`  
+`npx tsx scripts/smoke-report-card-ops-validation.ts`  
+`npx tsc --noEmit`
+
+### 65.4 Non-goals (this ship)
+
+Drag-and-drop designer UI, PDF bytes, DigiLocker, crypto digital signatures.
+
+---
+
+*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§65 through Report Card. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + portals + Curriculum + Assessment Framework + Recording + Grade Calculation + Report Card shipped.*

@@ -7,7 +7,10 @@ export {
   createReportCardDraftAction,
   regenerateReportCardDraftAction,
   updateReportCardRemarksAction,
+  fillReportCardFieldsAction,
   issueReportCardAction,
+  publishReportCardAction,
+  lockReportCardAction,
   revokeReportCardAction,
 } from "@/lib/report-cards/issue-actions";
 
@@ -19,3 +22,9 @@ export {
   listReportCardAuditAction,
   previewReportCardAssemblyAction,
 } from "@/lib/report-cards/issue-query-actions";
+
+export {
+  upsertReportCardFieldAssignmentAction,
+  archiveReportCardFieldAssignmentAction,
+  listReportCardFieldAssignmentsAction,
+} from "@/lib/report-cards/field-assignments-actions";

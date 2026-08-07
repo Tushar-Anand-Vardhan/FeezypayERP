@@ -118,7 +118,7 @@
 | [Notification](#notification) | E19 | `PLANNED` |
 | [DocumentTemplate](#documenttemplate) | E20 | `PARTIAL` (report card templates §35; other docs planned) |
 | [IssuedDocument](#issueddocument) | E20 | `SHIPPED` (backend §46; PDF media planned) |
-| [ReportCard](#reportcard) | E20 | `SHIPPED` (backend §46; templates §35; PDF planned) |
+| [ReportCard](#reportcard) | E20 | `SHIPPED` (backend §46/§65; templates §35; PDF planned) |
 
 ### 2.7 Cross-cutting & growth
 
@@ -1150,15 +1150,15 @@
 
 **Purpose:** Published academic report for a Placement × Term/Year — specialization of IssuedDocument.
 
-**Relationships:** StudentPlacement; Term/AcademicYear; AssessmentResults (**read** via `source_refs`); Attendance aggregates; Conduct; house/club; DocumentTemplate version; issue versions.
+**Relationships:** StudentPlacement; Term/AcademicYear; **E33** grade results (prefer) / E11 fallback via `source_refs`; Attendance aggregates; Conduct; achievements; curriculum progress; observation records; house/club; DocumentTemplate version; issue versions; field assignments.
 
-**Lifecycle:** draft (assembled) → issued (frozen version) → reissued (new version) / revoked.
+**Lifecycle:** draft (assembled) → published (legacy: issued) → locked → reissued (new version) / revoked.
 
-**Owner Engine:** **E20** (artifact). Source marks remain **E11**.
+**Owner Engine:** **E20** (artifact). Source grades prefer **E33**; raw evidence remains E32/E11.
 
-**Dependencies:** E11, E12, E13, E06, E04, E07, E08.
+**Dependencies:** E33, E32, E31, E11, E12, E13, E30, E06, E04, E07, E08.
 
-**Future extensions:** Progressive report cards, parent portal views without PDF, DigiLocker.
+**Future extensions:** Progressive report cards, parent portal views without PDF, DigiLocker, crypto digital signatures.
 
 **Hard rule:** Templates and issues reference assessments; they do not duplicate marks OLTP. `presentation_snapshot` is reprint display only.
 

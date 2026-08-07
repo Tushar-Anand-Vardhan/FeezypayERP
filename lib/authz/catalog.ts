@@ -83,6 +83,8 @@ export const PERMISSION_KEYS = [
   // Documents / report cards
   "document.report_card.read",
   "document.report_card.issue",
+  "document.report_card.fill",
+  "document.report_card.lock",
   "document.template.edit",
   // Analytics / audit / onboarding
   "analytics.dashboard.read",

@@ -10,14 +10,41 @@ export type BlockType =
   | "header"
   | "student_info"
   | "grades"
+  | "grade_summary"
   | "remarks"
   | "attendance"
   | "co_curricular"
+  | "achievements"
+  | "behaviour"
+  | "curriculum"
+  | "observations"
+  | "promotion"
   | "teacher_comments"
   | "principal_comments"
   | "signatures"
   | "custom"
   | "spacer";
+
+export type FieldAssigneeRole =
+  | "teacher"
+  | "class_teacher"
+  | "subject_teacher"
+  | "hod"
+  | "principal"
+  | "vice_principal"
+  | "admin";
+
+export type FieldAssignmentInput = {
+  id?: string;
+  templateId: string;
+  fieldKey: string;
+  fieldLabel: string;
+  assigneeRole?: FieldAssigneeRole;
+  subjectId?: string | null;
+  required?: boolean;
+  maxLength?: number;
+  displayOrder?: number;
+};
 
 export type SignatureType = "wet_ink" | "image_placeholder" | "digital_stub";
 
@@ -54,6 +81,12 @@ export type TemplateInput = {
   includeTeacherComments?: boolean;
   includePrincipalComments?: boolean;
   includeSignatures?: boolean;
+  includeAchievements?: boolean;
+  includeBehaviour?: boolean;
+  includeCurriculum?: boolean;
+  includeObservations?: boolean;
+  includePromotion?: boolean;
+  preferGradeCalculation?: boolean;
   pdfGenerationEnabled?: boolean;
   digitalSignatureEnabled?: boolean;
 };
@@ -107,14 +140,30 @@ export const BLOCK_TYPES: BlockType[] = [
   "header",
   "student_info",
   "grades",
+  "grade_summary",
   "remarks",
   "attendance",
   "co_curricular",
+  "achievements",
+  "behaviour",
+  "curriculum",
+  "observations",
+  "promotion",
   "teacher_comments",
   "principal_comments",
   "signatures",
   "custom",
   "spacer",
+];
+
+export const FIELD_ASSIGNEE_ROLES: FieldAssigneeRole[] = [
+  "teacher",
+  "class_teacher",
+  "subject_teacher",
+  "hod",
+  "principal",
+  "vice_principal",
+  "admin",
 ];
 
 export const SIGNATURE_TYPES: SignatureType[] = [
@@ -130,15 +179,21 @@ export const DEFAULT_BLOCK_BLUEPRINT: Array<{
 }> = [
   { blockType: "header", title: "Header", displayOrder: 1 },
   { blockType: "student_info", title: "Student information", displayOrder: 2 },
-  { blockType: "grades", title: "Grades", displayOrder: 3 },
-  { blockType: "attendance", title: "Attendance", displayOrder: 4 },
-  { blockType: "co_curricular", title: "Co-curricular", displayOrder: 5 },
-  { blockType: "remarks", title: "Remarks", displayOrder: 6 },
-  { blockType: "teacher_comments", title: "Teacher comments", displayOrder: 7 },
+  { blockType: "grades", title: "Assessment results", displayOrder: 3 },
+  { blockType: "grade_summary", title: "Grade summary", displayOrder: 4 },
+  { blockType: "attendance", title: "Attendance", displayOrder: 5 },
+  { blockType: "behaviour", title: "Behaviour", displayOrder: 6 },
+  { blockType: "co_curricular", title: "Co-curricular", displayOrder: 7 },
+  { blockType: "achievements", title: "Achievements", displayOrder: 8 },
+  { blockType: "curriculum", title: "Curriculum completion", displayOrder: 9 },
+  { blockType: "observations", title: "Observations", displayOrder: 10 },
+  { blockType: "promotion", title: "Promotion status", displayOrder: 11 },
+  { blockType: "remarks", title: "Remarks", displayOrder: 12 },
+  { blockType: "teacher_comments", title: "Teacher comments", displayOrder: 13 },
   {
     blockType: "principal_comments",
     title: "Principal comments",
-    displayOrder: 8,
+    displayOrder: 14,
   },
-  { blockType: "signatures", title: "Signatures", displayOrder: 9 },
+  { blockType: "signatures", title: "Signatures", displayOrder: 15 },
 ];

@@ -73,7 +73,7 @@ School ERPs fail architecturally when:
 | E17 | **Event Engine** | Calendar `SHIPPED` + Activity ops backend `SHIPPED` (UI/media later) | Occasions + participation — [`event-activity-engine.md`](event-activity-engine.md) |
 | E18 | **Communication Engine** | Config `SHIPPED` (§37); ops compose `SHIPPED` (§49); UI `NOT BUILT` | Templates/categories/rules + `comm_messages`; delivery is E19 |
 | E19 | **Notification Engine** | Minimal pipe `SHIPPED` (§49); providers stubbed | Delivery requests, attempts, outbox, read receipts; adapters future |
-| E20 | **Document Engine** | Templates `SHIPPED` + Issue backend `SHIPPED` (PDF media `NOT BUILT`) | Report cards assemble from sources; version history — [`report-card-engine.md`](report-card-engine.md) |
+| E20 | **Document Engine** | Templates + Phase 3 assembly `SHIPPED` (PDF / digital sig `NOT BUILT`) | Report cards assemble from E33+sources; template designer + field assignments — [`report-card-engine.md`](report-card-engine.md) |
 | E21 | **Reporting Engine** | `NOT BUILT` | Operational reports & exports |
 | E22 | **Analytics Engine** | Student §51 + Teacher §52 slices `SHIPPED`; school-wide marts later | Deterministic aggregates + snapshots — [`student-analytics-engine.md`](student-analytics-engine.md) · [`teacher-analytics-engine.md`](teacher-analytics-engine.md) |
 | E23 | **AI Engine** | `NOT BUILT` | Assistive insights, drafting, anomaly hints |
@@ -943,7 +943,8 @@ Generate and store official documents (report cards, TC, fee receipts, ID cards)
 - Versioning of issued certificates
 - Hash/integrity for verification
 - **Phase 1 shipped:** report card **templates** (`lib/report-cards/`) — boards, scopes, dynamic blocks, assessment refs, signature slots, immutable versions
-- **Phase 2 shipped:** report card **issue** — assemble from E11/E12/E13/house/club + remarks/promotion; `report_card_issues` + version history; no parallel marks store
+- **Phase 2 shipped:** report card **issue** — assemble from sources + remarks/promotion; `report_card_issues` + version history; no parallel marks store
+- **Phase 3 shipped:** prefer **E33** published grades; achievements / curriculum / observations / behaviour blocks; teacher **field assignments**; draft → published → locked; pin `grade_calculation_run_ids`
 
 **Data owned**
 - Templates, issued document metadata, storage pointers
@@ -969,8 +970,9 @@ Generate and store official documents (report cards, TC, fee receipts, ID cards)
 **Personas**
 - School admin, Parent, Student, Teacher (progress reports)
 
-**Phase 1 note:** Templates — [`report-card-template-engine.md`](report-card-template-engine.md).  
+**Phase 1 note:** Templates — [`report-card-template-engine.md`](report-card-template-engine.md).
 **Phase 2 note:** Issue — [`report-card-engine.md`](report-card-engine.md) · migration `20260807270000`.
+**Phase 3 note:** Academic assembly — MASTER §65 · migration `20260807480000`.
 
 ---
 

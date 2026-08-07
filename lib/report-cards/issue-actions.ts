@@ -11,15 +11,22 @@ import {
 } from "@/lib/report-cards/ops-server-helpers";
 import type {
   CreateReportCardDraftInput,
+  FillReportCardFieldsInput,
   IssueReportCardInput,
+  LockReportCardInput,
   RegenerateReportCardInput,
   ReportCardOpsActionResult,
   UpdateReportCardRemarksInput,
 } from "@/lib/report-cards/ops-types";
+import { isPublishedStatus } from "@/lib/report-cards/ops-types";
 import {
   mayEditRemarks,
+  mayFillFields,
+  mayLockIssue,
+  mayPublishVersion,
   mayRegenerateVersion,
   validateCreateDraftInput,
+  validateFillFieldsInput,
   validateIssueInput,
   validateUpdateRemarksInput,
 } from "@/lib/report-cards/ops-validation";
@@ -133,6 +140,8 @@ export async function createReportCardDraftAction(
       teacher_remarks: input.teacherRemarks ?? null,
       principal_remarks: input.principalRemarks ?? null,
       promotion_status: assembled.presentation.promotionStatus,
+      grade_calculation_run_ids: assembled.sourceRefs.gradeCalculationRunIds,
+      field_values: {},
       generated_by: actorId,
     })
     .select("id, version")
@@ -169,6 +178,7 @@ export async function createReportCardDraftAction(
     studentProfileId: input.studentProfileId,
     newValues: {
       exam_result_count: assembled.sourceRefs.examResultIds.length,
+      grade_run_count: assembled.sourceRefs.gradeCalculationRunIds.length,
       template_version_id: assembled.sourceRefs.templateVersionId,
     },
   });
@@ -197,8 +207,11 @@ export async function regenerateReportCardDraftAction(
   if (!issue) {
     return { success: false, error: "Report card issue not found." };
   }
-  if (issue.status === "revoked") {
-    return { success: false, error: "Revoked cards cannot be regenerated." };
+  if (issue.status === "revoked" || issue.status === "locked") {
+    return {
+      success: false,
+      error: "Revoked or locked cards cannot be regenerated.",
+    };
   }
 
   const current = await loadCurrentVersion(supabase, schoolId, issue);
@@ -210,9 +223,12 @@ export async function regenerateReportCardDraftAction(
     return {
       success: false,
       error:
-        "Current version is issued — pass asNewVersion to create a reissue draft.",
+        "Current version is published/locked — pass asNewVersion to create a reissue draft.",
     };
   }
+
+  const priorFieldValues =
+    (current?.field_values as Record<string, string | null> | null) ?? {};
 
   const assembled = await assembleReportCardFromSources(supabase, {
     schoolId,
@@ -222,6 +238,7 @@ export async function regenerateReportCardDraftAction(
     termId: issue.term_id,
     teacherRemarks: (current?.teacher_remarks as string | null) ?? null,
     principalRemarks: (current?.principal_remarks as string | null) ?? null,
+    fieldValues: priorFieldValues,
   });
   if ("error" in assembled) {
     return { success: false, error: assembled.error };
@@ -238,9 +255,11 @@ export async function regenerateReportCardDraftAction(
           ...assembled.presentation,
           teacherRemarks: current.teacher_remarks,
           principalRemarks: current.principal_remarks,
+          fieldValues: priorFieldValues,
         },
         template_version_id: assembled.sourceRefs.templateVersionId,
         promotion_status: assembled.presentation.promotionStatus,
+        grade_calculation_run_ids: assembled.sourceRefs.gradeCalculationRunIds,
         generated_at: now,
         generated_by: actorId,
         updated_at: now,
@@ -271,7 +290,7 @@ export async function regenerateReportCardDraftAction(
   }
 
   // New version path (reissue draft)
-  if (current && current.status === "issued") {
+  if (current && isPublishedStatus(current.status as string)) {
     await supabase
       .from("report_card_issue_versions")
       .update({
@@ -296,10 +315,13 @@ export async function regenerateReportCardDraftAction(
         ...assembled.presentation,
         teacherRemarks: current?.teacher_remarks ?? null,
         principalRemarks: current?.principal_remarks ?? null,
+        fieldValues: priorFieldValues,
       },
       teacher_remarks: (current?.teacher_remarks as string | null) ?? null,
       principal_remarks: (current?.principal_remarks as string | null) ?? null,
       promotion_status: assembled.presentation.promotionStatus,
+      grade_calculation_run_ids: assembled.sourceRefs.gradeCalculationRunIds,
+      field_values: priorFieldValues,
       generated_by: actorId,
     })
     .select("id, version")
@@ -451,8 +473,11 @@ export async function issueReportCardAction(
   }
 
   const current = await loadCurrentVersion(supabase, schoolId, issue);
-  if (!current || current.status !== "draft") {
-    return { success: false, error: "Only a draft version can be issued." };
+  if (
+    !current ||
+    !mayPublishVersion(current.status as string, issue.status as string)
+  ) {
+    return { success: false, error: "Only a draft version can be published." };
   }
 
   const now = new Date().toISOString();
@@ -461,7 +486,7 @@ export async function issueReportCardAction(
   const { error: versionError } = await supabase
     .from("report_card_issue_versions")
     .update({
-      status: "issued",
+      status: "published",
       issued_at: now,
       issued_by: actorId,
       notes: input.notes ?? null,
@@ -476,7 +501,7 @@ export async function issueReportCardAction(
   const { error: issueError } = await supabase
     .from("report_card_issues")
     .update({
-      status: "issued",
+      status: "published",
       issued_at: now,
       issued_by: actorId,
       updated_at: now,
@@ -537,7 +562,7 @@ export async function issueReportCardAction(
 
   await writeReportCardAudit(supabase, {
     schoolId,
-    action: "report_card.issued",
+    action: "report_card.published",
     actorId,
     issueId: issue.id,
     issueVersionId: current.id,
@@ -563,10 +588,207 @@ export async function issueReportCardAction(
   revalidate();
   return {
     success: true,
-    message: "Report card issued (version frozen).",
+    message: "Report card published (version frozen).",
     issueId: issue.id,
     versionId: current.id,
     version: current.version as number,
+  };
+}
+
+/** @deprecated Alias — prefer publish semantics (status=published). */
+export async function publishReportCardAction(
+  input: IssueReportCardInput,
+): Promise<ReportCardOpsActionResult> {
+  return issueReportCardAction(input);
+}
+
+export async function fillReportCardFieldsAction(
+  input: FillReportCardFieldsInput,
+): Promise<ReportCardOpsActionResult> {
+  const context = await getAuthenticatedSchoolContext(
+    "document.report_card.fill",
+  );
+  if ("error" in context) {
+    return { success: false, error: context.error };
+  }
+
+  const fieldErrors = validateFillFieldsInput(input);
+  if (Object.keys(fieldErrors).length > 0) {
+    return {
+      success: false,
+      error: "Please fix the highlighted fields.",
+      fieldErrors,
+    };
+  }
+
+  const { supabase, schoolId } = context;
+  const actorId = await getActorId(supabase);
+  const issue = await loadIssue(supabase, schoolId, input.issueId);
+  if (!issue) {
+    return { success: false, error: "Report card issue not found." };
+  }
+  const current = await loadCurrentVersion(supabase, schoolId, issue);
+  if (!current) {
+    return { success: false, error: "Current version not found." };
+  }
+  if (!mayFillFields(current.status as string, issue.status as string)) {
+    return {
+      success: false,
+      error: "Fields can only be filled on a draft version.",
+    };
+  }
+
+  const { data: assignments } = await supabase
+    .from("report_card_template_field_assignments")
+    .select("field_key, max_length, required")
+    .eq("template_id", issue.template_id)
+    .eq("school_id", schoolId)
+    .is("archived_at", null);
+
+  const allowed = new Map(
+    (assignments ?? []).map((a) => [
+      a.field_key as string,
+      a as { field_key: string; max_length: number; required: boolean },
+    ]),
+  );
+
+  if (allowed.size === 0) {
+    return {
+      success: false,
+      error: "Template has no assigned fillable fields.",
+    };
+  }
+
+  const nextValues: Record<string, string | null> = {
+    ...((current.field_values as Record<string, string | null> | null) ?? {}),
+  };
+
+  for (const [key, value] of Object.entries(input.fields)) {
+    const meta = allowed.get(key);
+    if (!meta) {
+      return {
+        success: false,
+        error: `Field "${key}" is not assigned on this template.`,
+      };
+    }
+    if (value != null && value.length > Number(meta.max_length)) {
+      return {
+        success: false,
+        error: `Field "${key}" exceeds max length (${meta.max_length}).`,
+      };
+    }
+    nextValues[key] = value;
+  }
+
+  const snap = {
+    ...(current.presentation_snapshot as Record<string, unknown>),
+    fieldValues: nextValues,
+  };
+
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("report_card_issue_versions")
+    .update({
+      field_values: nextValues,
+      presentation_snapshot: snap,
+      updated_at: now,
+    })
+    .eq("id", current.id);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  await writeReportCardAudit(supabase, {
+    schoolId,
+    action: "report_card.fields_filled",
+    actorId,
+    issueId: issue.id,
+    issueVersionId: current.id,
+    studentProfileId: issue.student_profile_id,
+    newValues: { keys: Object.keys(input.fields) },
+  });
+
+  revalidate();
+  return {
+    success: true,
+    message: "Assigned fields updated.",
+    issueId: issue.id,
+    versionId: current.id,
+  };
+}
+
+export async function lockReportCardAction(
+  input: LockReportCardInput,
+): Promise<ReportCardOpsActionResult> {
+  const context = await getAuthenticatedSchoolContext(
+    "document.report_card.lock",
+  );
+  if ("error" in context) {
+    return { success: false, error: context.error };
+  }
+
+  if (!input.issueId?.trim()) {
+    return { success: false, error: "Issue id is required." };
+  }
+
+  const { supabase, schoolId } = context;
+  const actorId = await getActorId(supabase);
+  const issue = await loadIssue(supabase, schoolId, input.issueId);
+  if (!issue) {
+    return { success: false, error: "Report card issue not found." };
+  }
+  if (!mayLockIssue(issue.status as string)) {
+    return {
+      success: false,
+      error: "Only a published card can be locked.",
+    };
+  }
+
+  const current = await loadCurrentVersion(supabase, schoolId, issue);
+  const now = new Date().toISOString();
+
+  const { error } = await supabase
+    .from("report_card_issues")
+    .update({
+      status: "locked",
+      locked_at: now,
+      locked_by: actorId,
+      updated_at: now,
+    })
+    .eq("id", issue.id);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  if (current) {
+    await supabase
+      .from("report_card_issue_versions")
+      .update({
+        status: "locked",
+        locked_at: now,
+        locked_by: actorId,
+        updated_at: now,
+      })
+      .eq("id", current.id);
+  }
+
+  await writeReportCardAudit(supabase, {
+    schoolId,
+    action: "report_card.locked",
+    actorId,
+    issueId: issue.id,
+    issueVersionId: current?.id ?? null,
+    studentProfileId: issue.student_profile_id,
+  });
+
+  revalidate();
+  return {
+    success: true,
+    message: "Report card locked.",
+    issueId: issue.id,
+    versionId: current?.id,
   };
 }
 
@@ -608,7 +830,7 @@ export async function revokeReportCardAction(
         updated_at: now,
       })
       .eq("id", issue.current_version_id)
-      .eq("status", "issued");
+      .in("status", ["issued", "published", "locked"]);
   }
 
   await supabase

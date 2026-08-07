@@ -7,6 +7,8 @@ export async function listReportCardIssuesAction(input: {
   academicYearId?: string;
   studentProfileId?: string;
   status?: string;
+  /** When set, overrides single status filter (e.g. published + issued + locked). */
+  statuses?: string[];
 }): Promise<
   | { success: true; rows: Array<Record<string, unknown>> }
   | { success: false; error: string }
@@ -20,7 +22,7 @@ export async function listReportCardIssuesAction(input: {
   let query = supabase
     .from("report_card_issues")
     .select(
-      "id, student_profile_id, academic_year_id, term_id, template_id, current_version_id, status, title, issued_at, created_at, updated_at",
+      "id, student_profile_id, academic_year_id, term_id, template_id, current_version_id, status, title, issued_at, locked_at, created_at, updated_at",
     )
     .eq("school_id", schoolId)
     .is("archived_at", null)
@@ -36,7 +38,9 @@ export async function listReportCardIssuesAction(input: {
   if (input.studentProfileId) {
     query = query.eq("student_profile_id", input.studentProfileId);
   }
-  if (input.status) {
+  if (input.statuses?.length) {
+    query = query.in("status", input.statuses);
+  } else if (input.status) {
     query = query.eq("status", input.status);
   }
 

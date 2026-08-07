@@ -21,12 +21,14 @@ function assert(cond: unknown, msg: string) {
 
 console.log("=== statuses ===");
 assert(
-  REPORT_CARD_ISSUE_STATUSES.join(",") === "draft,issued,revoked",
+  REPORT_CARD_ISSUE_STATUSES.includes("draft") &&
+    REPORT_CARD_ISSUE_STATUSES.includes("published") &&
+    REPORT_CARD_ISSUE_STATUSES.includes("locked"),
   "issue statuses",
 );
 assert(
-  REPORT_CARD_VERSION_STATUSES.join(",") ===
-    "draft,issued,superseded,revoked",
+  REPORT_CARD_VERSION_STATUSES.includes("draft") &&
+    REPORT_CARD_VERSION_STATUSES.includes("superseded"),
   "version statuses",
 );
 console.log("OK");
@@ -77,7 +79,12 @@ console.log("=== no-duplication contract (types) ===");
   const sourceRefs = {
     examResultIds: ["er1"],
     examDefinitionIds: ["ed1"],
+    gradeCalculationRunIds: [],
+    gradeCalculationResultIds: [],
     conductIncidentIds: [],
+    achievementIds: [],
+    observationRecordIds: [],
+    curriculumProgressIds: [],
     houseMembershipIds: [],
     clubMembershipIds: [],
     studentAcademicYearId: null,

@@ -1,78 +1,108 @@
-# Report Card Engine (E20 issue / generation)
+# Report Card Engine (E20 — Phase 3 academic assembly)
 
-> **Phase:** 2 — Operations  
-> **Created:** 2026-08-07  
-> **Status:** Backend `SHIPPED`. UI `NOT BUILT`. PDF bytes `NOT BUILT` (render job queued only).  
-> **Module:** `lib/report-cards/**` (ops + templates)  
-> **Migration:** `supabase/migrations/20260807270000_report_card_engine.sql`  
-> **Companions:** [`report-card-template-engine.md`](report-card-template-engine.md) · [`versioning.md`](versioning.md) · [`daily-workflows.md`](../operations/daily-workflows.md) · MASTER §46
+> **Phase:** 3 — Academic Recording Platform (enhances Phase 1 templates §35 + Phase 2 issue §46)  
+> **Created:** 2026-08-07 · **Updated:** 2026-08-07  
+> **Status:** Backend `SHIPPED`. Admin template designer UI `NOT BUILT`. PDF / digital signatures `FUTURE`.  
+> **Module:** `lib/report-cards/**`  
+> **Migrations:** `20260807190000` (templates) · `20260807270000` (issue) · `20260807480000` (Phase 3)  
+> **Companions:** [`report-card-template-engine.md`](report-card-template-engine.md) · [`grade-calculation-engine.md`](grade-calculation-engine.md) · MASTER §65
 
 ---
 
 ## 1. Purpose
 
-Generate **official report cards** dynamically from owning engines. Pin a **template version**. Keep **issue version history**. Never create a parallel marks OLTP.
+Admin **designs** report card templates (layout blocks, scopes by grade/class, field assignments).  
+Teachers **only fill assigned narrative fields**.  
+The engine **never stores duplicated academic OLTP** — it dynamically assembles from owning engines and pins `source_refs` + a reprint `presentation_snapshot`.
 
 | Rule | Meaning |
 |------|---------|
-| P1 | Grades come from E11 `exam_results` (ids in `source_refs`) |
-| P2 | Attendance from E12; behaviour from E13 stub; co-curricular from house/club memberships; promotion from `student_academic_years` |
-| P3 | Teacher/principal **card remarks** are E20-owned narrative on the version |
-| P4 | `presentation_snapshot` = derived reprint display only — not a second assessment store |
-| P5 | Issued versions are immutable; reissue opens a new version |
-| P6 | PDF media remains future (Media / DigiLocker) |
+| P1 | Grades prefer **published E33** results; E11 `exam_results` is fallback only |
+| P2 | Attendance / behaviour / achievements / co-curricular / promotion / curriculum / observations are **read by reference** |
+| P3 | Teacher narrative lives in version `field_values` + remarks — not in source engines |
+| P4 | Lifecycle: **draft → published → locked** (legacy `issued` ≡ published) |
+| P5 | Historical versions on `report_card_issue_versions`; reissue opens a new draft version |
+| P6 | Digital signatures / PDF bytes remain FUTURE stubs |
 
 ---
 
 ## 2. Sources assembled
 
-| Block | Source |
-|-------|--------|
-| Assessment / grades / per-subject teacher remarks | E11 `exam_results` (+ exam/subject labels) |
-| Attendance summary | E12 `attendance_records` aggregate |
-| Co-curricular | `house_memberships`, `club_memberships` |
-| Behaviour | `conduct_incidents` |
+| Block / concern | Source |
+|-----------------|--------|
+| Assessment results / final marks / letter / points | **E33** `grade_calculation_results` (published runs) → fallback E11 |
+| Grade summary (subject / term / overall) | E33 result kinds |
+| Attendance | E12 `attendance_records` aggregate |
+| Teacher remarks (per-subject) | E11 remarks on fallback path; card fields from assignments |
+| Behaviour | E13 `conduct_incidents` |
+| Co-curricular | House / club memberships |
+| Achievements | `student_achievements` |
 | Promotion status | `student_academic_years.promotion_status` |
-| Principal / teacher remarks (card-level) | Version columns |
-| Layout / bindings | E20 template + `report_card_template_versions` |
+| Curriculum completion | Section aggregate from `curriculum_topic_progress` |
+| Observation records | E32 locked records under E31 categories `kind=observation` |
+| Layout / scopes / signatures | Template designer tables |
 
 ---
 
-## 3. Tables
+## 3. Template designer (admin)
 
-| Table | Role |
-|-------|------|
-| `report_card_issues` | Logical card (student × template × year/term) |
-| `report_card_issue_versions` | Version history (`draft` → `issued` → `superseded` / `revoked`) |
-| `student_issued_documents` | Enriched link for Student Profile |
-| `report_card_render_jobs` | PDF queue stub (+ `report_card_issue_version_id`) |
-| `report_card_audit_log` | Append-only lifecycle audit |
+| Concern | Implementation |
+|---------|----------------|
+| Multiple templates | `report_card_templates` |
+| Different templates per grade | `report_card_template_scopes` (class / section) |
+| Dynamic blocks | `report_card_template_blocks` (+ Phase 3 types) |
+| Teacher-only fill fields | `report_card_template_field_assignments` |
+| Draft / published / retired | Template status |
+| Signatures | Slots + `digital_stub` / FUTURE crypto |
+| Version pin | Immutable `report_card_template_versions` on publish |
 
----
-
-## 4. API
-
-| Action | Notes |
-|--------|-------|
-| `createReportCardDraftAction` | Assemble from sources → v1 draft |
-| `regenerateReportCardDraftAction` | Refresh draft from live sources; or `asNewVersion` for reissue |
-| `updateReportCardRemarksAction` | Teacher / principal remarks on draft |
-| `issueReportCardAction` | Freeze version; mirror issued document; queue render job |
-| `revokeReportCardAction` | Revoke issue + document |
-| `previewReportCardAssemblyAction` | Assemble without persist |
-| `listReportCardIssuesAction` / `getReportCardIssueAction` | Queries |
-| `listReportCardVersionsAction` / `getReportCardVersionAction` | Version history |
-| `listReportCardAuditAction` | Audit |
+**New block types:** `grade_summary` · `achievements` · `behaviour` · `curriculum` · `observations` · `promotion`
 
 ---
 
-## 5. Placement
+## 4. Issue lifecycle
 
-- WF-PER-02 issue; WF-PRI-09 readiness; WF-TCH-08 remarks; WF-PAR-06 / WF-STU-06 consume.  
-- Templates remain §35. Marks remain §45. Attendance remains §44.
+```
+draft ──publish──► published ──lock──► locked
+  │                    │
+  └──── revoke ◄───────┴── revoke
+```
+
+Reissue: `regenerateReportCardDraftAction({ asNewVersion: true })` supersedes prior published/locked version and opens a new draft.
 
 ---
 
-## 6. Tests
+## 5. Tables (Phase 3 additive)
 
-`npx tsx scripts/smoke-report-card-ops-validation.ts`
+| Table / column | Role |
+|----------------|------|
+| `report_card_template_field_assignments` | Who fills which narrative field |
+| `report_card_issue_versions.grade_calculation_run_ids` | Pinned E33 runs |
+| `report_card_issue_versions.field_values` | Teacher-filled narratives |
+| `report_card_issues.locked_at/by` + status `locked`/`published` | Lock lifecycle |
+
+---
+
+## 6. API
+
+| Action | Permission |
+|--------|------------|
+| Template CRUD / blocks / scopes / field assignments | `document.template.edit` |
+| `createReportCardDraftAction` / regenerate / publish (`issueReportCardAction`) | `document.report_card.issue` |
+| `fillReportCardFieldsAction` | `document.report_card.fill` (teachers) |
+| `lockReportCardAction` | `document.report_card.lock` |
+| Queries / preview | `document.report_card.read` |
+
+---
+
+## 7. Tests
+
+`npx tsx scripts/smoke-report-card-phase3-validation.ts`  
+`npx tsx scripts/smoke-report-card-ops-validation.ts`  
+`npx tsx scripts/smoke-report-card-validation.ts`
+
+---
+
+## 8. Non-goals (this ship)
+
+Full drag-and-drop designer UI, PDF bytes, DigiLocker, crypto digital signatures, live auto-regen on every mark keystroke.
