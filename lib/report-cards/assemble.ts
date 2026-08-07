@@ -451,44 +451,34 @@ export async function assembleReportCardFromSources(
     };
   }
 
-  // --- Observations: E32 records under observation-kind categories ---
+  // --- Observations: prefer E34 student_observations; E32 fallback ---
   const observations: ReportCardPresentationSnapshot["observations"] = [];
   const observationRecordIds: string[] = [];
 
   if (template.include_observations !== false) {
-    const { data: obsCategories } = await supabase
-      .from("assessment_framework_categories")
-      .select("id, name, kind")
-      .eq("kind", "observation")
+    let obsQuery = supabase
+      .from("student_observations")
+      .select(
+        "id, category_id, category_code, subject_id, observed_on, remark, visibility",
+      )
+      .eq("school_id", input.schoolId)
+      .eq("student_profile_id", input.studentProfileId)
+      .eq("academic_year_id", input.academicYearId)
       .is("archived_at", null)
+      .in("visibility", ["parent_visible", "school", "staff"])
+      .order("observed_on", { ascending: false })
       .limit(100);
 
-    const obsCategoryIds = (obsCategories ?? []).map((c) => c.id as string);
-    const catMap = new Map(
-      (obsCategories ?? []).map((c) => [c.id as string, c.name as string]),
-    );
+    if (input.termId) {
+      obsQuery = obsQuery.or(`term_id.eq.${input.termId},term_id.is.null`);
+    }
 
-    if (obsCategoryIds.length) {
-      let recordsQuery = supabase
-        .from("assessment_records")
-        .select(
-          "id, framework_category_id, subject_id, title, conducted_on, description, status, section_id",
-        )
-        .eq("school_id", input.schoolId)
-        .eq("academic_year_id", input.academicYearId)
-        .in("framework_category_id", obsCategoryIds)
-        .eq("status", "locked")
-        .is("archived_at", null);
+    const { data: e34Rows } = await obsQuery;
 
-      if (placement?.section_id) {
-        recordsQuery = recordsQuery.eq("section_id", placement.section_id);
-      }
-
-      const { data: records } = await recordsQuery.limit(100);
-
+    if (e34Rows?.length) {
       const subjectIds = [
         ...new Set(
-          (records ?? [])
+          e34Rows
             .map((r) => r.subject_id as string | null)
             .filter((id): id is string => Boolean(id)),
         ),
@@ -501,22 +491,88 @@ export async function assembleReportCardFromSources(
         : { data: [] as Array<{ id: string; name: string }> };
       const subjectMap = new Map((subjects ?? []).map((s) => [s.id, s.name]));
 
-      for (const r of records ?? []) {
+      for (const r of e34Rows) {
         observationRecordIds.push(r.id as string);
         const subjectId = (r.subject_id as string | null) ?? null;
-        const categoryId = r.framework_category_id as string;
         observations.push({
           recordId: r.id as string,
-          categoryId,
-          categoryName: catMap.get(categoryId) ?? null,
+          categoryId: (r.category_id as string | null) ?? null,
+          categoryName: (r.category_code as string | null) ?? null,
           subjectId,
           subjectName: subjectId
             ? (subjectMap.get(subjectId) ?? null)
             : null,
-          title: (r.title as string | null) ?? null,
-          recordedOn: (r.conducted_on as string | null) ?? null,
-          summary: (r.description as string | null) ?? null,
+          title: (r.category_code as string | null) ?? null,
+          recordedOn: (r.observed_on as string | null) ?? null,
+          summary: (r.remark as string | null) ?? null,
         });
+      }
+    } else {
+      // Fallback: E32 locked records under observation-kind categories
+      const { data: obsCategories } = await supabase
+        .from("assessment_framework_categories")
+        .select("id, name, kind")
+        .eq("kind", "observation")
+        .is("archived_at", null)
+        .limit(100);
+
+      const obsCategoryIds = (obsCategories ?? []).map((c) => c.id as string);
+      const catMap = new Map(
+        (obsCategories ?? []).map((c) => [c.id as string, c.name as string]),
+      );
+
+      if (obsCategoryIds.length) {
+        let recordsQuery = supabase
+          .from("assessment_records")
+          .select(
+            "id, framework_category_id, subject_id, title, conducted_on, description, status, section_id",
+          )
+          .eq("school_id", input.schoolId)
+          .eq("academic_year_id", input.academicYearId)
+          .in("framework_category_id", obsCategoryIds)
+          .eq("status", "locked")
+          .is("archived_at", null);
+
+        if (placement?.section_id) {
+          recordsQuery = recordsQuery.eq("section_id", placement.section_id);
+        }
+
+        const { data: records } = await recordsQuery.limit(100);
+
+        const subjectIds = [
+          ...new Set(
+            (records ?? [])
+              .map((r) => r.subject_id as string | null)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        ];
+        const { data: subjects } = subjectIds.length
+          ? await supabase
+              .from("subjects")
+              .select("id, name")
+              .in("id", subjectIds)
+          : { data: [] as Array<{ id: string; name: string }> };
+        const subjectMap = new Map(
+          (subjects ?? []).map((s) => [s.id, s.name]),
+        );
+
+        for (const r of records ?? []) {
+          observationRecordIds.push(r.id as string);
+          const subjectId = (r.subject_id as string | null) ?? null;
+          const categoryId = r.framework_category_id as string;
+          observations.push({
+            recordId: r.id as string,
+            categoryId,
+            categoryName: catMap.get(categoryId) ?? null,
+            subjectId,
+            subjectName: subjectId
+              ? (subjectMap.get(subjectId) ?? null)
+              : null,
+            title: (r.title as string | null) ?? null,
+            recordedOn: (r.conducted_on as string | null) ?? null,
+            summary: (r.description as string | null) ?? null,
+          });
+        }
       }
     }
   }

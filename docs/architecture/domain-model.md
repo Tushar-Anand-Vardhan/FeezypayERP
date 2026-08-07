@@ -119,6 +119,7 @@
 | [DocumentTemplate](#documenttemplate) | E20 | `PARTIAL` (report card templates §35; other docs planned) |
 | [IssuedDocument](#issueddocument) | E20 | `SHIPPED` (backend §46; PDF media planned) |
 | [ReportCard](#reportcard) | E20 | `SHIPPED` (backend §46/§65; templates §35; PDF planned) |
+| [StudentObservation](#studentobservation) | E34 | `SHIPPED` (backend §66; AI summary FUTURE) |
 
 ### 2.7 Cross-cutting & growth
 
@@ -1161,6 +1162,22 @@
 **Future extensions:** Progressive report cards, parent portal views without PDF, DigiLocker, crypto digital signatures.
 
 **Hard rule:** Templates and issues reference assessments; they do not duplicate marks OLTP. `presentation_snapshot` is reprint display only.
+
+---
+
+### StudentObservation
+
+**Purpose:** Append-only structured teacher observation of a student across the academic year (developmental narrative — not a discipline incident).
+
+**Relationships:** StudentProfile; AcademicYear; optional Term/Subject; ObservationCategory; TeacherEmployment; ReportCard (read by reference).
+
+**Lifecycle:** recorded → (optional supersede via new row) → soft-archived. Remark body never updated in place.
+
+**Owner Engine:** **E34**
+
+**Dependencies:** E04/E06 (student), E05 (teacher), E07 (subject), E08 (year/term), E03 (visibility AuthZ). Distinct from E13 Conduct.
+
+**Future extensions:** AI summaries (`student_observation_ai_summaries` stub), parent portal feed, report-card narrative blocks.
 
 ---
 

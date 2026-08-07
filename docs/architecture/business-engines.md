@@ -87,6 +87,7 @@ School ERPs fail architecturally when:
 | E31 | **Assessment Framework Engine** | Backend `SHIPPED` (UI later) | Year×class×subject evaluation plan + categories + formulas — [`assessment-framework-engine.md`](assessment-framework-engine.md) |
 | E32 | **Assessment Recording Engine** | Backend `SHIPPED` (UI later) | Teacher evidence under framework categories; append-only marks — [`assessment-recording-engine.md`](assessment-recording-engine.md) |
 | E33 | **Grade Calculation Engine** | Backend `SHIPPED` (UI later) | Deterministic finals from framework + records; auditable runs — [`grade-calculation-engine.md`](grade-calculation-engine.md) |
+| E34 | **Student Observation Engine** | Backend `SHIPPED` (UI later) | Append-only structured observations; filters; AI summary stub — [`student-observation-engine.md`](student-observation-engine.md) |
 
 ---
 
@@ -1401,6 +1402,29 @@ Compute deterministic subject / term / overall results from pinned E31 framework
 
 ---
 
+### E34 — Student Observation Engine
+
+**Purpose**  
+Teachers record structured developmental observations throughout the year. Students accumulate immutable rows — nothing is overwritten. Distinct from E13 discipline incidents and E32 assessment evidence.
+
+**Responsibilities**
+- Category catalog (system + custom)
+- Append-only observations (date, teacher, subject, category, remark, visibility, term, year)
+- Filtering; soft-archive / supersede; FUTURE AI summary queue stub
+
+**Data owned**
+- `student_observation_categories`, `student_observations`, `student_observation_ai_summaries`, `student_observation_audit_log`
+
+**Data it must never own**
+- Conduct incidents (E13), assessment marks (E32), grade finals (E33), report card PDFs (E20)
+
+**Canonical doc:** [`student-observation-engine.md`](student-observation-engine.md)
+
+**Personas**
+- Teacher (record + read); Admin/HOD (configure, archive); Student/Parent (read visibility-filtered)
+
+---
+
 ## 5. Dependency graph
 
 ### 5.1 Layer view
@@ -1633,7 +1657,7 @@ Before implementing a feature, answer:
 ## 8. Phase 0.5 outcomes & next architecture tasks
 
 **Done in Phase 0.5:**
-- Named engines E01–E33
+- Named engines E01–E34
 - Initial ownership / non-ownership boundaries
 - Dependency graph
 - Mapping from shipped MASTER work
@@ -1748,6 +1772,7 @@ Before implementing a feature, answer:
 | assessment_frameworks, versions, categories, formulas, formula_parts, audit | **E31** | Year plan; E20 consumes mappings |
 | assessment_records, marks, topics, outcomes, attachments, recording audit | **E32** | Teacher evidence under E31 categories; append-only marks |
 | grade_calculation_runs, results, grace, optional subjects, exemptions, audit | **E33** | Deterministic finals; E20 reads published results |
+| student_observation_categories, student_observations, ai_summaries stub, audit | **E34** | Append-only observations; E20 reads by reference |
 
 ### 10.2 Derived / non-owned projections
 

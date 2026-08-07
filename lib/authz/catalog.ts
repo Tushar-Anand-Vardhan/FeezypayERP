@@ -125,6 +125,11 @@ export const PERMISSION_KEYS = [
   "grade_calculation.configure",
   "grade_calculation.run",
   "grade_calculation.publish",
+  // Student Observation (E34)
+  "student_observation.read",
+  "student_observation.record",
+  "student_observation.configure",
+  "student_observation.archive",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -161,4 +166,5 @@ export const PERMISSION_DOMAINS: Record<string, string> = {
   assessment_framework: "E31",
   assessment_recording: "E32",
   grade_calculation: "E33",
+  student_observation: "E34",
 };

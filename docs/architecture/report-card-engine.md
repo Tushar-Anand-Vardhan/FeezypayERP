@@ -39,7 +39,7 @@ The engine **never stores duplicated academic OLTP** — it dynamically assemble
 | Achievements | `student_achievements` |
 | Promotion status | `student_academic_years.promotion_status` |
 | Curriculum completion | Section aggregate from `curriculum_topic_progress` |
-| Observation records | E32 locked records under E31 categories `kind=observation` |
+| Observation records | **E34** `student_observations` (prefer); E32 observation-kind fallback |
 | Layout / scopes / signatures | Template designer tables |
 
 ---

@@ -163,6 +163,7 @@ Examples:
 | [AR1](#ar1-assessmentrecordcreated) | `assessment_recording.record.created` | E32 | Async | DESIGNED |
 | [AR2](#ar2-assessmentrecordlocked) | `assessment_recording.record.locked` | E32 | Async | DESIGNED |
 | [GC1](#gc1-gradecalculationpublished) | `grade_calculation.run.published` | E33 | Async | DESIGNED |
+| [SO1](#so1-studentobservationrecorded) | `student_observation.recorded` | E34 | Async | DESIGNED |
 | [57](#57-reportrequested) | `reporting.job.requested` | E21 | Async | Planned |
 | [58](#58-reportgenerated) | `reporting.job.completed` | E21 | Async | Planned |
 | [59](#59-analyticsbatchcompleted) | `analytics.batch.completed` | E22 | Async | Planned |
@@ -950,6 +951,18 @@ Each entry: **Producer** · **Consumers** · **Payload** · **Triggered when** �
 | **Consumers** | E20 Report Cards; E22 Analytics; E28 |
 | **Payload** | `{ run_id, scope, academic_year_id, class_id }` |
 | **Triggered when** | Calculation run published |
+| **Mode** | **Async** — DESIGNED |
+
+---
+
+### SO1. `student_observation.recorded`
+
+| | |
+|--|--|
+| **Producer** | E34 Student Observation |
+| **Consumers** | E20 Report Cards; E22 Analytics; E23 (future AI summary); E28 |
+| **Payload** | `{ observation_id, student_profile_id, academic_year_id, category_code, visibility }` |
+| **Triggered when** | Teacher records an append-only observation |
 | **Mode** | **Async** — DESIGNED |
 
 ---
