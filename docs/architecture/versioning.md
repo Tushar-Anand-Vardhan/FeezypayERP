@@ -148,6 +148,8 @@ Answers: **Y** / **N** / **Cond** (conditional) / **Pin** (past pinned via versi
 | Curriculum (pack) | Cond | N | **Y** | **Y** | Pin | Y | **V**/K | Publish → version snapshot; clone draft |
 | CurriculumVersion | N | N | — | **Y** | **Pin** | Y | **V** | Immutable after publish |
 | CurriculumTopicProgress | Cond | Soft | — | Cond | N | Y | **A** | Pins curriculum_version_id |
+| AssessmentFramework | Cond | N | **Y** | **Y** | Pin | Y | **V**/K | Publish → version snapshot; clone draft |
+| AssessmentFrameworkVersion | N | N | — | **Y** | **Pin** | Y | **V** | Immutable after publish |
 
 ### 3.4 Academic operations
 

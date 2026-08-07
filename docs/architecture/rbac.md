@@ -155,8 +155,11 @@ Examples (non-exhaustive; every matrix cell maps to one or more keys):
 | `curriculum.pack.read` / `edit` / `publish` / `archive` / `clone` | E30 |
 | `curriculum.structure.edit` / `outcome.edit` / `resource.edit` | E30 |
 | `curriculum.progress.read` / `record` | E30 |
+| `assessment_framework.read` / `edit` / `publish` / `archive` / `clone` | E31 |
 
 **E30 matrix (sketch):** teachers get pack.read + progress.*; HOD/VP/principal/school_admin get full `curriculum.*`. Dept-scope via ABAC attrs when passed.
+
+**E31 matrix (sketch):** teachers get `assessment_framework.read`; HOD/VP/principal/school_admin get full `assessment_framework.*`. Teachers never design the framework.
 
 E03 owns the catalog tables (future). Engines declare required keys; they do not invent parallel allow lists.
 

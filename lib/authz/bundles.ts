@@ -98,6 +98,11 @@ export const SYSTEM_ROLE_BUNDLES: Record<SystemRoleCode, PermissionKey[]> = {
     "curriculum.resource.edit",
     "curriculum.progress.read",
     "curriculum.progress.record",
+    "assessment_framework.read",
+    "assessment_framework.edit",
+    "assessment_framework.publish",
+    "assessment_framework.archive",
+    "assessment_framework.clone",
   ],
   teacher: [
     "tenant.school.read",
@@ -130,6 +135,7 @@ export const SYSTEM_ROLE_BUNDLES: Record<SystemRoleCode, PermissionKey[]> = {
     "curriculum.pack.read",
     "curriculum.progress.read",
     "curriculum.progress.record",
+    "assessment_framework.read",
   ],
   staff: [
     "tenant.school.read",

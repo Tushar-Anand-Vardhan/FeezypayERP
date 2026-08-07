@@ -105,6 +105,12 @@ export const PERMISSION_KEYS = [
   "curriculum.resource.edit",
   "curriculum.progress.read",
   "curriculum.progress.record",
+  // Assessment Framework (E31)
+  "assessment_framework.read",
+  "assessment_framework.edit",
+  "assessment_framework.publish",
+  "assessment_framework.archive",
+  "assessment_framework.clone",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -138,4 +144,5 @@ export const PERMISSION_DOMAINS: Record<string, string> = {
   homework: "Homework",
   onboarding: "E25",
   curriculum: "E30",
+  assessment_framework: "E31",
 };

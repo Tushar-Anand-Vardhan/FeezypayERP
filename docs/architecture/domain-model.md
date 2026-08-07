@@ -65,6 +65,8 @@
 | [Curriculum](#curriculum) | E30 | `SHIPPED` |
 | [CurriculumVersion](#curriculumversion) | E30 | `SHIPPED` |
 | [CurriculumTopicProgress](#curriculumtopicprogress) | E30 | `SHIPPED` |
+| [AssessmentFramework](#assessmentframework) | E31 | `SHIPPED` |
+| [AssessmentFrameworkVersion](#assessmentframeworkversion) | E31 | `SHIPPED` |
 | [GradingScale](#gradingscale) | E07 | `PLANNED` |
 | [Class](#class) | E09 | `SHIPPED` |
 | [Section](#section) | E09 | `SHIPPED` |
@@ -525,6 +527,30 @@
 **Purpose:** Teacher/section ops progress against a pinned curriculum version node (strategy A).
 
 **Owner Engine:** **E30**
+
+---
+
+### AssessmentFramework
+
+**Purpose:** Year × class × subject evaluation plan — categories, weightages, grade/report mappings, and blend formulas. Admin-authored before the year; teachers do not design it.
+
+**Relationships:** School 1—*; AcademicYear; Class; Subject; 1—* AssessmentFrameworkVersion; 1—* framework categories / formulas.
+
+**Lifecycle:** draft → published (version bump) → retired; clone creates new draft.
+
+**Owner Engine:** **E31**
+
+**Dependencies:** E07 Subject; E08 year/term; E09 class; optional E11 category catalog; optional E07 grading scale versions. Marks remain E11.
+
+---
+
+### AssessmentFrameworkVersion
+
+**Purpose:** Immutable published snapshot of an assessment framework (strategy V).
+
+**Relationships:** AssessmentFramework 1—*; future E11 ops / E20 issues pin version id.
+
+**Owner Engine:** **E31**
 
 ---
 

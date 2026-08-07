@@ -216,6 +216,26 @@ export const CONFIG_ENTITY_REGISTRY: Record<string, ConfigEntityDefinition> = {
     immutableStatuses: ["published"],
     cosmeticFields: ["change_summary"],
   },
+  assessment_framework: {
+    entityType: "assessment_framework",
+    table: "assessment_frameworks",
+    schoolScoped: true,
+    strategies: ["V", "K", "M"],
+    versioned: true,
+    statusField: "status",
+    immutableStatuses: ["retired"],
+    cosmeticFields: ["name", "description", "code"],
+    semanticFields: ["academic_year_id", "class_id", "subject_id"],
+  },
+  assessment_framework_version: {
+    entityType: "assessment_framework_version",
+    table: "assessment_framework_versions",
+    schoolScoped: false,
+    strategies: ["V"],
+    versioned: true,
+    immutableStatuses: ["published"],
+    cosmeticFields: ["change_summary"],
+  },
 };
 
 export function getConfigEntityDefinition(

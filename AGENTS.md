@@ -33,6 +33,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Teacher Portal (Phase 2.9): [`docs/architecture/teacher-portal.md`](docs/architecture/teacher-portal.md) · `lib/teacher-portal/` · `components/teacher-portal/` · `/dashboard/teacher/*` — thin permission-gated UI over Phase 2 engines
 - Student Portal (Phase 2.10): [`docs/architecture/student-portal.md`](docs/architecture/student-portal.md) · `lib/student-portal/` · `components/student-portal/` · `/dashboard/student/*` — RO self-scoped UI over student-profile + engines
 - Curriculum Engine (Phase 3 / E30): [`docs/architecture/curriculum-engine.md`](docs/architecture/curriculum-engine.md) · `lib/curriculum/` — year/board/grade/subject packs, publish versions, teacher progress
+- Assessment Framework Engine (Phase 3 / E31): [`docs/architecture/assessment-framework-engine.md`](docs/architecture/assessment-framework-engine.md) · `lib/assessment-framework/` — year×class×subject evaluation plans, categories, formulas, version/clone
 - Student Profile Engine (Phase 2): [`docs/architecture/student-profile-engine.md`](docs/architecture/student-profile-engine.md) · `lib/student-profile/`
 - Teacher Workspace (Phase 2): [`docs/architecture/teacher-workspace.md`](docs/architecture/teacher-workspace.md) · `lib/teacher-workspace/` · `/dashboard/teacher`
 - Attendance Engine (Phase 2): [`docs/architecture/attendance-engine.md`](docs/architecture/attendance-engine.md) · `lib/attendance/`

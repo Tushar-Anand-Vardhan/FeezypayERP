@@ -84,6 +84,7 @@ School ERPs fail architecturally when:
 | E28 | **Audit Engine** | Partial `SHIPPED` (config writes) | `audit_entries` via editing framework; full retention/SIEM later |
 | E29 | **Membership Engine** | `SHIPPED` | Person↔school index, preferences, switch — [`membership-engine.md`](membership-engine.md) |
 | E30 | **Curriculum Engine** | Backend `SHIPPED` (UI later) | Year/board/grade/subject packs + hierarchy + publish versions — [`curriculum-engine.md`](curriculum-engine.md) |
+| E31 | **Assessment Framework Engine** | Backend `SHIPPED` (UI later) | Year×class×subject evaluation plan + categories + formulas — [`assessment-framework-engine.md`](assessment-framework-engine.md) |
 
 ---
 
@@ -1318,6 +1319,37 @@ Own academic curriculum packs (year × board × grade/class × subject) with hie
 
 ---
 
+### E31 — Assessment Framework Engine
+
+**Purpose**  
+Own the year × class × subject **evaluation plan**: configurable assessment categories, weightages, grade mappings, visibility, report-card mapping, and multiple blend formulas. Created by academic leadership before the year; teachers enter evidence only against the published framework (E11 ops).
+
+**Responsibilities**
+- Framework CRUD, archive, retire, clone across years
+- Category configuration (kinds, marks, terms, mappings)
+- Multi-formula weighted blends
+- Publish → `assessment_framework_versions` snapshot (strategy V)
+- Local audit + editing-framework mutations for pack lifecycle
+
+**Data owned**
+- `assessment_frameworks`, `assessment_framework_versions`, `assessment_framework_categories`, `assessment_framework_formulas`, `assessment_framework_formula_parts`, `assessment_framework_audit_log`
+
+**Data it must never own**
+- Marks / mark sessions (E11 ops), exam schedule defs as operational facts (E11), report card PDF assembly (E20), curriculum trees (E30)
+
+**Inputs**
+- AcademicYear (E08), Class (E09), Subject (E07), optional Term (E08), optional E11 category catalog / E07 grading scale versions
+
+**Outputs**
+- Published framework version ids for E11 ops and E20 report cards
+
+**Canonical doc:** [`assessment-framework-engine.md`](assessment-framework-engine.md)
+
+**Personas**
+- School admin / Principal / VP / HOD (edit/publish/clone); Teacher (read published framework)
+
+---
+
 ## 5. Dependency graph
 
 ### 5.1 Layer view
@@ -1550,7 +1582,7 @@ Before implementing a feature, answer:
 ## 8. Phase 0.5 outcomes & next architecture tasks
 
 **Done in Phase 0.5:**
-- Named engines E01–E30
+- Named engines E01–E31
 - Initial ownership / non-ownership boundaries
 - Dependency graph
 - Mapping from shipped MASTER work
@@ -1662,6 +1694,7 @@ Before implementing a feature, answer:
 | audit log entries | **E28** | |
 | `school_memberships`, history, `user_school_preferences` | **E29** | Session index; facts remain E01/E05/E06 |
 | curricula, versions, structure, LOs, progress, curriculum_audit_log | **E30** | Not E07 `chapter_map`; consumers pin version id |
+| assessment_frameworks, versions, categories, formulas, formula_parts, audit | **E31** | Year plan; E11 owns marks; E20 consumes mappings |
 
 ### 10.2 Derived / non-owned projections
 

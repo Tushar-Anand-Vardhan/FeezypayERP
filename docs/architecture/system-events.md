@@ -158,6 +158,8 @@ Examples:
 | [C1](#c1-curriculumpublished) | `curriculum.published` | E30 | Async | DESIGNED |
 | [C2](#c2-curriculumcloned) | `curriculum.cloned` | E30 | Async | DESIGNED |
 | [C3](#c3-curriculumtopiccompleted) | `curriculum.topic.completed` | E30 | Async | DESIGNED |
+| [AF1](#af1-assessmentframeworkpublished) | `assessment_framework.published` | E31 | Async | DESIGNED |
+| [AF2](#af2-assessmentframeworkcloned) | `assessment_framework.cloned` | E31 | Async | DESIGNED |
 | [57](#57-reportrequested) | `reporting.job.requested` | E21 | Async | Planned |
 | [58](#58-reportgenerated) | `reporting.job.completed` | E21 | Async | Planned |
 | [59](#59-analyticsbatchcompleted) | `analytics.batch.completed` | E22 | Async | Planned |
@@ -885,6 +887,30 @@ Each entry: **Producer** · **Consumers** · **Payload** · **Triggered when** �
 | **Consumers** | E22 Analytics (future); E28 |
 | **Payload** | `{ curriculum_version_id, node_type, node_id, section_id, employment_id }` |
 | **Triggered when** | Teacher marks topic/subtopic completed |
+| **Mode** | **Async** — DESIGNED |
+
+---
+
+### AF1. `assessment_framework.published`
+
+| | |
+|--|--|
+| **Producer** | E31 Assessment Framework |
+| **Consumers** | E28 Audit; future E11 ops / E20 |
+| **Payload** | `{ framework_id, assessment_framework_version_id, version }` |
+| **Triggered when** | Framework published / version bumped |
+| **Mode** | **Async** — DESIGNED |
+
+---
+
+### AF2. `assessment_framework.cloned`
+
+| | |
+|--|--|
+| **Producer** | E31 |
+| **Consumers** | E28 |
+| **Payload** | `{ source_framework_id, new_framework_id, target_academic_year_id }` |
+| **Triggered when** | Framework cloned to another year/class/subject |
 | **Mode** | **Async** — DESIGNED |
 
 ---
