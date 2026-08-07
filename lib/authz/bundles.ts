@@ -109,6 +109,10 @@ export const SYSTEM_ROLE_BUNDLES: Record<SystemRoleCode, PermissionKey[]> = {
     "assessment_recording.enter_marks",
     "assessment_recording.lock",
     "assessment_recording.unlock",
+    "grade_calculation.read",
+    "grade_calculation.configure",
+    "grade_calculation.run",
+    "grade_calculation.publish",
   ],
   teacher: [
     "tenant.school.read",
@@ -146,6 +150,7 @@ export const SYSTEM_ROLE_BUNDLES: Record<SystemRoleCode, PermissionKey[]> = {
     "assessment_recording.create",
     "assessment_recording.edit",
     "assessment_recording.enter_marks",
+    "grade_calculation.read",
   ],
   staff: [
     "tenant.school.read",

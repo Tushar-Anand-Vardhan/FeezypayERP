@@ -166,6 +166,10 @@ Examples (non-exhaustive; every matrix cell maps to one or more keys):
 
 **E32 matrix:** teachers create/edit/enter_marks until lock; HOD/admin lock/unlock. No framework structure writes.
 
+| `grade_calculation.read` / `configure` / `run` / `publish` | E33 |
+
+**E33 matrix:** teachers read published only; HOD/admin configure/run/publish. Teachers never calculate manually.
+
 E03 owns the catalog tables (future). Engines declare required keys; they do not invent parallel allow lists.
 
 ---

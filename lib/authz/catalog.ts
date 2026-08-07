@@ -118,6 +118,11 @@ export const PERMISSION_KEYS = [
   "assessment_recording.enter_marks",
   "assessment_recording.lock",
   "assessment_recording.unlock",
+  // Grade Calculation (E33)
+  "grade_calculation.read",
+  "grade_calculation.configure",
+  "grade_calculation.run",
+  "grade_calculation.publish",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -153,4 +158,5 @@ export const PERMISSION_DOMAINS: Record<string, string> = {
   curriculum: "E30",
   assessment_framework: "E31",
   assessment_recording: "E32",
+  grade_calculation: "E33",
 };

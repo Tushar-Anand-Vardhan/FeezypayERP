@@ -86,6 +86,7 @@ School ERPs fail architecturally when:
 | E30 | **Curriculum Engine** | Backend `SHIPPED` (UI later) | Year/board/grade/subject packs + hierarchy + publish versions — [`curriculum-engine.md`](curriculum-engine.md) |
 | E31 | **Assessment Framework Engine** | Backend `SHIPPED` (UI later) | Year×class×subject evaluation plan + categories + formulas — [`assessment-framework-engine.md`](assessment-framework-engine.md) |
 | E32 | **Assessment Recording Engine** | Backend `SHIPPED` (UI later) | Teacher evidence under framework categories; append-only marks — [`assessment-recording-engine.md`](assessment-recording-engine.md) |
+| E33 | **Grade Calculation Engine** | Backend `SHIPPED` (UI later) | Deterministic finals from framework + records; auditable runs — [`grade-calculation-engine.md`](grade-calculation-engine.md) |
 
 ---
 
@@ -1375,6 +1376,29 @@ Own teacher-created **assessment records** (evidence) under published E31 framew
 
 ---
 
+### E33 — Grade Calculation Engine
+
+**Purpose**  
+Compute deterministic subject / term / overall results from pinned E31 frameworks and E32 marks. Teachers never enter final grades manually. Every run is reproducible (input snapshot + fingerprint) and auditable.
+
+**Responsibilities**
+- Configure grace rules, optional subjects, exemptions
+- Run calculations; publish results; supersede on re-run
+- Map percentage → letter grades / grade points; apply custom formula weights
+
+**Data owned**
+- `grade_calculation_grace_rules`, `grade_calculation_optional_subjects`, `grade_calculation_exemptions`, `grade_calculation_runs`, `grade_calculation_results`, `grade_calculation_audit_log`
+
+**Data it must never own**
+- Framework structure (E31), raw evidence marks (E32), report card PDFs (E20)
+
+**Canonical doc:** [`grade-calculation-engine.md`](grade-calculation-engine.md)
+
+**Personas**
+- Admin / HOD (configure, run, publish); Teacher (read published results only)
+
+---
+
 ## 5. Dependency graph
 
 ### 5.1 Layer view
@@ -1607,7 +1631,7 @@ Before implementing a feature, answer:
 ## 8. Phase 0.5 outcomes & next architecture tasks
 
 **Done in Phase 0.5:**
-- Named engines E01–E32
+- Named engines E01–E33
 - Initial ownership / non-ownership boundaries
 - Dependency graph
 - Mapping from shipped MASTER work
@@ -1721,6 +1745,7 @@ Before implementing a feature, answer:
 | curricula, versions, structure, LOs, progress, curriculum_audit_log | **E30** | Not E07 `chapter_map`; consumers pin version id |
 | assessment_frameworks, versions, categories, formulas, formula_parts, audit | **E31** | Year plan; E20 consumes mappings |
 | assessment_records, marks, topics, outcomes, attachments, recording audit | **E32** | Teacher evidence under E31 categories; append-only marks |
+| grade_calculation_runs, results, grace, optional subjects, exemptions, audit | **E33** | Deterministic finals; E20 reads published results |
 
 ### 10.2 Derived / non-owned projections
 

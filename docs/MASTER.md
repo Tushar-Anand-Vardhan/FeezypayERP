@@ -2,12 +2,12 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-07 (Phase 3 — Assessment Recording Engine)  
+> **Last updated:** 2026-08-07 (Phase 3 — Grade Calculation Engine)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
-> **Branch tip at last verification:** `main` @ `096f249` (+ Assessment Recording local)  
-> **Current phase:** **Phase 3 — Assessment Recording Engine SHIPPED (§63)** (E32 teacher evidence under E31 categories; append-only marks). Framework §62 / Curriculum §61 shipped.
+> **Branch tip at last verification:** `main` @ `51ffdbe` (+ Grade Calculation local)  
+> **Current phase:** **Phase 3 — Grade Calculation Engine SHIPPED (§64)** (E33 deterministic finals from E31+E32). Recording §63 / Framework §62 / Curriculum §61 shipped.
 
 ---
 
@@ -76,6 +76,7 @@
 61. [Phase 3 — Curriculum Engine](#61-phase-3--curriculum-engine)
 62. [Phase 3 — Assessment Framework Engine](#62-phase-3--assessment-framework-engine)
 63. [Phase 3 — Assessment Recording Engine](#63-phase-3--assessment-recording-engine)
+64. [Phase 3 — Grade Calculation Engine](#64-phase-3--grade-calculation-engine)
 
 ---
 
@@ -138,6 +139,7 @@
 | Curriculum Engine change | [`docs/architecture/curriculum-engine.md`](architecture/curriculum-engine.md) + §61 + `lib/curriculum/` |
 | Assessment Framework change | [`docs/architecture/assessment-framework-engine.md`](architecture/assessment-framework-engine.md) + §62 + `lib/assessment-framework/` |
 | Assessment Recording change | [`docs/architecture/assessment-recording-engine.md`](architecture/assessment-recording-engine.md) + §63 + `lib/assessment-recording/` |
+| Grade Calculation change | [`docs/architecture/grade-calculation-engine.md`](architecture/grade-calculation-engine.md) + §64 + `lib/grade-calculation/` |
 | New feature PR | Must name owning engine + entity + events + AuthZ + versioning + audit + notify + AI + persona; **Phase 2+ also cite workflow ID(s)** from §41; respect §26 P0 + §54 P0; update maturity if shipping |
 
 **Conventions**
@@ -192,6 +194,7 @@
 - Curriculum Engine: [`docs/architecture/curriculum-engine.md`](architecture/curriculum-engine.md) — keep in sync with §61.
 - Assessment Framework Engine: [`docs/architecture/assessment-framework-engine.md`](architecture/assessment-framework-engine.md) — keep in sync with §62.
 - Assessment Recording Engine: [`docs/architecture/assessment-recording-engine.md`](architecture/assessment-recording-engine.md) — keep in sync with §63.
+- Grade Calculation Engine: [`docs/architecture/grade-calculation-engine.md`](architecture/grade-calculation-engine.md) — keep in sync with §64.
 
 ---
 
@@ -303,6 +306,7 @@ Teachers, students, and parents exist as **global identity rows** (`persons` + r
 | AV | **Phase 3 — Curriculum Engine** | E30 year/board/grade/subject packs, hierarchy, publish versions, teacher progress — [`docs/architecture/curriculum-engine.md`](architecture/curriculum-engine.md) |
 | AW | **Phase 3 — Assessment Framework Engine** | E31 year×class×subject evaluation plans, categories, formulas, version/clone — [`docs/architecture/assessment-framework-engine.md`](architecture/assessment-framework-engine.md) |
 | AX | **Phase 3 — Assessment Recording Engine** | E32 teacher evidence under framework categories; bulk marks; lock; append-only history — [`docs/architecture/assessment-recording-engine.md`](architecture/assessment-recording-engine.md) |
+| AY | **Phase 3 — Grade Calculation Engine** | E33 deterministic subject/term/overall results from framework + records — [`docs/architecture/grade-calculation-engine.md`](architecture/grade-calculation-engine.md) |
 
 ### 3.3 Global Identity Steps 0–9 (gate status)
 
@@ -489,6 +493,7 @@ See §55 and authentication-platform.md. Staff save wires invites.
 | `20260807440000_curriculum_engine.sql` | E30 curricula, versions, structure, LOs, progress, audit + AuthZ seeds |
 | `20260807450000_assessment_framework_engine.sql` | E31 frameworks, categories, formulas, versions, audit + AuthZ seeds |
 | `20260807460000_assessment_recording_engine.sql` | E32 records, append-only marks, coverage, attachments, audit + AuthZ seeds |
+| `20260807470000_grade_calculation_engine.sql` | E33 runs, results, grace, optional subjects, exemptions, audit + AuthZ seeds |
 
 **Dropped legacy tables (must stay gone):** `teachers`, `teacher_subjects`, `students`, `guardians`, `student_guardians`, `student_section_enrollments` (+ `*_legacy` intermediates).
 
@@ -619,6 +624,10 @@ persons
 | `assessment_record_topics` / `_outcomes` | record | Curriculum coverage links (E30) |
 | `assessment_record_attachments` | record | Attachment metadata |
 | `assessment_recording_audit_log` | school | Local recording audit |
+| `grade_calculation_grace_rules` / `_optional_subjects` / `_exemptions` | school/year | E33 calculation config |
+| `grade_calculation_runs` | class/scope | Reproducible compute jobs + input snapshot + fingerprint |
+| `grade_calculation_results` | run | Subject / term / overall results (append/supersede) |
+| `grade_calculation_audit_log` | school | Local grade-calc audit |
 
 ### 8.4 Identity RPCs (SECURITY DEFINER)
 
@@ -850,6 +859,7 @@ Keep [`deferred-identity-followups.md`](deferred-identity-followups.md) aligned 
 | F25 | Curriculum Engine (E30) | Backend `SHIPPED` (§61); HOD/teacher portal UI later; assessment/lesson bind to versions next | [`curriculum-engine.md`](architecture/curriculum-engine.md) |
 | F26 | Assessment Framework Engine (E31) | Backend `SHIPPED` (§62); teachers read-only; marks pin framework version next | [`assessment-framework-engine.md`](architecture/assessment-framework-engine.md) |
 | F27 | Assessment Recording Engine (E32) | Backend `SHIPPED` (§63); evidence under categories; append-only marks; HOD lock | [`assessment-recording-engine.md`](architecture/assessment-recording-engine.md) |
+| F28 | Grade Calculation Engine (E33) | Backend `SHIPPED` (§64); teachers never calculate; auditable reproducible runs | [`grade-calculation-engine.md`](architecture/grade-calculation-engine.md) |
 | F11 | Split signup trigger for invited users | `SHIPPED` (§55) | §7.3 · §55 |
 | F12 | Onboarding form UI polish | `DEFERRED` | D11 |
 
@@ -1402,6 +1412,19 @@ Also: `npx tsc --noEmit` after calendar module land.
 | `npx tsc --noEmit` (recording modules) | PASS |
 | `supabase db push` | PENDING (user request) |
 
+### 15.45 Phase 3 — Grade Calculation Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-grade-calculation-validation.ts` · `npx tsc --noEmit` · migration `20260807470000` (not pushed unless requested)
+
+| Check | Result |
+|-------|--------|
+| Catalog keys + teacher read-only / HOD run | PASS |
+| Term 1 50/30/20 weighted subject result | PASS |
+| Grace + letter grades + overall exclude optional | PASS |
+| Fingerprint reproducibility | PASS |
+| `npx tsc --noEmit` (grade-calculation modules) | PASS |
+| `supabase db push` | PENDING (user request) |
+
 ---
 
 ## 16. Key file index
@@ -1518,6 +1541,10 @@ Also: `npx tsc --noEmit` after calendar module land.
 - `lib/assessment-recording/**` ← Assessment Recording Engine module
 - `supabase/migrations/20260807460000_assessment_recording_engine.sql`
 - `scripts/smoke-assessment-recording-validation.ts`
+- `docs/architecture/grade-calculation-engine.md` ← Phase 3 Grade Calculation (E33)
+- `lib/grade-calculation/**` ← Grade Calculation Engine module
+- `supabase/migrations/20260807470000_grade_calculation_engine.sql`
+- `scripts/smoke-grade-calculation-validation.ts`
 - `docs/architecture/student-profile-engine.md` ← Student Profile aggregator
 - `lib/student-profile/**` ← Student Profile Engine module
 - `supabase/migrations/20260807230000_student_profile_engine.sql` ← SCHEMA-READY ops stubs
@@ -1652,6 +1679,10 @@ Also: `npx tsc --noEmit` after calendar module land.
 | `supabase/migrations/20260807460000_assessment_recording_engine.sql` | Records, append-only marks, coverage, attachments, AuthZ |
 | `docs/architecture/assessment-recording-engine.md` + MASTER §63 | Assessment Recording docs |
 | `scripts/smoke-assessment-recording-validation.ts` | Assessment recording validation smoke |
+| `lib/grade-calculation/**` | Grade Calculation Engine (E33) backend |
+| `supabase/migrations/20260807470000_grade_calculation_engine.sql` | Runs, results, grace, optional, exemptions, AuthZ |
+| `docs/architecture/grade-calculation-engine.md` + MASTER §64 | Grade Calculation docs |
+| `scripts/smoke-grade-calculation-validation.ts` | Grade calculation validation smoke |
 | `lib/attendance/**` | Attendance Engine backend |
 | `supabase/migrations/20260807250000_attendance_engine.sql` | Sessions, leave, audit; enrich records |
 | `docs/architecture/attendance-engine.md` + MASTER §44 | Attendance Engine docs |
@@ -1749,7 +1780,8 @@ Safe to keep for manual QA; delete when cleaning staging.
 26. Assessment / lesson / report / AI must **reference** `curriculum_version_id` (E30) — do not duplicate chapter trees; bind exam definitions next.  
 27. Curriculum HOD/Teacher portal UI and `subjects.chapter_map` migration remain open after §61 backend.  
 28. E11 marks / E20 report cards should **pin `assessment_framework_version_id`** (E31); framework admin UI later; teachers never design frameworks.  
-29. Prefer **E32** assessment records for teacher evidence under framework categories; migrate Teacher Portal marks UI from E11 teacher-created defs gradually.
+29. Prefer **E32** assessment records for teacher evidence under framework categories; migrate Teacher Portal marks UI from E11 teacher-created defs gradually.  
+30. Report cards / portals should consume **published E33** grade results (not teacher-entered finals).
 
 ---
 
@@ -1782,6 +1814,7 @@ Before building remaining ERP features (fees, attendance, invites, portals, AI),
 | E30 | Curriculum | Year/board/grade/subject packs + versions |
 | E31 | Assessment Framework | Year×class×subject evaluation plans + formulas |
 | E32 | Assessment Recording | Teacher evidence under categories; append-only marks |
+| E33 | Grade Calculation | Deterministic subject/term/overall results |
 
 ### 18.3 Ownership review (2026-08-06) — outcomes
 
@@ -3649,4 +3682,34 @@ Formula rollup UI, full portal screens, auto-migrate `exam_results` into E32.
 
 ---
 
-*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§63 on architecture through Assessment Recording. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + portals + Curriculum + Assessment Framework + Assessment Recording shipped.*
+## 64. Phase 3 — Grade Calculation Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Admin UI `NOT BUILT` (actions-first).
+
+**Canonical doc:** [`docs/architecture/grade-calculation-engine.md`](architecture/grade-calculation-engine.md)
+
+### 64.1 Scope
+
+- Teachers **never** calculate grades manually
+- Reads: E31 framework (weightages/formulas), E32 locked marks, grace rules, optional subjects, exemptions, grade bands
+- Produces: final marks, letter grade, grade points, subject / term / overall results
+- Every run stores `input_snapshot` + `inputs_fingerprint` for reproducibility
+- Re-run supersedes prior current results — never silent overwrite
+- Module: `lib/grade-calculation/**` · Migration `20260807470000_grade_calculation_engine.sql`
+
+### 64.2 Placement rule
+
+E31 = plan, E32 = evidence, **E33 = computed results**. E20 report cards should pin published E33 run ids.
+
+### 64.3 Tests
+
+`npx tsx scripts/smoke-grade-calculation-validation.ts`  
+`npx tsc --noEmit`
+
+### 64.4 Non-goals (this ship)
+
+Full gradebook UI, auto-promotion, live recalculation on every mark keystroke.
+
+---
+
+*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§64 through Grade Calculation. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + portals + Curriculum + Assessment Framework + Recording + Grade Calculation shipped.*

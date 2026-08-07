@@ -152,6 +152,8 @@ Answers: **Y** / **N** / **Cond** (conditional) / **Pin** (past pinned via versi
 | AssessmentFrameworkVersion | N | N | — | **Y** | **Pin** | Y | **V** | Immutable after publish |
 | AssessmentRecord | Cond | Soft | Y | Audit | N | Y | **M**/X | Edit until lock |
 | AssessmentRecordMark | Cond | N | — | **Y** | via supersede | N/A | **A** | Never overwrite; is_current pointer |
+| GradeCalculationRun | Cond | N | Supersede | **Y** | **Pin** | Y | **V**/A | Input snapshot + fingerprint |
+| GradeCalculationResult | N | N | Supersede | **Y** | via new run | N/A | **A** | Published results immutable |
 
 ### 3.4 Academic operations
 

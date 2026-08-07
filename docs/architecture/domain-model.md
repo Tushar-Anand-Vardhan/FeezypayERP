@@ -69,6 +69,8 @@
 | [AssessmentFrameworkVersion](#assessmentframeworkversion) | E31 | `SHIPPED` |
 | [AssessmentRecord](#assessmentrecord) | E32 | `SHIPPED` |
 | [AssessmentRecordMark](#assessmentrecordmark) | E32 | `SHIPPED` |
+| [GradeCalculationRun](#gradecalculationrun) | E33 | `SHIPPED` |
+| [GradeCalculationResult](#gradecalculationresult) | E33 | `SHIPPED` |
 | [GradingScale](#gradingscale) | E07 | `PLANNED` |
 | [Class](#class) | E09 | `SHIPPED` |
 | [Section](#section) | E09 | `SHIPPED` |
@@ -573,6 +575,22 @@
 **Purpose:** Append-only student marks/remarks for a record; edits supersede prior current row.
 
 **Owner Engine:** **E32**
+
+---
+
+### GradeCalculationRun
+
+**Purpose:** One reproducible grade compute job with full input snapshot and fingerprint.
+
+**Owner Engine:** **E33**
+
+---
+
+### GradeCalculationResult
+
+**Purpose:** Subject / term / overall result for a student within a run; superseded on re-run, never overwritten in place.
+
+**Owner Engine:** **E33**
 
 ---
 

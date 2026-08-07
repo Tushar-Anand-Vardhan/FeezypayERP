@@ -162,6 +162,7 @@ Examples:
 | [AF2](#af2-assessmentframeworkcloned) | `assessment_framework.cloned` | E31 | Async | DESIGNED |
 | [AR1](#ar1-assessmentrecordcreated) | `assessment_recording.record.created` | E32 | Async | DESIGNED |
 | [AR2](#ar2-assessmentrecordlocked) | `assessment_recording.record.locked` | E32 | Async | DESIGNED |
+| [GC1](#gc1-gradecalculationpublished) | `grade_calculation.run.published` | E33 | Async | DESIGNED |
 | [57](#57-reportrequested) | `reporting.job.requested` | E21 | Async | Planned |
 | [58](#58-reportgenerated) | `reporting.job.completed` | E21 | Async | Planned |
 | [59](#59-analyticsbatchcompleted) | `analytics.batch.completed` | E22 | Async | Planned |
@@ -937,6 +938,18 @@ Each entry: **Producer** · **Consumers** · **Payload** · **Triggered when** �
 | **Consumers** | E28; portals |
 | **Payload** | `{ record_id, locked_by }` |
 | **Triggered when** | Admin/HOD locks a record |
+| **Mode** | **Async** — DESIGNED |
+
+---
+
+### GC1. `grade_calculation.run.published`
+
+| | |
+|--|--|
+| **Producer** | E33 Grade Calculation |
+| **Consumers** | E20 Report Cards; E22 Analytics; E28 |
+| **Payload** | `{ run_id, scope, academic_year_id, class_id }` |
+| **Triggered when** | Calculation run published |
 | **Mode** | **Async** — DESIGNED |
 
 ---

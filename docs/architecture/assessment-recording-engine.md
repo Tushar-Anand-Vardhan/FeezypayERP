@@ -113,7 +113,9 @@ lib/assessment-recording/
 | Teacher evidence under categories | **E32** |
 | Legacy scheduled exams + `exam_results` | E11 ops (still valid; migrate consumers gradually) |
 | Curriculum trees | E30 |
-| Report cards | E20 (prefer E32 marks + E31 formulas later) |
+| Report cards | E20 (prefer E33 published results + E31 formulas) |
+
+**Companion:** Final grades are computed by **E33** ([`grade-calculation-engine.md`](grade-calculation-engine.md)).
 
 ---
 
