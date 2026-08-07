@@ -85,6 +85,7 @@ School ERPs fail architecturally when:
 | E29 | **Membership Engine** | `SHIPPED` | Person↔school index, preferences, switch — [`membership-engine.md`](membership-engine.md) |
 | E30 | **Curriculum Engine** | Backend `SHIPPED` (UI later) | Year/board/grade/subject packs + hierarchy + publish versions — [`curriculum-engine.md`](curriculum-engine.md) |
 | E31 | **Assessment Framework Engine** | Backend `SHIPPED` (UI later) | Year×class×subject evaluation plan + categories + formulas — [`assessment-framework-engine.md`](assessment-framework-engine.md) |
+| E32 | **Assessment Recording Engine** | Backend `SHIPPED` (UI later) | Teacher evidence under framework categories; append-only marks — [`assessment-recording-engine.md`](assessment-recording-engine.md) |
 
 ---
 
@@ -1322,7 +1323,7 @@ Own academic curriculum packs (year × board × grade/class × subject) with hie
 ### E31 — Assessment Framework Engine
 
 **Purpose**  
-Own the year × class × subject **evaluation plan**: configurable assessment categories, weightages, grade mappings, visibility, report-card mapping, and multiple blend formulas. Created by academic leadership before the year; teachers enter evidence only against the published framework (E11 ops).
+Own the year × class × subject **evaluation plan**: configurable assessment categories, weightages, grade mappings, visibility, report-card mapping, and multiple blend formulas. Created by academic leadership before the year; teachers enter evidence only against the published framework (**E32** recording).
 
 **Responsibilities**
 - Framework CRUD, archive, retire, clone across years
@@ -1335,18 +1336,42 @@ Own the year × class × subject **evaluation plan**: configurable assessment ca
 - `assessment_frameworks`, `assessment_framework_versions`, `assessment_framework_categories`, `assessment_framework_formulas`, `assessment_framework_formula_parts`, `assessment_framework_audit_log`
 
 **Data it must never own**
-- Marks / mark sessions (E11 ops), exam schedule defs as operational facts (E11), report card PDF assembly (E20), curriculum trees (E30)
+- Teacher evidence / marks (E32), exam schedule defs as operational facts (E11), report card PDF assembly (E20), curriculum trees (E30)
 
 **Inputs**
 - AcademicYear (E08), Class (E09), Subject (E07), optional Term (E08), optional E11 category catalog / E07 grading scale versions
 
 **Outputs**
-- Published framework version ids for E11 ops and E20 report cards
+- Published framework version ids for E32 recording and E20 report cards
 
 **Canonical doc:** [`assessment-framework-engine.md`](assessment-framework-engine.md)
 
 **Personas**
 - School admin / Principal / VP / HOD (edit/publish/clone); Teacher (read published framework)
+
+---
+
+### E32 — Assessment Recording Engine
+
+**Purpose**  
+Own teacher-created **assessment records** (evidence) under published E31 framework categories — unlimited Class Tests / Worksheets / Observations per category — with append-only student marks, curriculum coverage, attachments, and HOD/Admin lock.
+
+**Responsibilities**
+- Record CRUD while unlocked; soft-archive
+- Single + bulk mark entry with full supersede history
+- Topic / LO coverage links (E30); attachment metadata
+- Lock / unlock workflow
+
+**Data owned**
+- `assessment_records`, `assessment_record_marks`, `assessment_record_topics`, `assessment_record_outcomes`, `assessment_record_attachments`, `assessment_recording_audit_log`
+
+**Data it must never own**
+- Framework structure/formulas (E31), curriculum trees (E30), report card PDFs (E20)
+
+**Canonical doc:** [`assessment-recording-engine.md`](assessment-recording-engine.md)
+
+**Personas**
+- Teacher (create/edit/enter marks until lock); HOD/Admin (lock/unlock + read)
 
 ---
 
@@ -1582,7 +1607,7 @@ Before implementing a feature, answer:
 ## 8. Phase 0.5 outcomes & next architecture tasks
 
 **Done in Phase 0.5:**
-- Named engines E01–E31
+- Named engines E01–E32
 - Initial ownership / non-ownership boundaries
 - Dependency graph
 - Mapping from shipped MASTER work
@@ -1694,7 +1719,8 @@ Before implementing a feature, answer:
 | audit log entries | **E28** | |
 | `school_memberships`, history, `user_school_preferences` | **E29** | Session index; facts remain E01/E05/E06 |
 | curricula, versions, structure, LOs, progress, curriculum_audit_log | **E30** | Not E07 `chapter_map`; consumers pin version id |
-| assessment_frameworks, versions, categories, formulas, formula_parts, audit | **E31** | Year plan; E11 owns marks; E20 consumes mappings |
+| assessment_frameworks, versions, categories, formulas, formula_parts, audit | **E31** | Year plan; E20 consumes mappings |
+| assessment_records, marks, topics, outcomes, attachments, recording audit | **E32** | Teacher evidence under E31 categories; append-only marks |
 
 ### 10.2 Derived / non-owned projections
 

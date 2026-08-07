@@ -161,6 +161,11 @@ Examples (non-exhaustive; every matrix cell maps to one or more keys):
 
 **E31 matrix (sketch):** teachers get `assessment_framework.read`; HOD/VP/principal/school_admin get full `assessment_framework.*`. Teachers never design the framework.
 
+| `assessment_recording.read` / `create` / `edit` / `enter_marks` | E32 |
+| `assessment_recording.lock` / `unlock` | E32 |
+
+**E32 matrix:** teachers create/edit/enter_marks until lock; HOD/admin lock/unlock. No framework structure writes.
+
 E03 owns the catalog tables (future). Engines declare required keys; they do not invent parallel allow lists.
 
 ---

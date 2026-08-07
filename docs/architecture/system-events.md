@@ -160,6 +160,8 @@ Examples:
 | [C3](#c3-curriculumtopiccompleted) | `curriculum.topic.completed` | E30 | Async | DESIGNED |
 | [AF1](#af1-assessmentframeworkpublished) | `assessment_framework.published` | E31 | Async | DESIGNED |
 | [AF2](#af2-assessmentframeworkcloned) | `assessment_framework.cloned` | E31 | Async | DESIGNED |
+| [AR1](#ar1-assessmentrecordcreated) | `assessment_recording.record.created` | E32 | Async | DESIGNED |
+| [AR2](#ar2-assessmentrecordlocked) | `assessment_recording.record.locked` | E32 | Async | DESIGNED |
 | [57](#57-reportrequested) | `reporting.job.requested` | E21 | Async | Planned |
 | [58](#58-reportgenerated) | `reporting.job.completed` | E21 | Async | Planned |
 | [59](#59-analyticsbatchcompleted) | `analytics.batch.completed` | E22 | Async | Planned |
@@ -911,6 +913,30 @@ Each entry: **Producer** · **Consumers** · **Payload** · **Triggered when** �
 | **Consumers** | E28 |
 | **Payload** | `{ source_framework_id, new_framework_id, target_academic_year_id }` |
 | **Triggered when** | Framework cloned to another year/class/subject |
+| **Mode** | **Async** — DESIGNED |
+
+---
+
+### AR1. `assessment_recording.record.created`
+
+| | |
+|--|--|
+| **Producer** | E32 Assessment Recording |
+| **Consumers** | E28; future E22 |
+| **Payload** | `{ record_id, framework_category_id, section_id }` |
+| **Triggered when** | Teacher creates an assessment record |
+| **Mode** | **Async** — DESIGNED |
+
+---
+
+### AR2. `assessment_recording.record.locked`
+
+| | |
+|--|--|
+| **Producer** | E32 |
+| **Consumers** | E28; portals |
+| **Payload** | `{ record_id, locked_by }` |
+| **Triggered when** | Admin/HOD locks a record |
 | **Mode** | **Async** — DESIGNED |
 
 ---

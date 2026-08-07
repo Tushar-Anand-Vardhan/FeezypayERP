@@ -2,12 +2,12 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-07 (Phase 3 — Assessment Framework Engine)  
+> **Last updated:** 2026-08-07 (Phase 3 — Assessment Recording Engine)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
-> **Branch tip at last verification:** `main` @ `0d66ae3` (+ Assessment Framework local)  
-> **Current phase:** **Phase 3 — Assessment Framework Engine SHIPPED (§62)** (E31 year×class×subject evaluation plans; actions-first). Curriculum §61 shipped. Phase 2 ops gate still open.
+> **Branch tip at last verification:** `main` @ `096f249` (+ Assessment Recording local)  
+> **Current phase:** **Phase 3 — Assessment Recording Engine SHIPPED (§63)** (E32 teacher evidence under E31 categories; append-only marks). Framework §62 / Curriculum §61 shipped.
 
 ---
 
@@ -75,6 +75,7 @@
 60. [Phase 2.10 — Student Portal](#60-phase-210--student-portal)
 61. [Phase 3 — Curriculum Engine](#61-phase-3--curriculum-engine)
 62. [Phase 3 — Assessment Framework Engine](#62-phase-3--assessment-framework-engine)
+63. [Phase 3 — Assessment Recording Engine](#63-phase-3--assessment-recording-engine)
 
 ---
 
@@ -136,6 +137,7 @@
 | Student Portal change | [`docs/architecture/student-portal.md`](architecture/student-portal.md) + §60 + `lib/student-portal/` · `components/student-portal/` |
 | Curriculum Engine change | [`docs/architecture/curriculum-engine.md`](architecture/curriculum-engine.md) + §61 + `lib/curriculum/` |
 | Assessment Framework change | [`docs/architecture/assessment-framework-engine.md`](architecture/assessment-framework-engine.md) + §62 + `lib/assessment-framework/` |
+| Assessment Recording change | [`docs/architecture/assessment-recording-engine.md`](architecture/assessment-recording-engine.md) + §63 + `lib/assessment-recording/` |
 | New feature PR | Must name owning engine + entity + events + AuthZ + versioning + audit + notify + AI + persona; **Phase 2+ also cite workflow ID(s)** from §41; respect §26 P0 + §54 P0; update maturity if shipping |
 
 **Conventions**
@@ -189,6 +191,7 @@
 - Student Portal: [`docs/architecture/student-portal.md`](architecture/student-portal.md) — keep in sync with §60.
 - Curriculum Engine: [`docs/architecture/curriculum-engine.md`](architecture/curriculum-engine.md) — keep in sync with §61.
 - Assessment Framework Engine: [`docs/architecture/assessment-framework-engine.md`](architecture/assessment-framework-engine.md) — keep in sync with §62.
+- Assessment Recording Engine: [`docs/architecture/assessment-recording-engine.md`](architecture/assessment-recording-engine.md) — keep in sync with §63.
 
 ---
 
@@ -299,6 +302,7 @@ Teachers, students, and parents exist as **global identity rows** (`persons` + r
 | AU | **Phase 2.10 — Student Portal** | Read-only self-scoped student routes over student-profile + engines — [`docs/architecture/student-portal.md`](architecture/student-portal.md) |
 | AV | **Phase 3 — Curriculum Engine** | E30 year/board/grade/subject packs, hierarchy, publish versions, teacher progress — [`docs/architecture/curriculum-engine.md`](architecture/curriculum-engine.md) |
 | AW | **Phase 3 — Assessment Framework Engine** | E31 year×class×subject evaluation plans, categories, formulas, version/clone — [`docs/architecture/assessment-framework-engine.md`](architecture/assessment-framework-engine.md) |
+| AX | **Phase 3 — Assessment Recording Engine** | E32 teacher evidence under framework categories; bulk marks; lock; append-only history — [`docs/architecture/assessment-recording-engine.md`](architecture/assessment-recording-engine.md) |
 
 ### 3.3 Global Identity Steps 0–9 (gate status)
 
@@ -484,6 +488,7 @@ See §55 and authentication-platform.md. Staff save wires invites.
 | `20260807430000_notification_operations.sql` | domain_event_outbox, notify type seeds, delivery statuses, provider configs |
 | `20260807440000_curriculum_engine.sql` | E30 curricula, versions, structure, LOs, progress, audit + AuthZ seeds |
 | `20260807450000_assessment_framework_engine.sql` | E31 frameworks, categories, formulas, versions, audit + AuthZ seeds |
+| `20260807460000_assessment_recording_engine.sql` | E32 records, append-only marks, coverage, attachments, audit + AuthZ seeds |
 
 **Dropped legacy tables (must stay gone):** `teachers`, `teacher_subjects`, `students`, `guardians`, `student_guardians`, `student_section_enrollments` (+ `*_legacy` intermediates).
 
@@ -609,6 +614,11 @@ persons
 | `assessment_framework_categories` | framework | Weightage, marks, grade/report mappings, term, visibility |
 | `assessment_framework_formulas` / `_formula_parts` | framework | Multi-formula weighted blends |
 | `assessment_framework_audit_log` | school | Local framework audit |
+| `assessment_records` | category | E32 teacher evidence under E31 categories |
+| `assessment_record_marks` | record | Append-only marks (`is_current` / supersede) |
+| `assessment_record_topics` / `_outcomes` | record | Curriculum coverage links (E30) |
+| `assessment_record_attachments` | record | Attachment metadata |
+| `assessment_recording_audit_log` | school | Local recording audit |
 
 ### 8.4 Identity RPCs (SECURITY DEFINER)
 
@@ -839,6 +849,7 @@ Keep [`deferred-identity-followups.md`](deferred-identity-followups.md) aligned 
 | F24 | Student Portal | `SHIPPED` (§60); RO default; admin preview via `?studentProfileId=` | [`student-portal.md`](architecture/student-portal.md) |
 | F25 | Curriculum Engine (E30) | Backend `SHIPPED` (§61); HOD/teacher portal UI later; assessment/lesson bind to versions next | [`curriculum-engine.md`](architecture/curriculum-engine.md) |
 | F26 | Assessment Framework Engine (E31) | Backend `SHIPPED` (§62); teachers read-only; marks pin framework version next | [`assessment-framework-engine.md`](architecture/assessment-framework-engine.md) |
+| F27 | Assessment Recording Engine (E32) | Backend `SHIPPED` (§63); evidence under categories; append-only marks; HOD lock | [`assessment-recording-engine.md`](architecture/assessment-recording-engine.md) |
 | F11 | Split signup trigger for invited users | `SHIPPED` (§55) | §7.3 · §55 |
 | F12 | Onboarding form UI polish | `DEFERRED` | D11 |
 
@@ -1378,6 +1389,19 @@ Also: `npx tsc --noEmit` after calendar module land.
 | `npx tsc --noEmit` (framework modules) | PASS |
 | `supabase db push` | PENDING (user request) |
 
+### 15.44 Phase 3 — Assessment Recording Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-assessment-recording-validation.ts` · `npx tsc --noEmit` · migration `20260807460000` (not pushed unless requested)
+
+| Check | Result |
+|-------|--------|
+| Catalog keys + teacher create/marks vs lock | PASS |
+| Mark max-bounds + bulk validation | PASS |
+| Edit-until-locked + append-only invariant | PASS |
+| Classwork multi-record scenario shape | PASS |
+| `npx tsc --noEmit` (recording modules) | PASS |
+| `supabase db push` | PENDING (user request) |
+
 ---
 
 ## 16. Key file index
@@ -1490,6 +1514,10 @@ Also: `npx tsc --noEmit` after calendar module land.
 - `lib/assessment-framework/**` ← Assessment Framework Engine module
 - `supabase/migrations/20260807450000_assessment_framework_engine.sql`
 - `scripts/smoke-assessment-framework-validation.ts`
+- `docs/architecture/assessment-recording-engine.md` ← Phase 3 Assessment Recording (E32)
+- `lib/assessment-recording/**` ← Assessment Recording Engine module
+- `supabase/migrations/20260807460000_assessment_recording_engine.sql`
+- `scripts/smoke-assessment-recording-validation.ts`
 - `docs/architecture/student-profile-engine.md` ← Student Profile aggregator
 - `lib/student-profile/**` ← Student Profile Engine module
 - `supabase/migrations/20260807230000_student_profile_engine.sql` ← SCHEMA-READY ops stubs
@@ -1620,6 +1648,10 @@ Also: `npx tsc --noEmit` after calendar module land.
 | `supabase/migrations/20260807450000_assessment_framework_engine.sql` | Frameworks, categories, formulas, versions, AuthZ seeds |
 | `docs/architecture/assessment-framework-engine.md` + MASTER §62 | Assessment Framework docs |
 | `scripts/smoke-assessment-framework-validation.ts` | Assessment framework validation smoke |
+| `lib/assessment-recording/**` | Assessment Recording Engine (E32) backend |
+| `supabase/migrations/20260807460000_assessment_recording_engine.sql` | Records, append-only marks, coverage, attachments, AuthZ |
+| `docs/architecture/assessment-recording-engine.md` + MASTER §63 | Assessment Recording docs |
+| `scripts/smoke-assessment-recording-validation.ts` | Assessment recording validation smoke |
 | `lib/attendance/**` | Attendance Engine backend |
 | `supabase/migrations/20260807250000_attendance_engine.sql` | Sessions, leave, audit; enrich records |
 | `docs/architecture/attendance-engine.md` + MASTER §44 | Attendance Engine docs |
@@ -1716,7 +1748,8 @@ Safe to keep for manual QA; delete when cleaning staging.
 25. Parent portal remains open after Teacher (§59) + Student (§60) portals.  
 26. Assessment / lesson / report / AI must **reference** `curriculum_version_id` (E30) — do not duplicate chapter trees; bind exam definitions next.  
 27. Curriculum HOD/Teacher portal UI and `subjects.chapter_map` migration remain open after §61 backend.  
-28. E11 marks / E20 report cards should **pin `assessment_framework_version_id`** (E31); framework admin UI later; teachers never design frameworks.
+28. E11 marks / E20 report cards should **pin `assessment_framework_version_id`** (E31); framework admin UI later; teachers never design frameworks.  
+29. Prefer **E32** assessment records for teacher evidence under framework categories; migrate Teacher Portal marks UI from E11 teacher-created defs gradually.
 
 ---
 
@@ -1748,6 +1781,7 @@ Before building remaining ERP features (fees, attendance, invites, portals, AI),
 | E29 | Membership | Person↔school index |
 | E30 | Curriculum | Year/board/grade/subject packs + versions |
 | E31 | Assessment Framework | Year×class×subject evaluation plans + formulas |
+| E32 | Assessment Recording | Teacher evidence under categories; append-only marks |
 
 ### 18.3 Ownership review (2026-08-06) — outcomes
 
@@ -3573,7 +3607,7 @@ AI generation, LessonPlan entity, exam↔topic binding UI, full portal screens, 
 
 ### 62.2 Placement rule
 
-Teachers do **not** design assessments — they enter evidence against the published framework (E11 ops). Marks and report cards should pin `assessment_framework_version_id`. E11 exam catalogs/defs remain separate; E31 is the year evaluation plan SoT.
+Teachers do **not** design assessments — they enter evidence against the published framework via **E32** Assessment Recording. Marks and report cards should pin `assessment_framework_version_id`. E11 exam catalogs/defs remain separate; E31 is the year evaluation plan SoT.
 
 ### 62.3 Tests
 
@@ -3586,4 +3620,33 @@ Teacher-authored frameworks, live grade computation UI, full admin portal, auto-
 
 ---
 
-*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§62 on architecture/ops/auth/portals/curriculum/frameworks. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + Teacher + Student portals + Curriculum + Assessment Framework shipped.*
+## 63. Phase 3 — Assessment Recording Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Teacher Portal wiring `NOT BUILT` (actions-first).
+
+**Canonical doc:** [`docs/architecture/assessment-recording-engine.md`](architecture/assessment-recording-engine.md)
+
+### 63.1 Scope
+
+- Teachers create **evidence** under E31 framework categories (unlimited Class Tests / Worksheets / Observations / …)
+- Fields: title, date, class, section, subject, category, max marks, description, curriculum topics/LOs, students, marks, remarks, attachments
+- Bulk mark entry; edit until locked; Admin/HOD lock/unlock
+- Marks **append-only** (supersede history — never overwrite)
+- Module: `lib/assessment-recording/**` · Migration `20260807460000_assessment_recording_engine.sql`
+
+### 63.2 Placement rule
+
+Teachers never create academic structures (that is E31). E11 ops remains for legacy scheduled exams; new framework-bound evidence should use E32.
+
+### 63.3 Tests
+
+`npx tsx scripts/smoke-assessment-recording-validation.ts`  
+`npx tsc --noEmit`
+
+### 63.4 Non-goals (this ship)
+
+Formula rollup UI, full portal screens, auto-migrate `exam_results` into E32.
+
+---
+
+*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§63 on architecture through Assessment Recording. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + portals + Curriculum + Assessment Framework + Assessment Recording shipped.*

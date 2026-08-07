@@ -67,6 +67,8 @@
 | [CurriculumTopicProgress](#curriculumtopicprogress) | E30 | `SHIPPED` |
 | [AssessmentFramework](#assessmentframework) | E31 | `SHIPPED` |
 | [AssessmentFrameworkVersion](#assessmentframeworkversion) | E31 | `SHIPPED` |
+| [AssessmentRecord](#assessmentrecord) | E32 | `SHIPPED` |
+| [AssessmentRecordMark](#assessmentrecordmark) | E32 | `SHIPPED` |
 | [GradingScale](#gradingscale) | E07 | `PLANNED` |
 | [Class](#class) | E09 | `SHIPPED` |
 | [Section](#section) | E09 | `SHIPPED` |
@@ -551,6 +553,26 @@
 **Relationships:** AssessmentFramework 1—*; future E11 ops / E20 issues pin version id.
 
 **Owner Engine:** **E31**
+
+---
+
+### AssessmentRecord
+
+**Purpose:** Teacher-created evidence instance under a published framework category (e.g. Class Test 1 under Classwork). Unlimited per category.
+
+**Relationships:** AssessmentFrameworkVersion; FrameworkCategory; Class; Section; Subject; * AssessmentRecordMark; optional Curriculum topic/LO links.
+
+**Lifecycle:** draft → open → locked; soft-archive.
+
+**Owner Engine:** **E32**
+
+---
+
+### AssessmentRecordMark
+
+**Purpose:** Append-only student marks/remarks for a record; edits supersede prior current row.
+
+**Owner Engine:** **E32**
 
 ---
 

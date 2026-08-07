@@ -111,6 +111,13 @@ export const PERMISSION_KEYS = [
   "assessment_framework.publish",
   "assessment_framework.archive",
   "assessment_framework.clone",
+  // Assessment Recording (E32)
+  "assessment_recording.read",
+  "assessment_recording.create",
+  "assessment_recording.edit",
+  "assessment_recording.enter_marks",
+  "assessment_recording.lock",
+  "assessment_recording.unlock",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -145,4 +152,5 @@ export const PERMISSION_DOMAINS: Record<string, string> = {
   onboarding: "E25",
   curriculum: "E30",
   assessment_framework: "E31",
+  assessment_recording: "E32",
 };

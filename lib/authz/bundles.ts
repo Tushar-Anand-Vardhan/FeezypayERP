@@ -103,6 +103,12 @@ export const SYSTEM_ROLE_BUNDLES: Record<SystemRoleCode, PermissionKey[]> = {
     "assessment_framework.publish",
     "assessment_framework.archive",
     "assessment_framework.clone",
+    "assessment_recording.read",
+    "assessment_recording.create",
+    "assessment_recording.edit",
+    "assessment_recording.enter_marks",
+    "assessment_recording.lock",
+    "assessment_recording.unlock",
   ],
   teacher: [
     "tenant.school.read",
@@ -136,6 +142,10 @@ export const SYSTEM_ROLE_BUNDLES: Record<SystemRoleCode, PermissionKey[]> = {
     "curriculum.progress.read",
     "curriculum.progress.record",
     "assessment_framework.read",
+    "assessment_recording.read",
+    "assessment_recording.create",
+    "assessment_recording.edit",
+    "assessment_recording.enter_marks",
   ],
   staff: [
     "tenant.school.read",

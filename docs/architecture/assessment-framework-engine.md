@@ -119,6 +119,8 @@ Optional events (DESIGNED): `assessment_framework.published`, `assessment_framew
 
 Downstream marks and report cards **should pin `assessment_framework_version_id`** — do not re-encode category weightages on result rows.
 
+**Teacher evidence** under framework categories is owned by **E32** ([`assessment-recording-engine.md`](assessment-recording-engine.md)), not by inventing new framework structure.
+
 ---
 
 ## 8. Tests

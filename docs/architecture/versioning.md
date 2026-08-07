@@ -150,6 +150,8 @@ Answers: **Y** / **N** / **Cond** (conditional) / **Pin** (past pinned via versi
 | CurriculumTopicProgress | Cond | Soft | — | Cond | N | Y | **A** | Pins curriculum_version_id |
 | AssessmentFramework | Cond | N | **Y** | **Y** | Pin | Y | **V**/K | Publish → version snapshot; clone draft |
 | AssessmentFrameworkVersion | N | N | — | **Y** | **Pin** | Y | **V** | Immutable after publish |
+| AssessmentRecord | Cond | Soft | Y | Audit | N | Y | **M**/X | Edit until lock |
+| AssessmentRecordMark | Cond | N | — | **Y** | via supersede | N/A | **A** | Never overwrite; is_current pointer |
 
 ### 3.4 Academic operations
 
