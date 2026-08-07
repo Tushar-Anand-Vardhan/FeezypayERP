@@ -420,7 +420,7 @@ export async function loadAchievements(
   const { data } = await supabase
     .from("student_achievements")
     .select(
-      "id, title, category, awarded_on, description, academic_year_id",
+      "id, title, category, awarded_on, description, academic_year_id, term_id, source, calendar_event_id, event_participant_id, participation_role, attendance_status, award_label, position_label, certificate_status, points, remarks, photo_media_ids, attachment_media_ids, visibility, calendar_events ( id, title, starts_at, ends_at, category, location )",
     )
     .eq("school_id", schoolId)
     .eq("student_profile_id", studentProfileId)
@@ -431,7 +431,7 @@ export async function loadAchievements(
     id: meta.id,
     name: meta.name,
     ownerEngine: meta.ownerEngine,
-    source: "schema_ready",
+    source: "live",
     data: data ?? [],
   };
 }

@@ -53,8 +53,9 @@ export const STUDENT_PROFILE_MODULES: StudentProfileModuleDefinition[] = [
   {
     id: "achievements",
     name: "Achievements",
-    ownerEngine: "E13/E20",
-    description: "Awards and achievements.",
+    ownerEngine: "E35",
+    description:
+      "Permanent achievement profile from calendar activities + manual awards (E35).",
   },
   {
     id: "behaviour",

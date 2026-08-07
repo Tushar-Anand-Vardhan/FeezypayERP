@@ -120,6 +120,7 @@
 | [IssuedDocument](#issueddocument) | E20 | `SHIPPED` (backend §46; PDF media planned) |
 | [ReportCard](#reportcard) | E20 | `SHIPPED` (backend §46/§65; templates §35; PDF planned) |
 | [StudentObservation](#studentobservation) | E34 | `SHIPPED` (backend §66; AI summary FUTURE) |
+| [StudentAchievement](#studentachievement) | E35 | `SHIPPED` (backend §67; AI summary FUTURE) |
 
 ### 2.7 Cross-cutting & growth
 
@@ -1178,6 +1179,22 @@
 **Dependencies:** E04/E06 (student), E05 (teacher), E07 (subject), E08 (year/term), E03 (visibility AuthZ). Distinct from E13 Conduct.
 
 **Future extensions:** AI summaries (`student_observation_ai_summaries` stub), parent portal feed, report-card narrative blocks.
+
+---
+
+### StudentAchievement
+
+**Purpose:** Permanent profile entry for a student's award / participation outcome. School activities originate on the Academic Calendar; this entity **references** `calendar_events` / `event_participants` and never owns event title/date SoT.
+
+**Relationships:** StudentProfile; optional CalendarEvent + EventParticipant; AcademicYear/Term; Certificate IssuedDocument; Media refs; ReportCard / Timeline / AI (consumers).
+
+**Lifecycle:** recorded (from event sync or manual) → outcomes updated → soft-archived.
+
+**Owner Engine:** **E35**
+
+**Dependencies:** E17 (calendar activities), E08 (calendar), E06 (student), E20 (certificates), E27 (media ids).
+
+**Future extensions:** AI summaries stub, DigiLocker certificates, parent timeline feed.
 
 ---
 

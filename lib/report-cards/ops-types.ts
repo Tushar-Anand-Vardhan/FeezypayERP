@@ -191,6 +191,10 @@ export type ReportCardPresentationSnapshot = {
     category: string | null;
     awardedOn: string | null;
     description: string | null;
+    awardLabel?: string | null;
+    positionLabel?: string | null;
+    points?: number | null;
+    participationRole?: string | null;
   }>;
   curriculumCompletion: {
     sectionId: string | null;

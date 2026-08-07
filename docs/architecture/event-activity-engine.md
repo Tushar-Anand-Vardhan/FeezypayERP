@@ -21,6 +21,7 @@ Own **school occasions and activities** that always start on the academic calend
 | P3 | House/club activities require `house_id` / `club_id` |
 | P4 | Certificates issue via E20 `student_issued_documents` linked to event + participant |
 | P5 | Attachments/photos are E27 media id arrays until Media engine ships |
+| P6 | Permanent achievement profile projection is **E35** (FK to participant — no event body dump) |
 
 ---
 

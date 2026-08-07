@@ -164,6 +164,7 @@ Examples:
 | [AR2](#ar2-assessmentrecordlocked) | `assessment_recording.record.locked` | E32 | Async | DESIGNED |
 | [GC1](#gc1-gradecalculationpublished) | `grade_calculation.run.published` | E33 | Async | DESIGNED |
 | [SO1](#so1-studentobservationrecorded) | `student_observation.recorded` | E34 | Async | DESIGNED |
+| [SA1](#sa1-studentachievementrecorded) | `student_achievement.recorded` | E35 | Async | DESIGNED |
 | [57](#57-reportrequested) | `reporting.job.requested` | E21 | Async | Planned |
 | [58](#58-reportgenerated) | `reporting.job.completed` | E21 | Async | Planned |
 | [59](#59-analyticsbatchcompleted) | `analytics.batch.completed` | E22 | Async | Planned |
@@ -963,6 +964,18 @@ Each entry: **Producer** · **Consumers** · **Payload** · **Triggered when** �
 | **Consumers** | E20 Report Cards; E22 Analytics; E23 (future AI summary); E28 |
 | **Payload** | `{ observation_id, student_profile_id, academic_year_id, category_code, visibility }` |
 | **Triggered when** | Teacher records an append-only observation |
+| **Mode** | **Async** — DESIGNED |
+
+---
+
+### SA1. `student_achievement.recorded`
+
+| | |
+|--|--|
+| **Producer** | E35 Student Achievement |
+| **Consumers** | E20 Report Cards; Student Profile; E22; E23 (future AI); E28 |
+| **Payload** | `{ achievement_id, student_profile_id, calendar_event_id?, source }` |
+| **Triggered when** | Achievement projected from calendar participation or manual award recorded |
 | **Mode** | **Async** — DESIGNED |
 
 ---

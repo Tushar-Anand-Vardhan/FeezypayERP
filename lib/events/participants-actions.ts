@@ -103,6 +103,21 @@ async function upsertOneParticipant(
     participatedOn: new Date().toISOString().slice(0, 10),
   });
 
+  // E35 permanent profile projection (idempotent; no event SoT duplication)
+  try {
+    const { upsertAchievementFromParticipant } = await import(
+      "@/lib/achievements/server-helpers"
+    );
+    await upsertAchievementFromParticipant(supabase, {
+      schoolId,
+      actorId,
+      eventParticipantId: participantId,
+      employmentId: input.employmentId,
+    });
+  } catch {
+    // Non-fatal: achievement sync must not block event participation
+  }
+
   return { id: participantId };
 }
 

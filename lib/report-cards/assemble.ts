@@ -400,7 +400,7 @@ export async function assembleReportCardFromSources(
       : await supabase
           .from("student_achievements")
           .select(
-            "id, title, category, awarded_on, description, academic_year_id",
+            "id, title, category, awarded_on, description, academic_year_id, award_label, position_label, points, participation_role",
           )
           .eq("school_id", input.schoolId)
           .eq("student_profile_id", input.studentProfileId)
@@ -679,6 +679,10 @@ export async function assembleReportCardFromSources(
       category: (a.category as string | null) ?? null,
       awardedOn: (a.awarded_on as string | null) ?? null,
       description: (a.description as string | null) ?? null,
+      awardLabel: (a.award_label as string | null) ?? null,
+      positionLabel: (a.position_label as string | null) ?? null,
+      points: a.points == null ? null : Number(a.points),
+      participationRole: (a.participation_role as string | null) ?? null,
     })),
     curriculumCompletion:
       template.include_curriculum === false

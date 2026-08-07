@@ -119,6 +119,9 @@ export const SYSTEM_ROLE_BUNDLES: Record<SystemRoleCode, PermissionKey[]> = {
     "student_observation.record",
     "student_observation.configure",
     "student_observation.archive",
+    "student_achievement.read",
+    "student_achievement.record",
+    "student_achievement.archive",
   ],
   teacher: [
     "tenant.school.read",
@@ -160,6 +163,8 @@ export const SYSTEM_ROLE_BUNDLES: Record<SystemRoleCode, PermissionKey[]> = {
     "grade_calculation.read",
     "student_observation.read",
     "student_observation.record",
+    "student_achievement.read",
+    "student_achievement.record",
   ],
   staff: [
     "tenant.school.read",
@@ -192,6 +197,7 @@ export const SYSTEM_ROLE_BUNDLES: Record<SystemRoleCode, PermissionKey[]> = {
     "payment.create",
     "payment.read",
     "student_observation.read",
+    "student_achievement.read",
   ],
   parent: [
     "tenant.school.read",
@@ -212,6 +218,7 @@ export const SYSTEM_ROLE_BUNDLES: Record<SystemRoleCode, PermissionKey[]> = {
     "payment.read",
     "payment.create",
     "student_observation.read",
+    "student_achievement.read",
   ],
 };
 

@@ -130,6 +130,10 @@ export const PERMISSION_KEYS = [
   "student_observation.record",
   "student_observation.configure",
   "student_observation.archive",
+  // Student Achievement (E35)
+  "student_achievement.read",
+  "student_achievement.record",
+  "student_achievement.archive",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -167,4 +171,5 @@ export const PERMISSION_DOMAINS: Record<string, string> = {
   assessment_recording: "E32",
   grade_calculation: "E33",
   student_observation: "E34",
+  student_achievement: "E35",
 };

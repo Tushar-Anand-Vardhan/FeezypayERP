@@ -2,12 +2,12 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-07 (Phase 3 — Student Observation Engine)  
+> **Last updated:** 2026-08-07 (Phase 3 — Student Achievement Engine)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
-> **Branch tip at last verification:** `main` @ `0f9a7ff` (+ Student Observation local)  
-> **Current phase:** **Phase 3 — Student Observation Engine SHIPPED (§66)** (E34 append-only structured observations). Report Card §65 / Grade Calc §64 / Recording §63 shipped.
+> **Branch tip at last verification:** `main` @ `b97c697` (+ Student Achievement local)  
+> **Current phase:** **Phase 3 — Student Achievement Engine SHIPPED (§67)** (E35 permanent profile from calendar activities). Observation §66 / Report Card §65 shipped.
 
 ---
 
@@ -79,6 +79,7 @@
 64. [Phase 3 — Grade Calculation Engine](#64-phase-3--grade-calculation-engine)
 65. [Phase 3 — Report Card Engine](#65-phase-3--report-card-engine)
 66. [Phase 3 — Student Observation Engine](#66-phase-3--student-observation-engine)
+67. [Phase 3 — Student Achievement Engine](#67-phase-3--student-achievement-engine)
 
 ---
 
@@ -144,6 +145,7 @@
 | Grade Calculation change | [`docs/architecture/grade-calculation-engine.md`](architecture/grade-calculation-engine.md) + §64 + `lib/grade-calculation/` |
 | Report Card Engine change | [`docs/architecture/report-card-engine.md`](architecture/report-card-engine.md) + §65 + `lib/report-cards/` |
 | Student Observation change | [`docs/architecture/student-observation-engine.md`](architecture/student-observation-engine.md) + §66 + `lib/observations/` |
+| Student Achievement change | [`docs/architecture/student-achievement-engine.md`](architecture/student-achievement-engine.md) + §67 + `lib/achievements/` |
 | New feature PR | Must name owning engine + entity + events + AuthZ + versioning + audit + notify + AI + persona; **Phase 2+ also cite workflow ID(s)** from §41; respect §26 P0 + §54 P0; update maturity if shipping |
 
 **Conventions**
@@ -201,6 +203,7 @@
 - Grade Calculation Engine: [`docs/architecture/grade-calculation-engine.md`](architecture/grade-calculation-engine.md) — keep in sync with §64.
 - Report Card Engine (Phase 3): [`docs/architecture/report-card-engine.md`](architecture/report-card-engine.md) — keep in sync with §65.
 - Student Observation Engine: [`docs/architecture/student-observation-engine.md`](architecture/student-observation-engine.md) — keep in sync with §66.
+- Student Achievement Engine: [`docs/architecture/student-achievement-engine.md`](architecture/student-achievement-engine.md) — keep in sync with §67.
 
 ---
 
@@ -315,6 +318,7 @@ Teachers, students, and parents exist as **global identity rows** (`persons` + r
 | AY | **Phase 3 — Grade Calculation Engine** | E33 deterministic subject/term/overall results from framework + records — [`docs/architecture/grade-calculation-engine.md`](architecture/grade-calculation-engine.md) |
 | AZ | **Phase 3 — Report Card Engine** | E20 template designer + assemble from E33/attendance/behaviour/…; draft/published/locked; field assignments — [`docs/architecture/report-card-engine.md`](architecture/report-card-engine.md) |
 | BA | **Phase 3 — Student Observation Engine** | E34 append-only structured observations; filters; AI summary stub — [`docs/architecture/student-observation-engine.md`](architecture/student-observation-engine.md) |
+| BB | **Phase 3 — Student Achievement Engine** | E35 permanent profile from calendar activities; no event SoT duplication — [`docs/architecture/student-achievement-engine.md`](architecture/student-achievement-engine.md) |
 
 ### 3.3 Global Identity Steps 0–9 (gate status)
 
@@ -504,6 +508,7 @@ See §55 and authentication-platform.md. Staff save wires invites.
 | `20260807470000_grade_calculation_engine.sql` | E33 runs, results, grace, optional subjects, exemptions, audit + AuthZ seeds |
 | `20260807480000_report_card_engine_phase3.sql` | E20 Phase 3: field assignments, new blocks, published/locked, E33 pin columns, AuthZ fill/lock |
 | `20260807490000_student_observation_engine.sql` | E34 categories, append-only observations, AI summary stub, audit + AuthZ |
+| `20260807500000_student_achievement_engine.sql` | E35 enrich achievements, AI stub, audit + AuthZ; calendar FK |
 
 **Dropped legacy tables (must stay gone):** `teachers`, `teacher_subjects`, `students`, `guardians`, `student_guardians`, `student_section_enrollments` (+ `*_legacy` intermediates).
 
@@ -639,6 +644,9 @@ persons
 | `student_observations` | student/year | Append-only observation facts |
 | `student_observation_ai_summaries` | student/year | FUTURE AI summary queue stub |
 | `student_observation_audit_log` | school | Local observation audit |
+| `student_achievements` (enriched) | student | E35 permanent achievement profile |
+| `student_achievement_ai_summaries` | student | FUTURE AI summary queue stub |
+| `student_achievement_audit_log` | school | Local achievement audit |
 | `grade_calculation_grace_rules` / `_optional_subjects` / `_exemptions` | school/year | E33 calculation config |
 | `grade_calculation_runs` | class/scope | Reproducible compute jobs + input snapshot + fingerprint |
 | `grade_calculation_results` | run | Subject / term / overall results (append/supersede) |
@@ -877,6 +885,7 @@ Keep [`deferred-identity-followups.md`](deferred-identity-followups.md) aligned 
 | F28 | Grade Calculation Engine (E33) | Backend `SHIPPED` (§64); teachers never calculate; auditable reproducible runs | [`grade-calculation-engine.md`](architecture/grade-calculation-engine.md) |
 | F29 | Report Card Engine (E20 Phase 3) | Backend `SHIPPED` (§65); assemble from sources; template designer; draft/published/locked | [`report-card-engine.md`](architecture/report-card-engine.md) |
 | F30 | Student Observation Engine (E34) | Backend `SHIPPED` (§66); append-only; filters; AI summary stub | [`student-observation-engine.md`](architecture/student-observation-engine.md) |
+| F31 | Student Achievement Engine (E35) | Backend `SHIPPED` (§67); calendar-origin permanent profile; timeline + AI stub | [`student-achievement-engine.md`](architecture/student-achievement-engine.md) |
 | F11 | Split signup trigger for invited users | `SHIPPED` (§55) | §7.3 · §55 |
 | F12 | Onboarding form UI polish | `DEFERRED` | D11 |
 
@@ -1469,6 +1478,20 @@ Also: `npx tsc --noEmit` after calendar module land.
 | `npx tsc --noEmit` (observations modules) | PASS |
 | `supabase db push` | PENDING (user request) |
 
+
+### 15.48 Phase 3 — Student Achievement Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-student-achievement-validation.ts` · `npx tsc --noEmit` · migration `20260807500000` (not pushed unless requested)
+
+| Check | Result |
+|-------|--------|
+| AuthZ record + teacher/HOD/student | PASS |
+| Calendar origin + no event SoT duplication | PASS |
+| Manual + from-event validation | PASS |
+| Filter + AI queue stub | PASS |
+| `npx tsc --noEmit` (achievements modules) | PASS |
+| `supabase db push` | PENDING (user request) |
+
 ---
 
 ## 16. Key file index
@@ -1597,6 +1620,10 @@ Also: `npx tsc --noEmit` after calendar module land.
 - `lib/observations/**` ← Student Observation Engine module
 - `supabase/migrations/20260807490000_student_observation_engine.sql`
 - `scripts/smoke-student-observation-validation.ts`
+- `docs/architecture/student-achievement-engine.md` ← Phase 3 Student Achievement (E35)
+- `lib/achievements/**` ← Student Achievement Engine module
+- `supabase/migrations/20260807500000_student_achievement_engine.sql`
+- `scripts/smoke-student-achievement-validation.ts`
 - `docs/architecture/student-profile-engine.md` ← Student Profile aggregator
 - `lib/student-profile/**` ← Student Profile Engine module
 - `supabase/migrations/20260807230000_student_profile_engine.sql` ← SCHEMA-READY ops stubs
@@ -1743,6 +1770,10 @@ Also: `npx tsc --noEmit` after calendar module land.
 | `supabase/migrations/20260807490000_student_observation_engine.sql` | Categories, observations, AI stub, AuthZ |
 | `docs/architecture/student-observation-engine.md` + MASTER §66 | Observation docs |
 | `scripts/smoke-student-observation-validation.ts` | Observation validation smoke |
+| `lib/achievements/**` | Student Achievement Engine (E35) backend |
+| `supabase/migrations/20260807500000_student_achievement_engine.sql` | Enrich achievements, AI stub, AuthZ |
+| `docs/architecture/student-achievement-engine.md` + MASTER §67 | Achievement docs |
+| `scripts/smoke-student-achievement-validation.ts` | Achievement validation smoke |
 | `lib/attendance/**` | Attendance Engine backend |
 | `supabase/migrations/20260807250000_attendance_engine.sql` | Sessions, leave, audit; enrich records |
 | `docs/architecture/attendance-engine.md` + MASTER §44 | Attendance Engine docs |
@@ -1843,7 +1874,8 @@ Safe to keep for manual QA; delete when cleaning staging.
 29. Prefer **E32** assessment records for teacher evidence under framework categories; migrate Teacher Portal marks UI from E11 teacher-created defs gradually.  
 30. Report cards / portals should consume **published E33** grade results (not teacher-entered finals).  
 31. Admin template designer UI and PDF/digital signatures remain open after §65 backend.  
-32. Observation teacher UI and AI provider wiring remain open after §66 backend.
+32. Observation teacher UI and AI provider wiring remain open after §66 backend.  
+33. Achievement teacher UI and AI provider wiring remain open after §67 backend.
 
 ---
 
@@ -1879,6 +1911,7 @@ Before building remaining ERP features (fees, attendance, invites, portals, AI),
 | E33 | Grade Calculation | Deterministic subject/term/overall results |
 | E20 | Document / Report Cards | Template designer + assemble from sources (Phase 3) |
 | E34 | Student Observation | Append-only structured observations |
+| E35 | Student Achievement | Permanent profile from calendar activities |
 
 ### 18.3 Ownership review (2026-08-06) — outcomes
 
@@ -3839,4 +3872,34 @@ Teacher observation UI, live AI summarization, merging E13/E34 stores.
 
 ---
 
-*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§66 through Student Observation. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + portals + Curriculum + Assessment Framework + Recording + Grade Calculation + Report Card + Student Observation shipped.*
+## 67. Phase 3 — Student Achievement Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Teacher UI `NOT BUILT`. AI provider `FUTURE` (queue stub only).
+
+**Canonical doc:** [`docs/architecture/student-achievement-engine.md`](architecture/student-achievement-engine.md)
+
+### 67.1 Scope
+
+- School activities originate from the **Academic Calendar** (E17 `calendar_events`)
+- Teachers record participation, attendance, role, award, position, certificate, points, remarks, photos, attachments
+- Permanent profile projection on `student_achievements` — **no duplicated event SoT**
+- Auto-sync from event participant upsert; manual awards supported
+- Appears in Student Profile, Report Cards, Timeline, future AI summaries
+- Module: `lib/achievements/**` · Migration `20260807500000_student_achievement_engine.sql`
+
+### 67.2 Placement rule
+
+E17 = live event ops. **E35 = permanent achievement profile.** E20 / Student Profile read by reference.
+
+### 67.3 Tests
+
+`npx tsx scripts/smoke-student-achievement-validation.ts`  
+`npx tsc --noEmit`
+
+### 67.4 Non-goals (this ship)
+
+Teacher achievement UI, live AI summarization, DigiLocker certificates.
+
+---
+
+*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§67 through Student Achievement. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + portals + Curriculum + Assessment Framework + Recording + Grade Calculation + Report Card + Student Observation + Student Achievement shipped.*

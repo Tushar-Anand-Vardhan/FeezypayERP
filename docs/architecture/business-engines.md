@@ -88,6 +88,7 @@ School ERPs fail architecturally when:
 | E32 | **Assessment Recording Engine** | Backend `SHIPPED` (UI later) | Teacher evidence under framework categories; append-only marks — [`assessment-recording-engine.md`](assessment-recording-engine.md) |
 | E33 | **Grade Calculation Engine** | Backend `SHIPPED` (UI later) | Deterministic finals from framework + records; auditable runs — [`grade-calculation-engine.md`](grade-calculation-engine.md) |
 | E34 | **Student Observation Engine** | Backend `SHIPPED` (UI later) | Append-only structured observations; filters; AI summary stub — [`student-observation-engine.md`](student-observation-engine.md) |
+| E35 | **Student Achievement Engine** | Backend `SHIPPED` (UI later) | Permanent profile from calendar activities; no event SoT duplication — [`student-achievement-engine.md`](student-achievement-engine.md) |
 
 ---
 
@@ -1425,6 +1426,30 @@ Teachers record structured developmental observations throughout the year. Stude
 
 ---
 
+### E35 — Student Achievement Engine
+
+**Purpose**  
+Project every school activity into the student's permanent achievement profile. Activities originate on the Academic Calendar (E17). Teachers record participation, attendance, role, award, position, certificate, points, remarks, photos, and attachments. Profile / report cards / timeline / future AI read by reference — never duplicate event SoT.
+
+**Responsibilities**
+- Upsert achievements from `event_participants` (1:1)
+- Manual / external awards without an event
+- Timeline + AI summary queue stub
+- Soft-archive only
+
+**Data owned**
+- Enriched `student_achievements`, `student_achievement_ai_summaries`, `student_achievement_audit_log`
+
+**Data it must never own**
+- Calendar event title/dates SoT (E08/E17), live RSVP ops (E17), PDF bytes (E20/E27)
+
+**Canonical doc:** [`student-achievement-engine.md`](student-achievement-engine.md)
+
+**Personas**
+- Teacher (record); Admin/HOD (archive); Student/Parent (read)
+
+---
+
 ## 5. Dependency graph
 
 ### 5.1 Layer view
@@ -1657,7 +1682,7 @@ Before implementing a feature, answer:
 ## 8. Phase 0.5 outcomes & next architecture tasks
 
 **Done in Phase 0.5:**
-- Named engines E01–E34
+- Named engines E01–E35
 - Initial ownership / non-ownership boundaries
 - Dependency graph
 - Mapping from shipped MASTER work
@@ -1773,6 +1798,7 @@ Before implementing a feature, answer:
 | assessment_records, marks, topics, outcomes, attachments, recording audit | **E32** | Teacher evidence under E31 categories; append-only marks |
 | grade_calculation_runs, results, grace, optional subjects, exemptions, audit | **E33** | Deterministic finals; E20 reads published results |
 | student_observation_categories, student_observations, ai_summaries stub, audit | **E34** | Append-only observations; E20 reads by reference |
+| student_achievements (enriched), ai_summaries stub, audit | **E35** | Permanent achievement profile; FK to calendar_events / event_participants |
 
 ### 10.2 Derived / non-owned projections
 

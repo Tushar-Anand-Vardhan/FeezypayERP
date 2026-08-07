@@ -36,7 +36,7 @@ The engine **never stores duplicated academic OLTP** — it dynamically assemble
 | Teacher remarks (per-subject) | E11 remarks on fallback path; card fields from assignments |
 | Behaviour | E13 `conduct_incidents` |
 | Co-curricular | House / club memberships |
-| Achievements | `student_achievements` |
+| Achievements | **E35** `student_achievements` (calendar-linked + manual) |
 | Promotion status | `student_academic_years.promotion_status` |
 | Curriculum completion | Section aggregate from `curriculum_topic_progress` |
 | Observation records | **E34** `student_observations` (prefer); E32 observation-kind fallback |

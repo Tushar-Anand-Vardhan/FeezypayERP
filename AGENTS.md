@@ -38,6 +38,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Grade Calculation Engine (Phase 3 / E33): [`docs/architecture/grade-calculation-engine.md`](docs/architecture/grade-calculation-engine.md) · `lib/grade-calculation/` — deterministic finals from framework + records; auditable runs
 - Report Card Engine (Phase 3 / E20): [`docs/architecture/report-card-engine.md`](docs/architecture/report-card-engine.md) · `lib/report-cards/` — template designer + assemble from sources; draft/published/locked
 - Student Observation Engine (Phase 3 / E34): [`docs/architecture/student-observation-engine.md`](docs/architecture/student-observation-engine.md) · `lib/observations/` — append-only structured observations; filters; AI summary stub
+- Student Achievement Engine (Phase 3 / E35): [`docs/architecture/student-achievement-engine.md`](docs/architecture/student-achievement-engine.md) · `lib/achievements/` — permanent profile from calendar activities; timeline + AI stub
 - Student Profile Engine (Phase 2): [`docs/architecture/student-profile-engine.md`](docs/architecture/student-profile-engine.md) · `lib/student-profile/`
 - Teacher Workspace (Phase 2): [`docs/architecture/teacher-workspace.md`](docs/architecture/teacher-workspace.md) · `lib/teacher-workspace/` · `/dashboard/teacher`
 - Attendance Engine (Phase 2): [`docs/architecture/attendance-engine.md`](docs/architecture/attendance-engine.md) · `lib/attendance/`
