@@ -155,6 +155,9 @@ Examples:
 | [55](#55-documentissued) | `document.artifact.issued` | E20 | Async | **Wired** (§58) |
 | [56](#56-reportcardgenerated) | `document.report_card.generated` | E20 | Async | Planned |
 | [H1](#h1-homeworkassigned) | `homework.assigned` | Homework | Async | **Wired** (§58) |
+| [C1](#c1-curriculumpublished) | `curriculum.published` | E30 | Async | DESIGNED |
+| [C2](#c2-curriculumcloned) | `curriculum.cloned` | E30 | Async | DESIGNED |
+| [C3](#c3-curriculumtopiccompleted) | `curriculum.topic.completed` | E30 | Async | DESIGNED |
 | [57](#57-reportrequested) | `reporting.job.requested` | E21 | Async | Planned |
 | [58](#58-reportgenerated) | `reporting.job.completed` | E21 | Async | Planned |
 | [59](#59-analyticsbatchcompleted) | `analytics.batch.completed` | E22 | Async | Planned |
@@ -847,6 +850,42 @@ Each entry: **Producer** · **Consumers** · **Payload** · **Triggered when** �
 | **Payload** | `{ document_id, placement_id, term_id?, academic_year_id }` |
 | **Triggered when** | ReportCard artifact ready |
 | **Mode** | **Async** |
+
+---
+
+### C1. `curriculum.published`
+
+| | |
+|--|--|
+| **Producer** | E30 Curriculum |
+| **Consumers** | E28 Audit; future E11/E23 (bind assessments / AI) |
+| **Payload** | `{ curriculum_id, curriculum_version_id, version }` |
+| **Triggered when** | Pack published / version bumped |
+| **Mode** | **Async** — DESIGNED (emit stub deferred) |
+
+---
+
+### C2. `curriculum.cloned`
+
+| | |
+|--|--|
+| **Producer** | E30 |
+| **Consumers** | E28 |
+| **Payload** | `{ source_curriculum_id, new_curriculum_id, target_academic_year_id }` |
+| **Triggered when** | Pack cloned to another year/class |
+| **Mode** | **Async** — DESIGNED |
+
+---
+
+### C3. `curriculum.topic.completed`
+
+| | |
+|--|--|
+| **Producer** | E30 |
+| **Consumers** | E22 Analytics (future); E28 |
+| **Payload** | `{ curriculum_version_id, node_type, node_id, section_id, employment_id }` |
+| **Triggered when** | Teacher marks topic/subtopic completed |
+| **Mode** | **Async** — DESIGNED |
 
 ---
 

@@ -180,7 +180,7 @@ export const CONFIG_ENTITY_REGISTRY: Record<string, ConfigEntityDefinition> = {
       },
     ],
   },
-  academic_year: {
+    academic_year: {
     entityType: "academic_year",
     table: "academic_years",
     schoolScoped: true,
@@ -189,6 +189,32 @@ export const CONFIG_ENTITY_REGISTRY: Record<string, ConfigEntityDefinition> = {
     immutableStatuses: ["closed"],
     cosmeticFields: ["name", "label"],
     semanticFields: ["start_date", "end_date", "start_month"],
+  },
+  curriculum: {
+    entityType: "curriculum",
+    table: "curricula",
+    schoolScoped: true,
+    strategies: ["V", "K", "M"],
+    versioned: true,
+    statusField: "status",
+    immutableStatuses: ["retired"],
+    cosmeticFields: ["name", "description", "code"],
+    semanticFields: [
+      "academic_year_id",
+      "subject_id",
+      "class_id",
+      "board_id",
+      "board_code",
+    ],
+  },
+  curriculum_version: {
+    entityType: "curriculum_version",
+    table: "curriculum_versions",
+    schoolScoped: false,
+    strategies: ["V"],
+    versioned: true,
+    immutableStatuses: ["published"],
+    cosmeticFields: ["change_summary"],
   },
 };
 

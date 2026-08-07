@@ -2,12 +2,12 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-07 (Phase 2.10 — Student Portal)  
+> **Last updated:** 2026-08-07 (Phase 3 — Curriculum Engine)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
-> **Branch tip at last verification:** `main` @ `11836a7` (+ AuthN / AuthZ / Membership / Notify / Teacher + Student Portal uncommitted)  
-> **Current phase:** **Phase 2.10 — Student Portal SHIPPED (§60)** (read-only `/dashboard/student/*` self-scoped). Teacher Portal §59 shipped. Phase 2 ops gate still open (report-card PDF/admin UIs, live providers, Fee/parent portals).
+> **Branch tip at last verification:** `main` (local Curriculum Engine uncommitted)  
+> **Current phase:** **Phase 3 — Curriculum Engine SHIPPED (§61)** (E30 packs + versions + progress; actions-first). Student Portal §60 / Teacher Portal §59 shipped. Phase 2 ops gate still open.
 
 ---
 
@@ -73,6 +73,7 @@
 58. [Phase 2.8 — Notification Operations](#58-phase-28--notification-operations)
 59. [Phase 2.9 — Teacher Portal](#59-phase-29--teacher-portal)
 60. [Phase 2.10 — Student Portal](#60-phase-210--student-portal)
+61. [Phase 3 — Curriculum Engine](#61-phase-3--curriculum-engine)
 
 ---
 
@@ -132,6 +133,7 @@
 | Notification Operations change | [`docs/architecture/notification-operations.md`](architecture/notification-operations.md) + §58 + `lib/domain-events/` · `lib/notify-orchestration/` |
 | Teacher Portal change | [`docs/architecture/teacher-portal.md`](architecture/teacher-portal.md) + §59 + `lib/teacher-portal/` · `components/teacher-portal/` |
 | Student Portal change | [`docs/architecture/student-portal.md`](architecture/student-portal.md) + §60 + `lib/student-portal/` · `components/student-portal/` |
+| Curriculum Engine change | [`docs/architecture/curriculum-engine.md`](architecture/curriculum-engine.md) + §61 + `lib/curriculum/` |
 | New feature PR | Must name owning engine + entity + events + AuthZ + versioning + audit + notify + AI + persona; **Phase 2+ also cite workflow ID(s)** from §41; respect §26 P0 + §54 P0; update maturity if shipping |
 
 **Conventions**
@@ -183,6 +185,7 @@
 - Notification Operations: [`docs/architecture/notification-operations.md`](architecture/notification-operations.md) — keep in sync with §58.
 - Teacher Portal: [`docs/architecture/teacher-portal.md`](architecture/teacher-portal.md) — keep in sync with §59.
 - Student Portal: [`docs/architecture/student-portal.md`](architecture/student-portal.md) — keep in sync with §60.
+- Curriculum Engine: [`docs/architecture/curriculum-engine.md`](architecture/curriculum-engine.md) — keep in sync with §61.
 
 ---
 
@@ -291,6 +294,7 @@ Teachers, students, and parents exist as **global identity rows** (`persons` + r
 | AS | **Phase 2.8 — Notification Operations** | Domain outbox → orchestrator → E19 workers + inbox — [`docs/architecture/notification-operations.md`](architecture/notification-operations.md) |
 | AT | **Phase 2.9 — Teacher Portal** | Permission-gated teacher feature routes over engines (attendance, marks, homework, …) — [`docs/architecture/teacher-portal.md`](architecture/teacher-portal.md) |
 | AU | **Phase 2.10 — Student Portal** | Read-only self-scoped student routes over student-profile + engines — [`docs/architecture/student-portal.md`](architecture/student-portal.md) |
+| AV | **Phase 3 — Curriculum Engine** | E30 year/board/grade/subject packs, hierarchy, publish versions, teacher progress — [`docs/architecture/curriculum-engine.md`](architecture/curriculum-engine.md) |
 
 ### 3.3 Global Identity Steps 0–9 (gate status)
 
@@ -474,6 +478,7 @@ See §55 and authentication-platform.md. Staff save wires invites.
 | `20260807410000_authorization_platform.sql` | authz_* tables, seeds, `has_permission` |
 | `20260807420000_membership_engine.sql` | school_memberships, history, preferences, helper rewrite |
 | `20260807430000_notification_operations.sql` | domain_event_outbox, notify type seeds, delivery statuses, provider configs |
+| `20260807440000_curriculum_engine.sql` | E30 curricula, versions, structure, LOs, progress, audit + AuthZ seeds |
 
 **Dropped legacy tables (must stay gone):** `teachers`, `teacher_subjects`, `students`, `guardians`, `student_guardians`, `student_section_enrollments` (+ `*_legacy` intermediates).
 
@@ -587,6 +592,13 @@ persons
 | `comm_automations` / `comm_campaigns` | school | FUTURE shells (no send) |
 | `audit_entries` | school | E28 append-only audit (config framework) |
 | `config_change_history` | school | Config snapshots / diffs / soft-migration notes |
+| `curricula` | year×class×subject | E30 curriculum packs (grade = `classes`) |
+| `curriculum_versions` | curriculum | Immutable publish snapshots (strategy V) |
+| `curriculum_units` / `_chapters` / `_topics` / `_subtopics` | curriculum | Live structure tree |
+| `curriculum_learning_outcomes` / `_competencies` / `_outcome_competencies` | curriculum | Outcomes + competencies |
+| `curriculum_resources` / `_notes` | curriculum | Shared resources; teacher notes |
+| `curriculum_topic_progress` | version×section | Ops progress pins version (strategy A) |
+| `curriculum_audit_log` | school | Local high-churn curriculum audit |
 
 ### 8.4 Identity RPCs (SECURITY DEFINER)
 
@@ -815,6 +827,7 @@ Keep [`deferred-identity-followups.md`](deferred-identity-followups.md) aligned 
 | F10 | Parent portal | `NOT BUILT` | §7 |
 | F23 | Teacher Portal | `SHIPPED` (§59); admin preview + linked teacher employment | [`teacher-portal.md`](architecture/teacher-portal.md) |
 | F24 | Student Portal | `SHIPPED` (§60); RO default; admin preview via `?studentProfileId=` | [`student-portal.md`](architecture/student-portal.md) |
+| F25 | Curriculum Engine (E30) | Backend `SHIPPED` (§61); HOD/teacher portal UI later; assessment/lesson bind to versions next | [`curriculum-engine.md`](architecture/curriculum-engine.md) |
 | F11 | Split signup trigger for invited users | `SHIPPED` (§55) | §7.3 · §55 |
 | F12 | Onboarding form UI polish | `DEFERRED` | D11 |
 
@@ -1330,6 +1343,18 @@ Also: `npx tsc --noEmit` after calendar module land.
 | `npx tsc --noEmit` | PASS |
 | Manual: admin preview across tabs with visibleOnly | PENDING (ops) |
 
+### 15.42 Phase 3 — Curriculum Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-curriculum-validation.ts` · `npx tsc --noEmit` · migration `20260807440000` (not pushed unless requested)
+
+| Check | Result |
+|-------|--------|
+| Hierarchy / order / hours / clone / progress smokes | PASS |
+| Permission keys + teacher vs HOD bundle coverage | PASS |
+| Snapshot shape round-trip | PASS |
+| `npx tsc --noEmit` (curriculum modules) | PASS |
+| `supabase db push` | PENDING (user request) |
+
 ---
 
 ## 16. Key file index
@@ -1434,6 +1459,10 @@ Also: `npx tsc --noEmit` after calendar module land.
 - `app/dashboard/notifications/page.tsx` · `app/api/internal/notify-worker/route.ts`
 - `supabase/migrations/20260807430000_notification_operations.sql`
 - `scripts/smoke-notify-orchestration-validation.ts` · `smoke-notification-worker-validation.ts` · `smoke-notification-emit-gate.ts`
+- `docs/architecture/curriculum-engine.md` ← Phase 3 Curriculum Engine (E30)
+- `lib/curriculum/**` ← Curriculum Engine module
+- `supabase/migrations/20260807440000_curriculum_engine.sql`
+- `scripts/smoke-curriculum-validation.ts`
 - `docs/architecture/student-profile-engine.md` ← Student Profile aggregator
 - `lib/student-profile/**` ← Student Profile Engine module
 - `supabase/migrations/20260807230000_student_profile_engine.sql` ← SCHEMA-READY ops stubs
@@ -1556,6 +1585,10 @@ Also: `npx tsc --noEmit` after calendar module land.
 | `app/dashboard/student/**` | Student Portal routes |
 | `docs/architecture/student-portal.md` + MASTER §60 | Student Portal docs |
 | `scripts/smoke-student-portal-validation.ts` | Student portal catalogue smoke |
+| `lib/curriculum/**` | Curriculum Engine (E30) backend |
+| `supabase/migrations/20260807440000_curriculum_engine.sql` | Packs, versions, structure, progress, AuthZ seeds |
+| `docs/architecture/curriculum-engine.md` + MASTER §61 | Curriculum Engine docs |
+| `scripts/smoke-curriculum-validation.ts` | Curriculum validation smoke |
 | `lib/attendance/**` | Attendance Engine backend |
 | `supabase/migrations/20260807250000_attendance_engine.sql` | Sessions, leave, audit; enrich records |
 | `docs/architecture/attendance-engine.md` + MASTER §44 | Attendance Engine docs |
@@ -1649,7 +1682,9 @@ Safe to keep for manual QA; delete when cleaning staging.
 22. Phase 3 (Fee / portals) may **design** with dependency on §54 P0; do not claim Phase 2 COMPLETE in kickoff.  
 23. Align Teacher Workspace “pending attendance” with `attendance_sessions` (Teacher Portal attendance UI §59 lands; refine session pending heuristics as needed).  
 24. Align Teacher Workspace “pending assessments” with `assessment_mark_sessions` (Teacher Portal marks UI §59 lands; refine pending heuristics as needed).  
-25. Parent portal remains open after Teacher (§59) + Student (§60) portals.
+25. Parent portal remains open after Teacher (§59) + Student (§60) portals.  
+26. Assessment / lesson / report / AI must **reference** `curriculum_version_id` (E30) — do not duplicate chapter trees; bind exam definitions next.  
+27. Curriculum HOD/Teacher portal UI and `subjects.chapter_map` migration remain open after §61 backend.
 
 ---
 
@@ -1678,6 +1713,8 @@ Before building remaining ERP features (fees, attendance, invites, portals, AI),
 | E20–E23 | Output | Document, Reporting, Analytics, AI |
 | E24 | Growth | Marketplace |
 | E25–E28 | Cross-cutting | Onboarding, Ingestion, Media, Audit |
+| E29 | Membership | Person↔school index |
+| E30 | Curriculum | Year/board/grade/subject packs + versions |
 
 ### 18.3 Ownership review (2026-08-06) — outcomes
 
@@ -3456,4 +3493,33 @@ Portal must not duplicate Student Profile OLTP or school-wide directories. Prefe
 
 ---
 
-*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§60 on architecture/ops/auth/portals. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + Teacher + Student portals shipped.*
+## 61. Phase 3 — Curriculum Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Full HOD/Teacher curriculum portal UI `NOT BUILT` (actions-first).
+
+**Canonical doc:** [`docs/architecture/curriculum-engine.md`](architecture/curriculum-engine.md)
+
+### 61.1 Scope
+
+- Packs: academic year × optional board × class (grade) × subject
+- Hierarchy: units → chapters → topics → subtopics + LOs / competencies / resources / notes
+- Publish → immutable `curriculum_versions.snapshot`; progress pins `curriculum_version_id`
+- AuthZ: `curriculum.*` keys; teacher read+progress; HOD+ full set
+- Module: `lib/curriculum/**` · Migration `20260807440000_curriculum_engine.sql`
+
+### 61.2 Placement rule
+
+Assessments, lesson progress, report cards, and AI **reference curriculum version ids** — do not duplicate chapter trees. `class_subjects` (E07) remains the offer map.
+
+### 61.3 Tests
+
+`npx tsx scripts/smoke-curriculum-validation.ts`  
+`npx tsc --noEmit`
+
+### 61.4 Non-goals (this ship)
+
+AI generation, LessonPlan entity, exam↔topic binding UI, full portal screens, auto-migrate `subjects.chapter_map`.
+
+---
+
+*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§61 on architecture/ops/auth/portals/curriculum. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + Teacher + Student portals + Curriculum Engine shipped.*

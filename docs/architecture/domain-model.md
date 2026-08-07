@@ -62,6 +62,9 @@
 | [SubjectGroup](#subjectgroup) | E07 | `SHIPPED` |
 | [SubjectDependency](#subjectdependency) | E07 | `SHIPPED` |
 | [ClassSubject](#classsubject) | E07 | `SHIPPED` |
+| [Curriculum](#curriculum) | E30 | `SHIPPED` |
+| [CurriculumVersion](#curriculumversion) | E30 | `SHIPPED` |
+| [CurriculumTopicProgress](#curriculumtopicprogress) | E30 | `SHIPPED` |
 | [GradingScale](#gradingscale) | E07 | `PLANNED` |
 | [Class](#class) | E09 | `SHIPPED` |
 | [Section](#section) | E09 | `SHIPPED` |
@@ -483,11 +486,45 @@
 
 **Owner Engine:** **E07**
 
-**Fields (v1):** category (scholastic/co_scholastic/language/elective), credits, weekly_periods, requires_lab, board mapping, assessment_rules JSON, display_order, language_code, textbook/AI/chapter stubs.
+**Fields (v1):** category (scholastic/co_scholastic/language/elective), credits, weekly_periods, requires_lab, board mapping, assessment_rules JSON, display_order, language_code, textbook/AI stubs. Legacy `chapter_map` jsonb is **deprecated for new work** — use E30 Curriculum packs.
 
 **Dependencies:** School.
 
-**Future extensions:** Full textbook catalog, AI lesson plans, chapter authoring.
+**Future extensions:** Full textbook catalog, AI lesson plans (bound to curriculum versions).
+
+---
+
+### Curriculum
+
+**Purpose:** Year × class (grade) × subject teaching pack with hierarchical units/chapters/topics/subtopics, learning outcomes, competencies, and published immutable snapshots.
+
+**Relationships:** School 1—*; AcademicYear; Class; Subject; optional ReportCardBoard; 1—* CurriculumVersion; 1—* structure nodes; progress pins CurriculumVersion.
+
+**Lifecycle:** draft → published (version bump) → retired; clone creates new draft.
+
+**Owner Engine:** **E30**
+
+**Dependencies:** E07 Subject / ClassSubject (offer map only); E08 year; E09 class.
+
+**Future extensions:** Lesson plans, assessment topic bindings, AI generation — all reference `curriculum_version_id`.
+
+---
+
+### CurriculumVersion
+
+**Purpose:** Immutable published snapshot of a curriculum pack (strategy V).
+
+**Relationships:** Curriculum 1—*; * CurriculumTopicProgress pins version.
+
+**Owner Engine:** **E30**
+
+---
+
+### CurriculumTopicProgress
+
+**Purpose:** Teacher/section ops progress against a pinned curriculum version node (strategy A).
+
+**Owner Engine:** **E30**
 
 ---
 

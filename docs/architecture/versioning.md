@@ -145,6 +145,9 @@ Answers: **Y** / **N** / **Cond** (conditional) / **Pin** (past pinned via versi
 | Period | Cond | Cond | Y | **Y** | **Pin** | **Y** | **V**/X | Bell changes → new grid version |
 | TimetableSlot | Cond | Cond | Supersede | **Y** | **Pin** | **Y** | V/X | Published grid immutable |
 | TeachingAssignment | Cond | Soft | Y | Cond | N | Y | M/A | Prefer reassign forward |
+| Curriculum (pack) | Cond | N | **Y** | **Y** | Pin | Y | **V**/K | Publish → version snapshot; clone draft |
+| CurriculumVersion | N | N | — | **Y** | **Pin** | Y | **V** | Immutable after publish |
+| CurriculumTopicProgress | Cond | Soft | — | Cond | N | Y | **A** | Pins curriculum_version_id |
 
 ### 3.4 Academic operations
 

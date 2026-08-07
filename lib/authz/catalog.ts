@@ -92,8 +92,19 @@ export const PERMISSION_KEYS = [
   "fee.invoice.read",
   "fee.invoice.create",
   "fee.waiver.approve",
-  "payment.read",
+    "payment.read",
   "payment.create",
+  // Curriculum (E30)
+  "curriculum.pack.read",
+  "curriculum.pack.edit",
+  "curriculum.pack.publish",
+  "curriculum.pack.archive",
+  "curriculum.pack.clone",
+  "curriculum.structure.edit",
+  "curriculum.outcome.edit",
+  "curriculum.resource.edit",
+  "curriculum.progress.read",
+  "curriculum.progress.record",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -123,7 +134,8 @@ export const PERMISSION_DOMAINS: Record<string, string> = {
   communication: "E18",
   document: "E20",
   analytics: "E22",
-  audit: "E28",
+    audit: "E28",
   homework: "Homework",
   onboarding: "E25",
+  curriculum: "E30",
 };

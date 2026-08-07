@@ -83,6 +83,7 @@ School ERPs fail architecturally when:
 | E27 | **Media Engine** | Partial `SHIPPED` | Logos, photos, file storage metadata |
 | E28 | **Audit Engine** | Partial `SHIPPED` (config writes) | `audit_entries` via editing framework; full retention/SIEM later |
 | E29 | **Membership Engine** | `SHIPPED` | Person↔school index, preferences, switch — [`membership-engine.md`](membership-engine.md) |
+| E30 | **Curriculum Engine** | Backend `SHIPPED` (UI later) | Year/board/grade/subject packs + hierarchy + publish versions — [`curriculum-engine.md`](curriculum-engine.md) |
 
 ---
 
@@ -1283,6 +1284,40 @@ Index every person↔school relationship for session routing and tenant membersh
 
 ---
 
+### E30 — Curriculum Engine
+
+**Purpose**  
+Own academic curriculum packs (year × board × grade/class × subject) with hierarchical structure, publishable immutable versions, teacher progress, and private notes. Spine of Phase 3 Academic Recording — assessment/lesson/report/AI **reference** curriculum version ids.
+
+**Responsibilities**
+- Pack CRUD, archive, retire, clone across years
+- Live structure edit (units → subtopics) + outcomes/competencies/resources
+- Publish → `curriculum_versions` snapshot (strategy V)
+- Teacher progress recording pinned to a version (strategy A)
+- Local audit + editing-framework mutations for pack lifecycle
+
+**Data owned**
+- `curricula`, `curriculum_versions`, structure tables, LOs/competencies, resources, notes, `curriculum_topic_progress`, `curriculum_audit_log`
+
+**Data it must never own**
+- Subject master / `class_subjects` offer map (E07), exam definitions/marks (E11), lesson-plan runtime (future), report card assembly (E20)
+
+**Inputs**
+- AcademicYear (E08), Class (E09), Subject (E07), optional ReportCardBoard (E20 templates)
+
+**Outputs**
+- Published curriculum version ids for consumers; progress aggregates for HOD
+
+**Dependencies**
+- E03 AuthZ keys `curriculum.*`; E05 employment for progress/notes authors; E28 audit via editing framework
+
+**Canonical doc:** [`curriculum-engine.md`](curriculum-engine.md)
+
+**Personas**
+- HOD / VP / Principal / School admin (full pack+structure); Teacher (read + progress + private notes)
+
+---
+
 ## 5. Dependency graph
 
 ### 5.1 Layer view
@@ -1515,7 +1550,7 @@ Before implementing a feature, answer:
 ## 8. Phase 0.5 outcomes & next architecture tasks
 
 **Done in Phase 0.5:**
-- Named engines E01–E29
+- Named engines E01–E30
 - Initial ownership / non-ownership boundaries
 - Dependency graph
 - Mapping from shipped MASTER work
@@ -1626,6 +1661,7 @@ Before implementing a feature, answer:
 | school logo path string on `schools` | **E07** | Points at E27 object |
 | audit log entries | **E28** | |
 | `school_memberships`, history, `user_school_preferences` | **E29** | Session index; facts remain E01/E05/E06 |
+| curricula, versions, structure, LOs, progress, curriculum_audit_log | **E30** | Not E07 `chapter_map`; consumers pin version id |
 
 ### 10.2 Derived / non-owned projections
 
