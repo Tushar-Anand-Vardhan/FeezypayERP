@@ -2,12 +2,12 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-06 (User journeys document)  
+> **Last updated:** 2026-08-07 (Phase 1 — Implementation Audit)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
-> **Branch tip at last verification:** `main` @ `b7f540b` (+ local uncommitted Step 5 upsert fix / Step 7–8 doc hardening — see §17)  
-> **Current phase:** **Phase 0.5 COMPLETE.** Next: **Phase 1 — Implementation readiness** (P0) — see §26. User journeys: §27.
+> **Branch tip at last verification:** `main` @ `f78b48a` (+ Phase 1 engines §28–§39; audit §40)  
+> **Current phase:** **Phase 1 engines SHIPPED (§28–§39). Production gate NOT PASSED — Phase 1 not marked COMPLETE.** See [`docs/architecture/phase-1-implementation-audit.md`](architecture/phase-1-implementation-audit.md) + §40. Next: P0 hardening (same-school FKs, DELETE revoke, year lifecycle, editing adoption, seed-on-create, audit retention) then remaining §26 P0 (F11, membership RLS, outbox, Fee, rollover).
 
 ---
 
@@ -40,6 +40,19 @@
 25. [Phase 0.5 — AI architecture](#25-phase-05--ai-architecture)
 26. [Phase 0.5 complete — Architecture review](#26-phase-05-complete--architecture-review)
 27. [User journeys](#27-user-journeys)
+28. [Phase 1 — Configuration Engine](#28-phase-1--configuration-engine)
+29. [Phase 1 — Academic Calendar Engine](#29-phase-1--academic-calendar-engine)
+30. [Phase 1 — Department Engine](#30-phase-1--department-engine)
+31. [Phase 1 — House & Club Engine](#31-phase-1--house--club-engine)
+32. [Phase 1 — Subject Configuration Engine](#32-phase-1--subject-configuration-engine)
+33. [Phase 1 — Timetable Configuration Engine](#33-phase-1--timetable-configuration-engine)
+34. [Phase 1 — Assessment Configuration Engine](#34-phase-1--assessment-configuration-engine)
+35. [Phase 1 — Report Card Template Engine](#35-phase-1--report-card-template-engine)
+36. [Phase 1 — School Policy Engine](#36-phase-1--school-policy-engine)
+37. [Phase 1 — Communication Configuration Engine](#37-phase-1--communication-configuration-engine)
+38. [Phase 1 — Configuration Editing Framework](#38-phase-1--configuration-editing-framework)
+39. [Phase 1 — Configuration Dashboard](#39-phase-1--configuration-dashboard)
+40. [Phase 1 — Implementation audit](#40-phase-1--implementation-audit)
 
 ---
 
@@ -66,7 +79,20 @@
 | New/changed AI service or tool | [`docs/architecture/ai-architecture.md`](architecture/ai-architecture.md) + §25 |
 | Architecture review / phase gate | [`docs/architecture/phase-05-architecture-review.md`](architecture/phase-05-architecture-review.md) + §26 |
 | Persona journey / UX surface | [`docs/architecture/user-journeys.md`](architecture/user-journeys.md) + §27 |
-| New feature PR | Must name owning engine + entity + events + AuthZ + versioning + audit + notify + AI + **persona journey**; respect §26 P0; update maturity if shipping |
+| Configuration Engine change | [`docs/architecture/configuration-engine.md`](architecture/configuration-engine.md) + §28 + `lib/config/` |
+| Academic Calendar Engine change | [`docs/architecture/academic-calendar-engine.md`](architecture/academic-calendar-engine.md) + §29 + `lib/calendar/` |
+| Department Engine change | [`docs/architecture/department-engine.md`](architecture/department-engine.md) + §30 + `lib/departments/` |
+| House & Club Engine change | [`docs/architecture/house-club-engine.md`](architecture/house-club-engine.md) + §31 + `lib/houses-clubs/` |
+| Subject Configuration Engine change | [`docs/architecture/subject-configuration-engine.md`](architecture/subject-configuration-engine.md) + §32 + `lib/subjects/` |
+| Timetable Configuration Engine change | [`docs/architecture/timetable-configuration-engine.md`](architecture/timetable-configuration-engine.md) + §33 + `lib/timetable/` |
+| Assessment Configuration Engine change | [`docs/architecture/assessment-configuration-engine.md`](architecture/assessment-configuration-engine.md) + §34 + `lib/assessment/` |
+| Report Card Template Engine change | [`docs/architecture/report-card-template-engine.md`](architecture/report-card-template-engine.md) + §35 + `lib/report-cards/` |
+| School Policy Engine change | [`docs/architecture/school-policy-engine.md`](architecture/school-policy-engine.md) + §36 + `lib/policies/` |
+| Communication Configuration Engine change | [`docs/architecture/communication-configuration-engine.md`](architecture/communication-configuration-engine.md) + §37 + `lib/communications/` |
+| Configuration Editing Framework change | [`docs/architecture/configuration-editing-framework.md`](architecture/configuration-editing-framework.md) + §38 + `lib/editing/` |
+| Configuration Dashboard change | [`docs/architecture/configuration-dashboard.md`](architecture/configuration-dashboard.md) + §39 + `lib/config-dashboard/` |
+| Phase 1 implementation audit / production gate | [`docs/architecture/phase-1-implementation-audit.md`](architecture/phase-1-implementation-audit.md) + §40 |
+| New feature PR | Must name owning engine + entity + events + AuthZ + versioning + audit + notify + AI + persona; respect §26 P0; update maturity if shipping |
 
 **Conventions**
 
@@ -84,6 +110,19 @@
 - AI architecture: [`docs/architecture/ai-architecture.md`](architecture/ai-architecture.md) — keep in sync with §25.
 - Phase 0.5 review: [`docs/architecture/phase-05-architecture-review.md`](architecture/phase-05-architecture-review.md) — keep in sync with §26.
 - User journeys: [`docs/architecture/user-journeys.md`](architecture/user-journeys.md) — keep in sync with §27.
+- Configuration Engine: [`docs/architecture/configuration-engine.md`](architecture/configuration-engine.md) — keep in sync with §28.
+- Academic Calendar Engine: [`docs/architecture/academic-calendar-engine.md`](architecture/academic-calendar-engine.md) — keep in sync with §29.
+- Department Engine: [`docs/architecture/department-engine.md`](architecture/department-engine.md) — keep in sync with §30.
+- House & Club Engine: [`docs/architecture/house-club-engine.md`](architecture/house-club-engine.md) — keep in sync with §31.
+- Subject Configuration Engine: [`docs/architecture/subject-configuration-engine.md`](architecture/subject-configuration-engine.md) — keep in sync with §32.
+- Timetable Configuration Engine: [`docs/architecture/timetable-configuration-engine.md`](architecture/timetable-configuration-engine.md) — keep in sync with §33.
+- Assessment Configuration Engine: [`docs/architecture/assessment-configuration-engine.md`](architecture/assessment-configuration-engine.md) — keep in sync with §34.
+- Report Card Template Engine: [`docs/architecture/report-card-template-engine.md`](architecture/report-card-template-engine.md) — keep in sync with §35.
+- School Policy Engine: [`docs/architecture/school-policy-engine.md`](architecture/school-policy-engine.md) — keep in sync with §36.
+- Communication Configuration Engine: [`docs/architecture/communication-configuration-engine.md`](architecture/communication-configuration-engine.md) — keep in sync with §37.
+- Configuration Editing Framework: [`docs/architecture/configuration-editing-framework.md`](architecture/configuration-editing-framework.md) — keep in sync with §38.
+- Configuration Dashboard: [`docs/architecture/configuration-dashboard.md`](architecture/configuration-dashboard.md) — keep in sync with §39.
+- Phase 1 implementation audit: [`docs/architecture/phase-1-implementation-audit.md`](architecture/phase-1-implementation-audit.md) — keep in sync with §40.
 
 ---
 
@@ -159,6 +198,19 @@ Teachers, students, and parents exist as **global identity rows** (`persons` + r
 | L | **Phase 0.5 — AI architecture** | E23: services, RAG, tools, persona AIs, never source of truth — [`docs/architecture/ai-architecture.md`](architecture/ai-architecture.md) |
 | M | **Phase 0.5 — Architecture review** | CSA review; P0–P2 improvements; **phase complete** — [`docs/architecture/phase-05-architecture-review.md`](architecture/phase-05-architecture-review.md) |
 | N | **User journeys** | Admin, Principal, HOD, Teacher, Parent, Student — tasks/engines/data/approvals/notify/AI — [`docs/architecture/user-journeys.md`](architecture/user-journeys.md) |
+| O | **Phase 1 — Configuration Engine** | E07 backend: archive/restore, grading scales, `lib/config/` — [`docs/architecture/configuration-engine.md`](architecture/configuration-engine.md) |
+| P | **Phase 1 — Academic Calendar Engine** | E08 years/terms/working days/holidays + E17 `calendar_events`; `lib/calendar/`; minimal `/dashboard/calendar` — [`docs/architecture/academic-calendar-engine.md`](architecture/academic-calendar-engine.md) |
+| Q | **Phase 1 — Department Engine** | E05 dept surface: memberships, subjects, teaching assignments, announcements, resources, history — [`docs/architecture/department-engine.md`](architecture/department-engine.md) |
+| R | **Phase 1 — House & Club Engine** | E07 houses/clubs: colours, logos, TIC, captains, memberships, year scope — [`docs/architecture/house-club-engine.md`](architecture/house-club-engine.md) |
+| S | **Phase 1 — Subject Configuration Engine** | E07 subject master: groups, languages, electives, board map, credits, periods, lab, assessment rules, dependencies — [`docs/architecture/subject-configuration-engine.md`](architecture/subject-configuration-engine.md) |
+| T | **Phase 1 — Timetable Configuration Engine** | E10 grids, cycle days, slots, availability, locks, conflict detection — [`docs/architecture/timetable-configuration-engine.md`](architecture/timetable-configuration-engine.md) |
+| U | **Phase 1 — Assessment Configuration Engine** | E11 config: exam types, categories, weightages, pass marks, components, publish/lock — **no marks** — [`docs/architecture/assessment-configuration-engine.md`](architecture/assessment-configuration-engine.md) |
+| V | **Phase 1 — Report Card Template Engine** | E20 templates: boards, scopes, dynamic blocks, assessment refs, signatures — **no PDF** — [`docs/architecture/report-card-template-engine.md`](architecture/report-card-template-engine.md) |
+| W | **Phase 1 — School Policy Engine** | E07 versioned policies: attendance, promotion, timings, leave, exam eligibility, grace, behaviour — [`docs/architecture/school-policy-engine.md`](architecture/school-policy-engine.md) |
+| X | **Phase 1 — Communication Configuration Engine** | E18 categories, channel templates, priorities, audiences, delivery/approval rules — **no sending** — [`docs/architecture/communication-configuration-engine.md`](architecture/communication-configuration-engine.md) |
+| Y | **Phase 1 — Configuration Editing Framework** | Shared edit/archive/restore/duplicate/history/audit/version/deps/soft-migration — [`docs/architecture/configuration-editing-framework.md`](architecture/configuration-editing-framework.md) |
+| Z | **Phase 1 — Configuration Dashboard** | School setup command centre: completion, warnings, missing, deps, health + module links — [`docs/architecture/configuration-dashboard.md`](architecture/configuration-dashboard.md) |
+| AA | **Phase 1 — Implementation audit** | Schema/RLS/actions/validation/perf/deps/UI/future-compat review; **production gate NOT PASSED** — [`docs/architecture/phase-1-implementation-audit.md`](architecture/phase-1-implementation-audit.md) |
 
 ### 3.3 Global Identity Steps 0–9 (gate status)
 
@@ -394,6 +446,17 @@ Authorization decision ≈
 | `20260806164000_identity_lookup_functions.sql` | Lookup RPCs |
 | `20260806165000_drop_legacy_identity_tables.sql` | Drop `*_legacy` |
 | `20260806166000_identity_create_helpers.sql` | Create/update RPCs |
+| `20260807120000_configuration_engine.sql` | E07 archive/restore, grading scales, club memberships, subject FK RESTRICT |
+| `20260807130000_academic_calendar_engine.sql` | E08/E17: year status/archive, working days, holidays, calendar_events |
+| `20260807140000_department_engine.sql` | E05: dept enrich, memberships, subjects, assignments, announcements, resources, history |
+| `20260807150000_house_club_engine.sql` | E07: house/club enrich, house_memberships, club roles, points/events stubs |
+| `20260807160000_subject_configuration_engine.sql` | E07: subject_groups, subject master enrich, dependencies, textbook stub |
+| `20260807170000_timetable_configuration_engine.sql` | E10: grids, cycle days, availability, locks, rooms/substitutions stubs |
+| `20260807180000_assessment_configuration_engine.sql` | E11 config: exam types, categories, policies, components, publish/lock (no results) |
+| `20260807190000_report_card_template_engine.sql` | E20 templates: boards, scopes, blocks, assessment refs, versions, PDF job stub |
+| `20260807200000_school_policy_engine.sql` | E07 versioned school policies (attendance…behaviour; fee/transport stubs) |
+| `20260807210000_communication_configuration_engine.sql` | E18 categories, templates, priorities, audiences, delivery/approval rules; automation/campaign stubs |
+| `20260807220000_configuration_editing_framework.sql` | `audit_entries` + `config_change_history` (E28 minimal + config history) |
 
 **Dropped legacy tables (must stay gone):** `teachers`, `teacher_subjects`, `students`, `guardians`, `student_guardians`, `student_section_enrollments` (+ `*_legacy` intermediates).
 
@@ -448,19 +511,65 @@ persons
 | Table | Scope | Notes |
 |-------|-------|-------|
 | `schools` | root | identity fields, `academic_year_start_month`, `onboarding_status`, `houses_enabled`/`clubs_enabled`, `houses_clubs_completed`, `timetable_skipped` |
-| `academic_years` | `school_id` | `label`, `is_active` |
-| `terms` | year | month/day recurring fields |
+| `academic_years` | `school_id` | `label`, `is_active`, `status` (draft/active/closed), `start_date`/`end_date`, `archived_at` |
+| `terms` | year | month/day recurring fields + `archived_at` |
+| `school_working_day_patterns` | school (± year) | Mon–Sun instructional flags |
+| `holidays` | year | E08 non-instructional ranges; archive-only |
+| `calendar_events` | year | E17 occasions; categories, visibility, audience, approval |
 | `classes` | year | `capacity`, `display_order` |
 | `sections` | class | `capacity`, `class_teacher_id` → **`teacher_employments.id`** |
-| `subjects` | school | scholastic / co-scholastic |
-| `class_subjects` | class↔subject | |
-| `houses`, `clubs` | school | |
-| `departments` | school | used by HOD staff |
-| `period_definitions` | year | timetable periods |
-| `timetable_slots` | section | `teacher_id` → **`teacher_employments.id`** |
-| `teacher_subject_assignments` | school mapping | `teacher_id` → employments |
-| `exam_definitions` | year | category, weightage, max_marks, `grading_type` |
-| `exam_subject_schedules` | exam | |
+| `subjects` | school | E07 master: category, group, language, elective, board, credits, weekly_periods, lab, assessment_rules, display_order, archive |
+| `subject_groups` | school | E07 grouping catalog |
+| `subject_dependencies` | subject | prerequisite / corequisite / recommended (archive to unlink) |
+| `subject_textbooks` | subject | FUTURE multi-textbook rows |
+| `class_subjects` | class↔subject | elective flag per class offer map |
+| `houses`, `clubs` | school | E07 catalog; colour, logo_path, description, year scope, TIC employment |
+| `house_memberships` | house | member/captain/vice_captain ↔ student; dated; syncs `admission.house_id` |
+| `club_memberships` | club | member/captain/vice_captain; year-scoped; dated |
+| `house_point_ledger` | house | FUTURE points (schema-ready) |
+| `club_event_links` | club | FUTURE event/competition links to E17 |
+| `departments` | school | E05 org unit; code, archive, `created_by`/`updated_by`; never stores teachers |
+| `department_memberships` | department | head / coordinator / member ↔ `teacher_employments` |
+| `department_subjects` | department | Org links to E07 `subjects` |
+| `department_teaching_assignments` | department | Employment↔subject relationships (not E10) |
+| `department_announcements` | department | Draft/publish; notify stub |
+| `department_resources` | department | Links/notes; media stub |
+| `department_history` | department | Append-only edit trail |
+| `period_definitions` | year | E10 bell periods; break/lock/archive |
+| `timetable_grids` | year | primary / alternate / exam / special |
+| `timetable_cycle_days` | grid | cycle day labels + weekday mapping |
+| `timetable_slots` | section×grid | subject + teacher employment; room stub; locks |
+| `teacher_availability` | employment×year | free/busy blocks |
+| `section_availability` | section×year | free/busy blocks |
+| `rooms` | school | FUTURE room catalog |
+| `timetable_substitutions` | slot×date | FUTURE substitute overlays |
+| `teacher_subject_assignments` | section | schedule planning map |
+| `exam_definitions` | year | type/category FKs, weightage, max/pass marks, grading, publish/lock, archive |
+| `exam_subject_schedules` | exam | optional subject, component type, pass marks, archive |
+| `assessment_exam_types` | school | exam-type catalog + defaults |
+| `assessment_categories` | school | category kinds catalog |
+| `assessment_policies` | school/year | publish/lock defaults + moderation/AI flags |
+| `assessment_components` | exam | theory/practical/internal/project breakdown |
+| `report_card_boards` | school | board catalog for templates |
+| `report_card_templates` | school | layout flags, board/year/term, PDF/digital stubs |
+| `report_card_template_versions` | template | immutable publish snapshots |
+| `report_card_template_scopes` | template | class / section applicability |
+| `report_card_template_assessments` | template | E11 `exam_definition_id` refs (no marks copy) |
+| `report_card_template_blocks` | template | dynamic sections |
+| `report_card_template_signatures` | template | signature slots |
+| `report_card_render_jobs` | school | FUTURE PDF generation stub |
+| `school_policies` | school/year | versioned policy docs by kind |
+| `school_policy_versions` | policy | immutable `rules` JSON + `is_current` |
+| `comm_announcement_categories` | school | announcement category catalog |
+| `comm_priority_levels` | school | priority catalog |
+| `comm_audience_groups` | school | audience filter config |
+| `comm_message_templates` | school | channel templates (email/WA/SMS/…) |
+| `comm_message_template_versions` | template | versioned subject/body |
+| `comm_delivery_rules` | school | event → channel/audience/template |
+| `comm_approval_rules` | school | approval gates |
+| `comm_automations` / `comm_campaigns` | school | FUTURE shells (no send) |
+| `audit_entries` | school | E28 append-only audit (config framework) |
+| `config_change_history` | school | Config snapshots / diffs / soft-migration notes |
 
 ### 8.4 Identity RPCs (SECURITY DEFINER)
 
@@ -594,7 +703,8 @@ Empty Aadhaar allowed. Invalid row → entire import blocked.
 
 ### 11.4 Exams & review
 
-- `exam_definitions` per academic year.
+- `exam_definitions` per academic year (E11 config; soft-archive on onboarding rewrite).
+- Assessment Configuration Engine: `lib/assessment/**` — types, categories, policies, components, publish/lock. **No marks entry.**
 - Review shows progress counts (employments/admissions, not legacy tables).
 
 ---
@@ -650,6 +760,9 @@ Staff list and student list plans used index scans on `teacher_employments_activ
 |-------|----------|
 | `/` | Session → `/dashboard`; else marketing |
 | `/dashboard` | Allowed during onboarding; locked feature links + continue banner when incomplete |
+| `/dashboard/configuration` | School setup command centre (completion, warnings, deps, health) |
+| `/dashboard/calendar` | Minimal academic calendar admin |
+| `/dashboard/houses-clubs` | Minimal houses/clubs admin |
 | `/onboarding` | Resume redirect via progress |
 | `/onboarding/[step]` | Step UI |
 
@@ -803,6 +916,152 @@ Smoke school `Feezypay Academy`: staff 3, students 1, exams 1, `timetable_skippe
 
 `scripts/smoke-identity-db.sql` — end-to-end identity smoke against school `6385483b-8f79-49fc-9bd4-b19d2cef684a` (create HOD, dup email fail, student+parent, cleanup). Prefer transactional / unique emails when re-running on shared DB.
 
+### 15.10 Phase 1 — Academic Calendar Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-calendar-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| Working-day pattern requires ≥1 day | PASS |
+| Holiday / term date validation | PASS |
+| Calendar event category + range validation | PASS |
+| Invalid category `holiday` rejected (use E08 holidays table) | PASS |
+
+Also: `npx tsc --noEmit` after calendar module land.
+
+### 15.11 Phase 1 — Department Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-department-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| Department name required | PASS |
+| Membership roles head/coordinator/member | PASS |
+| Teaching assignment date validation | PASS |
+| Announcement / resource validation | PASS |
+| Invalid resource URL scheme rejected | PASS |
+
+### 15.12 Phase 1 — House & Club Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-houses-clubs-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| Hex colour validation | PASS |
+| House/club catalog validation | PASS |
+| Membership roles captain/vice_captain/member | PASS |
+| House/club code helpers | PASS |
+
+### 15.13 Phase 1 — Subject Configuration Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-subject-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| Subject group validation | PASS |
+| Subject master credits/periods/language validation | PASS |
+| Assessment rules (pass ≤ max) | PASS |
+| Dependency self-reference blocked | PASS |
+
+### 15.14 Phase 1 — Timetable Configuration Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-timetable-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| Period time overlap detection | PASS |
+| Teacher double-book conflict | PASS |
+| Teacher unavailable conflict | PASS |
+| Period locked conflict | PASS |
+| Batch slot conflict detection | PASS |
+
+### 15.15 Phase 1 — Assessment Configuration Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-assessment-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| Exam type / category validation | PASS |
+| Policy pass-percent bounds | PASS |
+| Exam definition weightage/pass marks | PASS |
+| Component + schedule validation | PASS |
+| Publish/lock JSON + lock gates | PASS |
+
+### 15.16 Phase 1 — Report Card Template Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-report-card-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| Board / template code helpers | PASS |
+| Template / scope / assessment binding validation | PASS |
+| Block + signature validation | PASS |
+| Layout config round-trip | PASS |
+| Draft-only mutability + default blueprint | PASS |
+
+### 15.17 Phase 1 — School Policy Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-policy-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| Policy kinds inventory (12 + 2 future) | PASS |
+| Default rules coverage | PASS |
+| Attendance / promotion / timings validation | PASS |
+| Leave / late / half-day validation | PASS |
+| Exam eligibility / grace / behaviour validation | PASS |
+| Version effective-date + merge defaults | PASS |
+
+### 15.18 Phase 1 — Communication Configuration Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-communication-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| Channel inventory | PASS |
+| Category / priority / audience validation | PASS |
+| Template + email subject / placeholders | PASS |
+| Delivery / approval rule validation | PASS |
+| Filter rules JSON round-trip | PASS |
+
+### 15.19 Phase 1 — Configuration Editing Framework
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-editing-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| Registry covers major config entities | PASS |
+| Diff / changed-field helpers | PASS |
+| Soft-migration recommendations | PASS |
+| Immutable / versioned flags | PASS |
+
+### 15.20 Phase 1 — Configuration Dashboard
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-config-dashboard-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| Catalog covers all Phase 1 config modules | PASS |
+| Unique module ids + hrefs | PASS |
+| Completion / health labels | PASS |
+
+### 15.21 Phase 1 — Implementation audit (production gate)
+
+**Date:** 2026-08-07 · review only (no new features) · [`docs/architecture/phase-1-implementation-audit.md`](architecture/phase-1-implementation-audit.md)
+
+| Check | Result |
+|-------|--------|
+| Engines §28–§39 shipped (backend-first) | PASS |
+| Pure validation smokes §15.10–§15.20 | PASS |
+| Archive-first + school-scoped actions (admin-only) | PASS (with known exceptions) |
+| Editing framework adopted across engines | FAIL |
+| Same-school FK integrity at DB | FAIL |
+| Hard-delete / exam mass-archive paths closed | FAIL |
+| Multi-persona AuthZ / membership RLS | FAIL (deferred P0) |
+| UI parity across all config modules | FAIL (minimal / uneven by design) |
+| **Production gate** | **NOT PASSED** |
+| **Mark Phase 1 COMPLETE** | **No** |
+
 ---
 
 ## 16. Key file index
@@ -825,7 +1084,7 @@ Smoke school `Feezypay Academy`: staff 3, students 1, exams 1, `timetable_skippe
 ### Identity
 
 - `lib/identity/aadhaar.ts`
-- Migrations `20260806160000` … `20260806166000`
+- Migrations `20260806160000` … `20260806166000`, `20260807120000`
 
 ### Docs & smokes
 
@@ -840,24 +1099,115 @@ Smoke school `Feezypay Academy`: staff 3, students 1, exams 1, `timetable_skippe
 - `docs/architecture/ai-architecture.md` ← AI layer
 - `docs/architecture/phase-05-architecture-review.md` ← Phase 0.5 CSA review (complete)
 - `docs/architecture/user-journeys.md` ← persona journeys
+- `docs/architecture/configuration-engine.md` ← E07 implementation
+- `lib/config/**` ← Configuration Engine module
+- `docs/architecture/academic-calendar-engine.md` ← E08+E17 calendar implementation
+- `lib/calendar/**` ← Academic Calendar Engine module
+- `app/dashboard/calendar/page.tsx` ← minimal calendar admin UI
+- `docs/architecture/department-engine.md` ← E05 department surface
+- `lib/departments/**` ← Department Engine module
+- `docs/architecture/house-club-engine.md` ← E07 house/club surface
+- `lib/houses-clubs/**` ← House & Club Engine module
+- `app/dashboard/houses-clubs/page.tsx` ← minimal houses/clubs UI
 - `docs/deferred-identity-followups.md`
 - `scripts/smoke-identity-validation.ts`
+- `scripts/smoke-config-validation.ts`
+- `scripts/smoke-calendar-validation.ts`
+- `scripts/smoke-department-validation.ts`
+- `scripts/smoke-houses-clubs-validation.ts`
+- `docs/architecture/subject-configuration-engine.md` ← E07 subject master
+- `lib/subjects/**` ← Subject Configuration Engine module
+- `scripts/smoke-subject-validation.ts`
+- `docs/architecture/timetable-configuration-engine.md` ← E10 timetable
+- `lib/timetable/**` ← Timetable Configuration Engine module
+- `scripts/smoke-timetable-validation.ts`
+- `docs/architecture/assessment-configuration-engine.md` ← E11 assessment config
+- `lib/assessment/**` ← Assessment Configuration Engine module
+- `scripts/smoke-assessment-validation.ts`
+- `docs/architecture/report-card-template-engine.md` ← E20 report card templates
+- `lib/report-cards/**` ← Report Card Template Engine module
+- `scripts/smoke-report-card-validation.ts`
+- `docs/architecture/school-policy-engine.md` ← E07 school policies
+- `lib/policies/**` ← School Policy Engine module
+- `scripts/smoke-policy-validation.ts`
+- `docs/architecture/communication-configuration-engine.md` ← E18 communication config
+- `lib/communications/**` ← Communication Configuration Engine module
+- `scripts/smoke-communication-validation.ts`
+- `docs/architecture/configuration-editing-framework.md` ← shared editing framework
+- `lib/editing/**` ← Configuration Editing Framework
+- `scripts/smoke-editing-validation.ts`
+- `docs/architecture/configuration-dashboard.md` ← school setup command centre
+- `lib/config-dashboard/**` ← Configuration Dashboard aggregator
+- `app/dashboard/configuration/page.tsx` ← minimal command-centre UI
+- `scripts/smoke-config-dashboard-validation.ts`
+- `docs/architecture/phase-1-implementation-audit.md` ← Phase 1 production gate audit
 - `scripts/smoke-identity-db.sql`
 
 ---
 
 ## 17. Open deltas & maintenance notes
 
-### 17.1 Uncommitted at last update (2026-08-06)
+### 17.1 Uncommitted at last update (2026-08-07)
 
 | Path | Change |
 |------|--------|
-| `lib/onboarding/students-actions.ts` | Upsert-by-admission-number (Step 5 fix) |
-| `lib/identity/aadhaar.ts` | Storage/match documentation |
-| `docs/deferred-identity-followups.md` | Expanded invite flow |
-| `scripts/` | Smoke validation + SQL (untracked) |
+| `lib/config/**` | Configuration Engine backend |
+| `supabase/migrations/20260807120000_configuration_engine.sql` | Archive, scales, club memberships, FK harden |
+| Onboarding subjects/houses/clubs/progress/staff/timetable | Rewired to archive-safe config APIs |
+| `docs/architecture/configuration-engine.md` + MASTER §28 | Phase 1 config docs |
+| `scripts/smoke-config-validation.ts` | Config validation smoke |
+| `lib/calendar/**` | Academic Calendar Engine backend |
+| `supabase/migrations/20260807130000_academic_calendar_engine.sql` | Years/terms enrich; working days; holidays; events |
+| `app/dashboard/calendar/**` + `components/calendar/**` | Minimal calendar admin UI |
+| `docs/architecture/academic-calendar-engine.md` + MASTER §29 | Calendar docs |
+| `scripts/smoke-calendar-validation.ts` | Calendar validation smoke |
+| `lib/departments/**` | Department Engine backend |
+| `supabase/migrations/20260807140000_department_engine.sql` | Memberships, subjects, assignments, announcements, resources, history |
+| `docs/architecture/department-engine.md` + MASTER §30 | Department docs |
+| `scripts/smoke-department-validation.ts` | Department validation smoke |
+| `lib/houses-clubs/**` | House & Club Engine backend |
+| `supabase/migrations/20260807150000_house_club_engine.sql` | Catalog enrich, memberships, stubs |
+| `app/dashboard/houses-clubs/**` | Minimal houses/clubs UI |
+| `docs/architecture/house-club-engine.md` + MASTER §31 | House/club docs |
+| `scripts/smoke-houses-clubs-validation.ts` | House/club validation smoke |
+| `lib/subjects/**` | Subject Configuration Engine backend |
+| `supabase/migrations/20260807160000_subject_configuration_engine.sql` | Subject groups, master enrich, dependencies |
+| `docs/architecture/subject-configuration-engine.md` + MASTER §32 | Subject docs |
+| `scripts/smoke-subject-validation.ts` | Subject validation smoke |
+| `lib/timetable/**` | Timetable Configuration Engine backend |
+| `supabase/migrations/20260807170000_timetable_configuration_engine.sql` | Grids, cycle days, availability, locks |
+| `docs/architecture/timetable-configuration-engine.md` + MASTER §33 | Timetable docs |
+| `scripts/smoke-timetable-validation.ts` | Timetable conflict smoke |
+| `lib/assessment/**` | Assessment Configuration Engine backend |
+| `supabase/migrations/20260807180000_assessment_configuration_engine.sql` | Types, categories, policies, components, publish/lock |
+| `docs/architecture/assessment-configuration-engine.md` + MASTER §34 | Assessment config docs |
+| `scripts/smoke-assessment-validation.ts` | Assessment config validation smoke |
+| `lib/onboarding/exams-review-actions.ts` + `progress.ts` | Soft-archive exams (DELETE revoked) |
+| `lib/report-cards/**` | Report Card Template Engine backend |
+| `supabase/migrations/20260807190000_report_card_template_engine.sql` | Boards, templates, scopes, blocks, assessment refs |
+| `docs/architecture/report-card-template-engine.md` + MASTER §35 | Report card template docs |
+| `scripts/smoke-report-card-validation.ts` | Report card template validation smoke |
+| `lib/policies/**` | School Policy Engine backend |
+| `supabase/migrations/20260807200000_school_policy_engine.sql` | Versioned policies by kind |
+| `docs/architecture/school-policy-engine.md` + MASTER §36 | School policy docs |
+| `scripts/smoke-policy-validation.ts` | School policy validation smoke |
+| `lib/communications/**` | Communication Configuration Engine backend |
+| `supabase/migrations/20260807210000_communication_configuration_engine.sql` | Categories, templates, rules, stubs |
+| `docs/architecture/communication-configuration-engine.md` + MASTER §37 | Communication config docs |
+| `scripts/smoke-communication-validation.ts` | Communication config validation smoke |
+| `lib/editing/**` | Configuration Editing Framework |
+| `supabase/migrations/20260807220000_configuration_editing_framework.sql` | Audit + config history tables |
+| `docs/architecture/configuration-editing-framework.md` + MASTER §38 | Editing framework docs |
+| `scripts/smoke-editing-validation.ts` | Editing framework smoke |
+| `lib/config/subjects-actions.ts` + `grading-scales-actions.ts` | Reference adopters of framework |
+| `lib/config-dashboard/**` | Configuration Dashboard health aggregator |
+| `app/dashboard/configuration/**` + `components/configuration/**` | Minimal command-centre UI |
+| `docs/architecture/configuration-dashboard.md` + MASTER §39 | Dashboard docs |
+| `scripts/smoke-config-dashboard-validation.ts` | Dashboard catalog smoke |
+| `components/dashboard/app-header.tsx` | Nav link → Configuration |
+| `docs/architecture/phase-1-implementation-audit.md` + MASTER §40 | Production gate audit (not COMPLETE) |
 
-**Action:** commit these before treating Step 5 as fully landed on `origin/main`.
+**Action:** commit + push; apply pending migrations via `npx supabase db push`. Prioritize §40 P0 before production.
 
 ### 17.2 Smoke data still in linked DB (known)
 
@@ -877,15 +1227,26 @@ Safe to keep for manual QA; delete when cleaning staging.
 - Staff `resetPasswordForEmail` cannot create accounts
 - Employment `invited` unused by app writes
 - Form UI polish deferred
+- **Phase 1 production gate open (§40)** — same-school FK guards, DELETE revoke leftovers, editing adoption, seed-on-create, onboarding hard-delete harden, etc.
 
 ### 17.4 Next planning suggestions
 
 1. Commit §17.1 deltas.  
-2. **Phase 0.5 is complete** — treat §18–§26 + all `docs/architecture/*` as binding.  
-3. Execute **§26 P0** design (still may be design-only first): F11, membership RLS, outbox, Fee deep-dive, year-rollover playbook — **before** Fee UI, portals, or WhatsApp.  
-4. Spec **RBAC-1** teacher invite end-to-end against §7 + [`rbac.md`](architecture/rbac.md) after F11 + membership RLS.  
-5. Only then expand parent/student portals.  
-6. Parallel track: F1 student bulk UX once identity has more real school traffic.
+2. **Phase 0.5 is complete** — treat §18–§27 + architecture docs as binding.  
+3. **Phase 1 engines §28–§39 SHIPPED; production gate NOT PASSED (§40)** — do not mark Phase 1 COMPLETE until P0 hardening closes.  
+4. Close **§40.3 P0** (FK integrity, archive purity, year lifecycle, editing adoption, seeds, audit retention) **or** continue admin-only build with explicit risk acceptance.  
+5. Continue **§26 P0**: F11, membership RLS, outbox, Fee deep-dive, year-rollover — **before** Fee UI, portals, or WhatsApp.  
+6. Spec **RBAC-1** teacher invite after F11 + membership RLS.  
+7. Wire onboarding staff department creates through `lib/departments` + memberships (retire employment-only HOD flags as source of truth).  
+8. Prefer `house_memberships` over writing `admission.house_id` alone.  
+9. Department / assessment / policies / communications admin UIs after hardening.  
+10. Event outbox for domain events after P0 outbox ships.  
+11. Assessment **marks entry** (`exam_results`) remains deferred — config only (§34).  
+12. Report card **PDF issue** / digital signatures remain deferred — templates only (§35).  
+13. Fee / transport **policy runtime** remains deferred — kinds stubbed (§36).  
+14. Communication **sending** (E19) remains deferred — config only (§37).  
+15. Adopt **§38 editing framework** (`recordConfigMutation` / `evaluateConfigEdit`) in remaining config action modules.  
+16. Re-audit and mark Phase 1 **COMPLETE** only when §40 production gate PASSes.
 
 ---
 
@@ -1094,7 +1455,8 @@ Every feature must list:
 
 ### 22.1 Principles
 
-- **Configuration** (subjects, departments, scales, periods, templates) → editable via rename / version / archive / effective-date  
+- **Configuration** (subjects, scales, periods, templates) → editable via rename / version / archive / effective-date  
+- **Departments** (E05) → rename / archive; memberships dated; never version Person data under dept 
 - **Operational facts** (results, attendance, ledger, payments, issued docs, audit) → append-only or compensating; no silent rewrite  
 - Prefer **Archive** over hard delete; **pin version ids** or **snapshot** on issue  
 - Academic year close → **Lock**; rollover creates new year-scoped rows, does not mutate closed years  
@@ -1322,4 +1684,578 @@ New screens must map to a persona section in `user-journeys.md` and stay within 
 
 ---
 
-*End of master document. Update §15 after verification runs; §3/§4/§8 on schema/decisions; §18–§27 on architecture/product journeys. Phase 0.5 closed.*
+## 28. Phase 1 — Configuration Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). UI admin screens **not built**.  
+**Canonical doc:** [`docs/architecture/configuration-engine.md`](architecture/configuration-engine.md)  
+**Module:** `lib/config/**`  
+**Migration:** `supabase/migrations/20260807120000_configuration_engine.sql` (applied to linked project)
+
+### 28.1 Audit outcomes
+
+| Finding | Action taken |
+|---------|----------------|
+| Subjects/houses/clubs wipe-rewrite | Replaced with upsert + **archive** |
+| No archive columns | Added `archived_at` / `updated_at` |
+| Subject CASCADE destroyed ops FKs | `ON DELETE RESTRICT` on employment/exam/class_subjects |
+| Hard DELETE on catalogs | **Revoked** for `authenticated` |
+| Missing grading scales | Added `grading_scales` + `grading_scale_versions` |
+| Missing club memberships | Added `club_memberships` (dated `left_on`) |
+| No `lib/config/` | Created engine module |
+| Departments / fee heads / classes | **Not** moved into E07 (correct owners) |
+
+### 28.2 Supported operations
+
+Every catalog object: **create · edit · archive · restore**. No hard deletes.
+
+| Object | Notes |
+|--------|-------|
+| Subjects | Stable `code`; archive missing on sync |
+| Class–subjects | Replace-per-class (offer map only) |
+| Houses / Clubs | Upsert + archive; house `code` |
+| Grading scales | New immutable version on band publish |
+| School branding | E07 columns only (`updateSchoolBrandingAction`) |
+| Club memberships | Join / leave (`left_on`) |
+
+### 28.3 Tests
+
+`npx tsx scripts/smoke-config-validation.ts` — validation helpers.
+
+### 28.4 Explicitly out of scope (this slice)
+
+- Config admin UI  
+- Event outbox (`config.catalog.updated`)  
+- Splitting onboarding school-identity month write into E08-only action  
+- HouseMembership first-class (still admission.house_id)
+
+### 28.5 Placement rule
+
+Config mutations go through `lib/config/*-actions.ts`. Onboarding calls these APIs; do not reintroduce delete-all catalog saves.
+
+---
+
+## 29. Phase 1 — Academic Calendar Engine
+
+**Status:** Backend + minimal admin UI `SHIPPED` (2026-08-07).  
+**Canonical doc:** [`docs/architecture/academic-calendar-engine.md`](architecture/academic-calendar-engine.md)  
+**Module:** `lib/calendar/**`  
+**UI:** `/dashboard/calendar`  
+**Migration:** `supabase/migrations/20260807130000_academic_calendar_engine.sql`
+
+### 29.1 Ownership
+
+| Concern | Engine | Table |
+|---------|--------|-------|
+| Years / terms / working days / holidays | **E08** | `academic_years`, `terms`, `school_working_day_patterns`, `holidays` |
+| Occasions (PTM, sports, trips, …) | **E17** | `calendar_events` |
+
+Holiday ≠ CalendarEvent ≠ TimetableSlot.
+
+### 29.2 Audit outcomes
+
+| Finding | Action taken |
+|---------|----------------|
+| Years/terms only; no holidays/events | Added `holidays`, `calendar_events`, working-day patterns |
+| No year lifecycle status | `status` draft/active/closed + `archived_at` |
+| Hard DELETE on years | Revoked for `authenticated` |
+| Holidays vs occasions mixed in product language | Separate tables; UI copy clarifies |
+| Future recurrence/notify/attendance/AI | Nullable stub columns only |
+
+### 29.3 Supported operations
+
+| Object | Operations |
+|--------|------------|
+| Academic year | create, activate, close, archive |
+| Term | create, edit, archive, restore |
+| Working days | upsert (school default or per year) |
+| Holiday | create, edit, archive, restore |
+| Calendar event | create, edit, set approval, archive, restore |
+
+Event fields: title, description, category, start/end, all-day, location, visibility, audience, academic year, term, created by, approval status.
+
+### 29.4 Tests
+
+`npx tsx scripts/smoke-calendar-validation.ts` — validation helpers.
+
+### 29.5 Explicitly out of scope (this slice)
+
+- Recurring event expansion / RRULE engine  
+- Attachments UI · publish notifications · event attendance · AI summaries  
+- Moving `schools.academic_year_start_month` writes fully off onboarding into E08-only action  
+- Rewiring onboarding `saveTermsAction` off delete-all (still works; calendar API prefers archive)
+
+### 29.6 Placement rule
+
+Calendar mutations go through `lib/calendar/*-actions.ts`. Do not store holidays inside `calendar_events`.
+
+---
+
+## 30. Phase 1 — Department Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Admin UI **not built**.  
+**Owner:** **E05 Workforce** (department org surface)  
+**Canonical doc:** [`docs/architecture/department-engine.md`](architecture/department-engine.md)  
+**Module:** `lib/departments/**`  
+**Migration:** `supabase/migrations/20260807140000_department_engine.sql`
+
+### 30.1 Hard rule
+
+Departments **never own teachers**. Teachers belong to **Person** (E04). Departments own **relationships** to `teacher_employments`.
+
+### 30.2 Supported objects
+
+| Object | Operations |
+|--------|------------|
+| Department | create, edit, archive, restore + history |
+| Membership | add/update roles (`head` / `coordinator` / `member`); end (dated) |
+| Department subject | link / unlink (archive) E07 subjects |
+| Teaching assignment | create / end employment↔subject relationship |
+| Announcement | create, update, archive |
+| Resource | create, update, archive |
+| History | append-only read |
+
+### 30.3 Ownership & tracking
+
+- `created_by` / `updated_by` on departments, announcements, resources  
+- `department_history` append-only trail for mutations  
+- Membership / assignment dated history via `joined_on`/`left_on` and `started_on`/`ended_on`  
+- Future stubs: `parent_department_id`, `cost_center_code`, `media_id`, `notify_on_publish`
+
+### 30.4 Compatibility
+
+Membership writes sync `teacher_employments.department_id` + `is_hod` so existing staff onboarding keeps working until rewired.
+
+### 30.5 Tests
+
+`npx tsx scripts/smoke-department-validation.ts`
+
+### 30.6 Out of scope
+
+- Admin UI  
+- Nested department UX  
+- E18/E19 fan-out on announce  
+- Full onboarding rewire onto membership APIs  
+
+### 30.7 Placement rule
+
+Department mutations go through `lib/departments/*-actions.ts`. Do not insert Person/TeacherProfile under departments.
+
+---
+
+## 31. Phase 1 — House & Club Engine
+
+**Status:** Backend + minimal admin UI `SHIPPED` (2026-08-07).  
+**Owner:** **E07 Configuration** (house/club surface)  
+**Canonical doc:** [`docs/architecture/house-club-engine.md`](architecture/house-club-engine.md)  
+**Module:** `lib/houses-clubs/**`  
+**UI:** `/dashboard/houses-clubs`  
+**Migration:** `supabase/migrations/20260807150000_house_club_engine.sql`
+
+### 31.1 Supported
+
+| Object | Notes |
+|--------|-------|
+| Houses / Clubs | name, code, description, colour(s), logo_path, academic year, TIC employment, archive |
+| Membership | dated house/club memberships |
+| Captains | `captain` / `vice_captain` roles (one active each per house/club×year) |
+| Teacher in charge | `teacher_in_charge_employment_id` → employment, not Person |
+
+### 31.2 Future (schema stubs only)
+
+`house_point_ledger`, `club_event_links` (competitions / inter-house / club events → E17 later). Flags `points_tracking_enabled`, `events_enabled`.
+
+### 31.3 Compatibility
+
+- Onboarding catalog sync still via `lib/config/houses-actions` / `clubs-actions`  
+- Club memberships re-exported from engine  
+- Active house membership syncs `student_admissions.house_id`
+
+### 31.4 Tests
+
+`npx tsx scripts/smoke-houses-clubs-validation.ts`
+
+### 31.5 Placement rule
+
+House/club relationship mutations go through `lib/houses-clubs/*`. Do not store student/teacher PII on house/club rows.
+
+---
+
+## 32. Phase 1 — Subject Configuration Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Admin UI **not built**.  
+**Owner:** **E07 Configuration** (subject master surface)  
+**Canonical doc:** [`docs/architecture/subject-configuration-engine.md`](architecture/subject-configuration-engine.md)  
+**Module:** `lib/subjects/**`  
+**Migration:** `supabase/migrations/20260807160000_subject_configuration_engine.sql`
+
+### 32.1 Supported
+
+| Concern | Implementation |
+|---------|----------------|
+| Subject master | Rich `subjects` row: description, category, group, language, elective, board mapping, credits, weekly periods, lab, assessment_rules JSON, display_order |
+| Subject groups | `subject_groups` catalog |
+| Languages | `category=language`, `is_language`, `language_code` |
+| Electives | `category=elective`, `is_elective` (+ class_subjects.is_elective for offer map) |
+| Board mapping | `board_code`, `board_subject_name` |
+| Assessment rules | JSON: grading_type, max/pass marks, practical weightage, internal assessment |
+| Dependencies | `subject_dependencies`: prerequisite / corequisite / recommended |
+| Archive | `archived_at` on subjects/groups/deps; DELETE revoked on subjects; FK RESTRICT on operational refs |
+
+### 32.2 Future (stubs)
+
+`textbook_isbn`, `textbook_title`, `ai_lesson_plan_enabled`, `chapter_map` on subjects; `subject_textbooks` table for multi-book catalog.
+
+### 32.3 Compatibility
+
+Onboarding `syncSubjectsCatalogAction` still sets name/code/type only — enriched fields preserved on update.
+
+### 32.4 Tests
+
+`npx tsx scripts/smoke-subject-validation.ts`
+
+### 32.5 Placement rule
+
+Rich subject mutations go through `lib/subjects/*-actions.ts`. Onboarding bulk sync stays on `lib/config/subjects-actions.ts`.
+
+---
+
+## 33. Phase 1 — Timetable Configuration Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Admin UI **not built**.  
+**Owner:** **E10 Timetable**  
+**Canonical doc:** [`docs/architecture/timetable-configuration-engine.md`](architecture/timetable-configuration-engine.md)  
+**Module:** `lib/timetable/**`  
+**Migration:** `supabase/migrations/20260807170000_timetable_configuration_engine.sql`
+
+### 33.1 Supported
+
+| Concern | Implementation |
+|---------|----------------|
+| Periods | Upsert, archive, break flag, **lock/unlock** |
+| Weekly schedule | `timetable_slots` with day_of_week + period |
+| Cycle days | `timetable_cycle_days` per grid |
+| Alternate timetables | `timetable_grids` types: primary / alternate / exam / special |
+| Teacher allocation | Slot `teacher_id` → employment; conflict-checked |
+| Section allocation | Slot `section_id`; unique per grid×day×period |
+| Availability | `teacher_availability`, `section_availability` |
+| Conflict detection | Pure `detectSlotConflicts` + enforced on upsert |
+| Period / slot locking | Blocks mutations until unlocked |
+
+### 33.2 Future (stubs)
+
+`rooms`, `timetable_slots.room_id`, `timetable_substitutions`.
+
+### 33.3 Conflict kinds blocked on save
+
+`teacher_double_booked` · `section_double_booked` · `room_double_booked` · `teacher_unavailable` · `section_unavailable` · `period_locked` · `slot_locked` · `break_period` · `period_overlap`
+
+### 33.4 Compatibility
+
+Onboarding `saveTimetableAction` wipe-rewrite still works. Engine APIs prefer upsert/archive/lock. Existing slots backfilled onto primary weekly grids.
+
+### 33.5 Tests
+
+`npx tsx scripts/smoke-timetable-validation.ts`
+
+### 33.6 Placement rule
+
+Timetable mutations go through `lib/timetable/*-actions.ts`. Eligibility remains E05; schedule ownership is E10.
+
+---
+
+## 34. Phase 1 — Assessment Configuration Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Admin UI **not built**. Marks entry **not built**.  
+**Owner:** **E11 Assessment** (config surface only)  
+**Canonical doc:** [`docs/architecture/assessment-configuration-engine.md`](architecture/assessment-configuration-engine.md)  
+**Module:** `lib/assessment/**`  
+**Migration:** `supabase/migrations/20260807180000_assessment_configuration_engine.sql`
+
+### 34.1 Supported
+
+| Concern | Implementation |
+|---------|----------------|
+| Exam types | `assessment_exam_types` catalog + defaults |
+| Assessment categories | theory / internal / practical / project / oral / optional |
+| Weightages / passing marks | On types, definitions, components, schedules |
+| Grading rules | `grading_type` + pin `grading_scale_version_id` (E07) |
+| Internal / practical / projects | `assessment_components` + category kinds |
+| Optional subjects | Schedule `is_optional_subject`; definition `includes_optional_subjects` |
+| Subject groups | Optional FK to E07 `subject_groups` |
+| Publishing rules | JSON on policy + definition; publish / schedule / retract |
+| Lock rules | JSON + lock/unlock; edit/archive gated when locked |
+| Future moderation / AI | Boolean flags only (`moderation_enabled`, `ai_evaluation_enabled`) |
+
+### 34.2 Explicit non-goals
+
+No `exam_results`, marks entry UI, moderation workflow, or AI evaluation behavior.
+
+### 34.3 Compatibility
+
+Onboarding `saveExamsAction` soft-archives then inserts (DELETE revoked). Prefer `lib/assessment/*-actions.ts` for ongoing admin config.
+
+### 34.4 Tests
+
+`npx tsx scripts/smoke-assessment-validation.ts`
+
+### 34.5 Placement rule
+
+Assessment **configuration** mutations go through `lib/assessment/*-actions.ts`. Grading scales / subject groups stay E07. Results remain future E11.
+
+---
+
+## 35. Phase 1 — Report Card Template Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Admin UI **not built**. PDF issue **not built**.  
+**Owner:** **E20 Document** (template surface)  
+**Canonical doc:** [`docs/architecture/report-card-template-engine.md`](architecture/report-card-template-engine.md)  
+**Module:** `lib/report-cards/**`  
+**Migration:** `supabase/migrations/20260807190000_report_card_template_engine.sql`
+
+### 35.1 Supported
+
+| Concern | Implementation |
+|---------|----------------|
+| Boards | `report_card_boards` catalog |
+| Classes / sections | `report_card_template_scopes` |
+| Dynamic sections | `report_card_template_blocks` (+ reorder) |
+| Grades | Grades block + assessment bindings (`show_grades`) |
+| Remarks | Remarks block + include flag |
+| Attendance | Attendance block (binds E12 later; no facts owned) |
+| Co-curricular | Co-curricular block |
+| Teacher / principal comments | Dedicated blocks + include flags |
+| Signatures | `report_card_template_signatures` (wet_ink / placeholder / digital_stub) |
+| Custom layouts | `layout_config` JSON + `custom` block type |
+| Assessment refs | `report_card_template_assessments.exam_definition_id` (E11) |
+| Versioning | Publish → immutable `report_card_template_versions` snapshot |
+| Future PDF | `pdf_generation_enabled` + `report_card_render_jobs` stub |
+| Future digital signatures | `digital_signature_enabled` + `requires_digital` flags |
+
+### 35.2 Explicit non-goals
+
+No issued ReportCard rows, PDF bytes, DigiLocker, or duplicated marks/attendance facts.
+
+### 35.3 Hard rule
+
+Templates reference assessments; they do **not** store marks. Future issued cards pin a template **version** and read E11 results at render time (or snapshot then — never mutate live joins for reprints).
+
+### 35.4 Tests
+
+`npx tsx scripts/smoke-report-card-validation.ts`
+
+### 35.5 Placement rule
+
+Template mutations go through `lib/report-cards/*-actions.ts`. Marks remain E11; issued PDFs remain future E20.
+
+---
+
+## 36. Phase 1 — School Policy Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Admin UI **not built**.  
+**Owner:** **E07 Configuration** (policy definitions)  
+**Canonical doc:** [`docs/architecture/school-policy-engine.md`](architecture/school-policy-engine.md)  
+**Module:** `lib/policies/**`  
+**Migration:** `supabase/migrations/20260807200000_school_policy_engine.sql`
+
+### 36.1 Supported policy kinds
+
+| Kind | Notes |
+|------|-------|
+| `attendance_rules` | Min % / absence thresholds |
+| `promotion_rules` | Pass %, compartment, failed-subject caps |
+| `working_hours` | Staff + instructional HH:MM |
+| `school_timings` | Per-weekday open/close |
+| `leave_types` | Catalog of leave codes |
+| `late_arrival` | Grace minutes / late-after |
+| `half_day` | Morning/afternoon cutoffs |
+| `exam_eligibility` | Attendance gate (+ fee flag stub) |
+| `grace_marks` | Caps / borderline-only |
+| `behaviour_rules` | Warn/suspend thresholds |
+| `fee_rules` | FUTURE stub |
+| `transport_rules` | FUTURE stub |
+
+### 36.2 Versioning
+
+Every policy has `school_policy_versions`. Draft edit → publish (immutable + `is_current`). Further edits open version N+1. Year-scoped published policies override school-wide defaults of the same kind.
+
+### 36.3 Explicit non-goals
+
+No attendance marking, promotion execution, fee calculation, or transport routing. Policies are configuration only.
+
+### 36.4 Tests
+
+`npx tsx scripts/smoke-policy-validation.ts`
+
+### 36.5 Placement rule
+
+Policy mutations go through `lib/policies/*-actions.ts`. Instructional weekdays stay E08; hours/timings/thresholds are E07 policies. Consumers pin or read `is_current` versions.
+
+---
+
+## 37. Phase 1 — Communication Configuration Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Admin UI **not built**. Sending **not built**.  
+**Owner:** **E18 Communication** (config surface)  
+**Canonical doc:** [`docs/architecture/communication-configuration-engine.md`](architecture/communication-configuration-engine.md)  
+**Module:** `lib/communications/**`  
+**Migration:** `supabase/migrations/20260807210000_communication_configuration_engine.sql`
+
+### 37.1 Supported
+
+| Concern | Implementation |
+|---------|----------------|
+| Announcement categories | `comm_announcement_categories` |
+| Priority levels | `comm_priority_levels` (critical/high/normal/low seeded) |
+| Audience groups | `comm_audience_groups` + filter JSON |
+| Notification / email / WhatsApp / SMS templates | `comm_message_templates.channel` |
+| Template versioning | `comm_message_template_versions` (publish → immutable) |
+| Delivery rules | `comm_delivery_rules` (event → channels/audience/template) |
+| Approval rules | `comm_approval_rules` |
+| Future automation | `comm_automations` shell (`is_enabled` forced false on write) |
+| Future campaigns | `comm_campaigns` shell (draft only) |
+
+### 37.2 Explicit non-goals
+
+No queues, provider calls, delivery attempts, audience resolution at send-time, or live campaign execution (E19 / future).
+
+### 37.3 Hard rule
+
+**E18 = content + config; E19 = delivery.** This engine never sends.
+
+### 37.4 Tests
+
+`npx tsx scripts/smoke-communication-validation.ts`
+
+### 37.5 Placement rule
+
+Communication config mutations go through `lib/communications/*-actions.ts`. Department announcements (E05) remain dept-scoped; school-wide templates/rules are E18.
+
+---
+
+## 38. Phase 1 — Configuration Editing Framework
+
+**Status:** Backend `SHIPPED` (2026-08-07). Full adoption across every config action is **in progress** (subjects + grading scales wired as reference).  
+**Owner:** Cross-cutting · persists via **E28** `audit_entries`  
+**Canonical doc:** [`docs/architecture/configuration-editing-framework.md`](architecture/configuration-editing-framework.md)  
+**Module:** `lib/editing/**`  
+**Migration:** `supabase/migrations/20260807220000_configuration_editing_framework.sql`
+
+### 38.1 Audit of configuration modules (pre-framework)
+
+| Module | Edit | Archive | Restore | Duplicate | History | Audit | Version | Deps |
+|--------|------|---------|---------|-----------|---------|-------|---------|------|
+| `lib/config` subjects/houses/clubs | partial | yes | yes | **added** (subjects) | via framework | via framework | scales **V** | framework |
+| `lib/subjects` | yes | yes | partial | no | adopt | adopt | — | registry |
+| `lib/calendar` | yes | yes | partial | no | adopt | adopt | year lock | registry |
+| `lib/departments` | yes | yes | partial | no | adopt | adopt | — | registry |
+| `lib/houses-clubs` | yes | yes | yes | no | adopt | adopt | — | registry |
+| `lib/timetable` | yes | yes | locks | no | adopt | adopt | grids | conflict engine |
+| `lib/assessment` | yes | yes | locks | no | adopt | adopt | publish/lock | registry |
+| `lib/report-cards` | draft-only | yes | clone | clone | versions | adopt | **V** | registry |
+| `lib/policies` | draft/version | yes | — | no | versions | adopt | **V** | — |
+| `lib/communications` | draft/version | yes | — | no | versions | adopt | **V** | — |
+
+### 38.2 Supported operations
+
+Edit · Archive · Restore · Duplicate · History · Audit log · Version tracking · Validation · Dependency checks · Soft-migration recommendations.
+
+### 38.3 Soft migration (instead of destructive updates)
+
+When an edit would invalidate operational records, the framework **denies** the mutation and returns one or more of:
+
+- **Rename only** (identity-preserving)  
+- **Archive and create** replacement  
+- **Clone / publish new version**  
+- **Year-scoped clone**  
+- **Blocked — use correction workflow**  
+
+### 38.4 Tests
+
+`npx tsx scripts/smoke-editing-validation.ts`
+
+### 38.5 Placement rule
+
+Config mutations should call `evaluateConfigEdit` before dangerous writes and `recordConfigMutation` after success. Hard delete of configuration remains denied.
+
+---
+
+## 39. Phase 1 — Configuration Dashboard
+
+**Status:** Backend + minimal UI `SHIPPED` (2026-08-07).  
+**Owner:** Cross-cutting (read-only aggregator; does not own config rows)  
+**Canonical doc:** [`docs/architecture/configuration-dashboard.md`](architecture/configuration-dashboard.md)  
+**Module:** `lib/config-dashboard/**`  
+**UI:** `/dashboard/configuration`  
+**Migration:** none (observes existing engines)
+
+### 39.1 What it shows
+
+| Signal | Source |
+|--------|--------|
+| Completion status | Per-module heuristics over active row counts + school flags |
+| Warnings | Soft gaps (empty holidays, unpublished policies/templates, …) |
+| Missing configuration | Hard gaps (no year/terms/classes/subjects when required) |
+| Dependency errors | Cross-module breakage (e.g. slots → archived subjects; published RC templates without assessment bindings) |
+| Health checks | Informational readiness notes (`backend_only` modules, feature flags) |
+| Links | Calendar, houses/clubs, onboarding steps, in-page anchors for API-only modules |
+
+### 39.2 Catalog modules
+
+School branding · Academic calendar · Classes & sections · Subjects · Grading scales · Houses & clubs · Departments · Timetable · Assessment · Report cards · Policies · Communications · Editing framework.
+
+### 39.3 Tests
+
+`npx tsx scripts/smoke-config-dashboard-validation.ts`
+
+### 39.4 Placement rule
+
+Write paths stay in owning engines (`lib/calendar`, `lib/subjects`, …). The dashboard only aggregates and links.
+
+---
+
+## 40. Phase 1 — Implementation audit
+
+**Status:** Audit `SHIPPED` (2026-08-07). Phase 1 engines **SHIPPED**. Production gate **NOT PASSED**. Phase 1 **not marked COMPLETE**.  
+**Canonical doc:** [`docs/architecture/phase-1-implementation-audit.md`](architecture/phase-1-implementation-audit.md)
+
+### 40.1 Verdict
+
+| Gate | Result |
+|------|--------|
+| Engines O–Z (§28–§39) implemented | PASS |
+| Validation smokes | PASS |
+| Production-ready (multi-tenant integrity, AuthZ, archive purity, editing adoption) | **FAIL** |
+| Mark Phase 1 COMPLETE | **No** |
+
+Safe for continued **school_admin-only** development. Block multi-persona production, Fee/send/portals, and production year rollover until P0 closed.
+
+### 40.2 Critical / high themes
+
+- Cross-school FK integrity gaps at DB (C2)
+- Profile-only AuthZ (C1) — known §26 P0
+- Hard deletes + exam mass-archive in onboarding/class-subjects (C3–C4)
+- Incomplete DELETE revocation; dual year lifecycle; CASCADE asymmetry (H1–H3)
+- Mutable “immutable” versions; migration-only seeds; audit CASCADE wipe (H4–H6)
+- Dual SoTs (H7); editing framework barely adopted (H8)
+- Uneven UI (calendar / houses-clubs / configuration only)
+
+### 40.3 P0 hardening (before production-ready / COMPLETE)
+
+1. Same-school / same-year FK guards  
+2. Revoke DELETE on remaining archive-era tables  
+3. Single academic-year lifecycle + audited activate/close  
+4. Align year child ON DELETE with rollover playbook  
+5. Immutable version enforcement at DB  
+6. Seed-on-school-create  
+7. Audit retention (no CASCADE wipe)  
+8. Harden onboarding hard-delete / exam mass-archive  
+9. Adopt editing framework on lifecycle mutations  
+10. Membership RLS + app RBAC (F11 / §26)
+
+### 40.4 Placement rule
+
+Do not claim Phase 1 COMPLETE in plans or releases until §40.3 P0 is closed (or explicitly waived with written risk acceptance). Update this section when a re-audit passes the production gate.
+
+---
+
+*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§40 on architecture. Phase 0.5 closed; Phase 1 engines shipped; production gate open (§40).*

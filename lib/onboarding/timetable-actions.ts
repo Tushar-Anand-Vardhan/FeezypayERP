@@ -62,7 +62,11 @@ export async function getTimetableStepDataAction(): Promise<TimetableStepData> {
         .select("id, name, class_id, class_teacher_id")
         .in("class_id", classIds)
         .order("display_order"),
-      supabase.from("subjects").select("id, name").eq("school_id", schoolId),
+      supabase
+        .from("subjects")
+        .select("id, name")
+        .eq("school_id", schoolId)
+        .is("archived_at", null),
       supabase
         .from("teacher_employments")
         .select(

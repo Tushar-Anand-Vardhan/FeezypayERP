@@ -82,6 +82,7 @@ export async function getExamsStepDataAction(): Promise<ExamsStepData> {
         "name, category, term_id, weightage_percent, max_marks, grading_type",
       )
       .eq("academic_year_id", yearResult.academicYear.id)
+      .is("archived_at", null)
       .order("name"),
   ]);
 
@@ -167,7 +168,8 @@ export async function saveExamsAction(formData: FormData): Promise<Result> {
     const { count } = await supabase
       .from("exam_definitions")
       .select("id", { count: "exact", head: true })
-      .eq("academic_year_id", yearResult.academicYear.id);
+      .eq("academic_year_id", yearResult.academicYear.id)
+      .is("archived_at", null);
     if ((count ?? 0) > 0) {
       return {
         success: false,
@@ -177,12 +179,17 @@ export async function saveExamsAction(formData: FormData): Promise<Result> {
     }
   }
 
-  const { error: deleteError } = await supabase
+  // Soft-archive existing definitions (E11 prefers archive; DELETE revoked).
+  const { error: archiveError } = await supabase
     .from("exam_definitions")
-    .delete()
-    .eq("academic_year_id", yearResult.academicYear.id);
-  if (deleteError) {
-    return { success: false, error: deleteError.message };
+    .update({
+      archived_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("academic_year_id", yearResult.academicYear.id)
+    .is("archived_at", null);
+  if (archiveError) {
+    return { success: false, error: archiveError.message };
   }
 
   if (trimmed.length > 0) {
@@ -197,6 +204,7 @@ export async function saveExamsAction(formData: FormData): Promise<Result> {
           : null,
         max_marks: row.maxMarks ? Number(row.maxMarks) : null,
         grading_type: row.gradingType || "marks",
+        publishing_status: "draft",
       })),
     );
     if (error) {

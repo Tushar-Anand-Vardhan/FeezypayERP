@@ -61,19 +61,19 @@ School ERPs fail architecturally when:
 | E05 | **Workforce Engine** | Mostly `SHIPPED` | Teacher employment at schools |
 | E06 | **Enrollment Engine** | Mostly `SHIPPED` | Student admissions + year placements + parents links |
 | E07 | **Configuration Engine** | Mostly `SHIPPED` | School static/config catalogs (board, subjects, houses…) |
-| E08 | **Calendar Engine** | Partial `SHIPPED` | Academic years, terms, holidays, school calendar truth |
+| E08 | **Calendar Engine** | Mostly `SHIPPED` | Academic years, terms, holidays, working days, school calendar truth |
 | E09 | **Structure Engine** | Mostly `SHIPPED` | Classes, sections, capacity, promotion topology |
-| E10 | **Timetable Engine** | Partial `SHIPPED` | Periods, slots, teacher–subject–section scheduling |
-| E11 | **Assessment Engine** | Partial `SHIPPED` | Exam definitions + results (marks) over time |
+| E10 | **Timetable Engine** | Mostly `SHIPPED` | Periods, grids, cycle days, slots, availability, locks, conflict detection |
+| E11 | **Assessment Engine** | Partial `SHIPPED` (config); results `NOT BUILT` | Exam definitions/config shipped; marks/results deferred |
 | E12 | **Attendance Engine** | `DEFERRED` | Presence / absence facts |
 | E13 | **Conduct Engine** | `DEFERRED` | Behaviour, discipline, remarks |
 | E14 | **Health Engine** | `DEFERRED` | Lifelong medical attributes & incidents |
 | E15 | **Fee Engine** | `NOT BUILT` (brand core) | Fee structures, invoices, student ledger |
 | E16 | **Payments Engine** | `NOT BUILT` | Payment rails, settlements, reconciliations |
-| E17 | **Event Engine** | `NOT BUILT` | PTMs, sports days, calendar events as first-class objects |
-| E18 | **Communication Engine** | Seed only | Message content, threads, WhatsApp/email copy, consent |
+| E17 | **Event Engine** | Partial `SHIPPED` | `calendar_events` (PTM/sports/trips…); RSVP/notify deferred |
+| E18 | **Communication Engine** | Partial `SHIPPED` (config); send `NOT BUILT` | Templates/categories/rules shipped; delivery is E19 |
 | E19 | **Notification Engine** | `NOT BUILT` | Delivery pipelines, retries, channel adapters |
-| E20 | **Document Engine** | `NOT BUILT` | Certificates, report cards, TC PDFs, templates |
+| E20 | **Document Engine** | Partial `SHIPPED` (templates); issue `NOT BUILT` | Report card templates shipped; PDF issue deferred |
 | E21 | **Reporting Engine** | `NOT BUILT` | Operational reports & exports |
 | E22 | **Analytics Engine** | `NOT BUILT` | Aggregates, trends, dashboards (read-only) |
 | E23 | **AI Engine** | `NOT BUILT` | Assistive insights, drafting, anomaly hints |
@@ -81,7 +81,7 @@ School ERPs fail architecturally when:
 | E25 | **Onboarding Engine** | Mostly `SHIPPED` | Wizard orchestration & completion gates |
 | E26 | **Ingestion Engine** | Partial `SHIPPED` | CSV/API bulk import validation & mapping |
 | E27 | **Media Engine** | Partial `SHIPPED` | Logos, photos, file storage metadata |
-| E28 | **Audit Engine** | `NOT BUILT` | Immutable action logs for compliance |
+| E28 | **Audit Engine** | Partial `SHIPPED` (config writes) | `audit_entries` via editing framework; full retention/SIEM later |
 
 ---
 
@@ -300,27 +300,28 @@ Model a person’s **job relationship** with a school (employment history).
 
 **Responsibilities**
 - `teacher_employments` lifecycle: invited → active → ended
-- Departments, HOD flag, employee codes, designations
-- Subject teaching assignments at employment (`employment_subjects`)
+- **Department Engine surface:** departments, heads/coordinators/members, dept subjects, teaching relationships, announcements, resources, history
+- Subject teaching eligibility at employment (`employment_subjects`)
 - Provide employment IDs to Timetable / Structure (class teacher)
 
 **Data owned**
 - `teacher_employments`, `employment_subjects` (**capability**: subjects this employment is eligible to teach)
-- `departments` (staff org units — **not** Configuration)
+- `departments`, `department_memberships`, `department_subjects`, `department_teaching_assignments`, `department_announcements`, `department_resources`, `department_history`
 - Future: leave/HR extensions that are employment-scoped
 
 **Data it must never own**
-- Person PII / Aadhaar
+- Person PII / Aadhaar / TeacherProfile identity rows
 - Timetable slot grid or `teacher_subject_assignments` (**E10** owns concrete schedule mapping)
 - Student data
 - Auth passwords
 - Subject catalog definitions (**E07**)
 **Inputs**
-- Staff onboarding / HR updates
+- Staff onboarding / HR updates / `lib/departments/*`
 - Invite acceptance (status flip)
 
 **Outputs**
 - Active employment lists per school
+- Department membership & assignment graphs
 - Employment id as actor key for teaching duties
 
 **Dependencies**
@@ -332,7 +333,7 @@ Model a person’s **job relationship** with a school (employment history).
 
 **Future scalability**
 - Multi-school careers; substitute teachers; contract types
-- Marketplace verification consumes employment history (read)
+- Nested departments; cost centers; marketplace verification consumes employment history (read)
 
 **Personas**
 - School admin, Teacher, HOD, Platform admin
@@ -394,42 +395,52 @@ School-level **catalogs and settings** that change infrequently and parameterize
 
 **Responsibilities**
 - School identity display fields (board, address, logo reference, grading preferences later)
-- Subjects catalog + class–subject map
-- Houses & clubs enablement and memberships lists
+- **Subject Configuration surface:** subject master, groups, dependencies, board/credits/periods/lab/assessment rules
+- **House & Club Engine surface:** houses/clubs catalog, colours/logos, TIC, memberships, captains
 - Feature flags that are config (houses_enabled), not lifecycle (onboarding_status → Tenancy)
 - Grading scales / mark schemes config (shared with Assessment; Assessment owns results)
+- **School Policy Engine surface:** versioned attendance/promotion/timings/leave/exam/grace/behaviour policies (`lib/policies/`)
 
 **Data owned**
-- `subjects`, `class_subjects`, `houses`, `clubs`
+- `subjects`, `subject_groups`, `subject_dependencies`, `class_subjects`, `houses`, `clubs`, `house_memberships`, `club_memberships`
+- Stub: `subject_textbooks`, `house_point_ledger`, `club_event_links`
 - **School branding/config columns** on `schools`: `name`, board/address/contact identity fields, logo reference, `houses_enabled`, `clubs_enabled`
-- Future: `grading_scales` / mark-scheme **definitions** (Assessment owns results; may reference scale id)
+- `grading_scales` / mark-scheme **definitions** (Assessment owns results; may reference scale id)
+- `school_policies`, `school_policy_versions` (fee/transport kinds stubbed)
 - Does **not** own `departments` (E05) or `academic_year_start_month` (E08)
 
 **Data it must never own**
 - Runtime timetable slots
-- Admissions / employments
-- Marks / attendance
+- Person / TeacherProfile identity rows (TIC is employment FK only)
+- Marks / attendance **facts**
 - Payment transactions
 - Tenant lifecycle (`onboarding_status`) or wizard flags
 **Inputs**
 - Onboarding steps (identity, subjects, houses/clubs)
-- Admin settings UI
+- Admin `/dashboard/houses-clubs` + `lib/houses-clubs/*`
+- Admin policy APIs via `lib/policies/*`
 
 **Outputs**
-- Valid subject/house/club ids for other engines
+- Valid subject/house/club ids and membership graphs for other engines
+- Current policy version rules for E09/E11/E12/E13 consumers
 
 **Dependencies**
 - Tenancy
 - Structure (for class_subjects)
 - Media (logos)
 - Authorization
+- Workforce (TIC employment ids)
 
 **Future scalability**
 - Config versioning per academic year (subject offered in 2025 but not 2026)
+- House points / club events / competitions
 - Templates for new schools
+- Fee / transport policy runtime
 
 **Personas**
 - School admin, HOD (limited), Platform admin (templates)
+
+**Phase 1 note:** School Policy Engine — [`school-policy-engine.md`](school-policy-engine.md).
 
 ---
 
@@ -439,15 +450,15 @@ School-level **catalogs and settings** that change infrequently and parameterize
 Authoritative **time structure** of the school: years, terms, holidays, working days.
 
 **Responsibilities**
-- `academic_years` (active year)
-- `terms` (month/day patterns or dated ranges)
-- Future: holiday calendar, exam windows as calendar blocks (Assessment references them)
+- `academic_years` (active year + draft/active/closed lifecycle)
+- `terms` (month/day patterns or dated ranges; archive)
+- `school_working_day_patterns` (instructional weekdays)
+- `holidays` (non-instructional ranges)
 - Define “what day is instructional”
 
 **Data owned**
-- `academic_years`, `terms`
+- `academic_years`, `terms`, `school_working_day_patterns`, `holidays`
 - **`schools.academic_year_start_month`** (calendar policy for the tenant)
-- Future: `holidays`, `calendar_exceptions` (non-instructional days)
 
 **Data it must never own**
 - Period bell times / teaching slots (Timetable)
@@ -455,10 +466,10 @@ Authoritative **time structure** of the school: years, terms, holidays, working 
 - Attendance records
 - Exam mark values (Assessment)
 **Inputs**
-- Onboarding terms step; admin calendar edits
+- Onboarding terms step; `/dashboard/calendar`; `lib/calendar/*`
 
 **Outputs**
-- `academic_year_id`, term ids, instructional-day answers
+- `academic_year_id`, term ids, instructional-day answers, holiday ranges
 
 **Dependencies**
 - Tenancy
@@ -467,6 +478,7 @@ Authoritative **time structure** of the school: years, terms, holidays, working 
 **Future scalability**
 - Multi-board calendars; trimester vs semester packs
 - Sync to Google Calendar (via Notification/Integration later)
+- Exam windows as calendar blocks (Assessment references them)
 
 **Personas**
 - School admin, Teacher (read), Parent (read)
@@ -519,13 +531,16 @@ Schedule teaching periods: who teaches what, where, when.
 
 **Responsibilities**
 - `period_definitions`, `timetable_slots`, `teacher_subject_assignments`
-- Conflict detection (teacher double-booked, room later)
-- Skip/partial configuration flags coordination with Onboarding (`timetable_skipped` on school — Tenancy/Onboarding flag)
+- `timetable_grids`, `timetable_cycle_days` (weekly + alternate)
+- Conflict detection (teacher/section/room double-book, availability, locks)
+- Teacher & section availability calendars
+- Period / slot locking
+- Skip/partial configuration flags coordination with Onboarding (`timetable_skipped` — E25)
 
 **Data owned**
-- Periods (`period_definitions`), slots (`timetable_slots`)
-- `teacher_subject_assignments` when used as **schedule planning map** (distinct from Workforce `employment_subjects` eligibility)
-- Conflict-detection indexes/helpers
+- Periods, grids, cycle days, slots, availability tables
+- `teacher_subject_assignments` when used as **schedule planning map** (≠ E05 eligibility)
+- Stub: `rooms`, `timetable_substitutions`
 
 **Data it must never own**
 - Employment master data / eligibility subject lists (E05)
@@ -534,16 +549,17 @@ Schedule teaching periods: who teaches what, where, when.
 - `schools.timetable_skipped` (E25 wizard flag)
 **Inputs**
 - Structure sections, Configuration subjects, Workforce employments, Calendar year
+- `lib/timetable/*` engine APIs
 
 **Outputs**
-- Slot grid; “teacher T free?” queries
+- Slot grid; conflict reports; “teacher T free?” via availability
 
 **Dependencies**
 - Structure, Configuration, Workforce, Calendar
 - Authorization
 
 **Future scalability**
-- Room resources, substitution workflow, rotating schedules
+- Room resources, substitution workflow, rotating schedules UI
 
 **Personas**
 - School admin, Teacher, HOD, Student/Parent (read)
@@ -556,35 +572,40 @@ Schedule teaching periods: who teaches what, where, when.
 Define assessments and record **append-only results**.
 
 **Responsibilities**
-- `exam_definitions` (+ schedules)
+- `exam_definitions` (+ schedules) — **config shipped** (`lib/assessment/`)
+- Exam types, categories, components, weightages, pass marks, publish/lock rules
 - Future: `exam_results` linked to `student_academic_years` + subject + exam
 - Weightages, grading_type; compute derived totals via views
 - Never overwrite prior year marks
 
 **Data owned**
-- Exam definitions/schedules; results tables (future)
+- Exam definitions/schedules/components/policies/types/categories
+- Results tables (future)
 - Rubrics if skill-based (future)
 
 **Data it must never own**
 - Student master / admission
 - Fee consequences of failing (Fee may react to events)
 - Report PDF binaries (Document Engine renders from results)
+- Grading scale **definitions** (E07; E11 pins versions)
 
 **Inputs**
-- Calendar terms; Configuration subjects; Enrollment placements; Timetable optional
+- Calendar terms; Configuration subjects/groups/scales; Enrollment placements; Timetable optional
 
 **Outputs**
-- Marks, grades, pass/fail signals for Document/Reporting/Analytics
+- Published assessment **definitions** (config); later marks/grades for Document/Reporting/Analytics
 
 **Dependencies**
 - Calendar, Configuration, Enrollment, Structure
-- Authorization (who may enter marks)
+- Authorization (who may enter marks — future)
 
 **Future scalability**
-- Continuous evaluation, competency frameworks, moderation workflows
+- Continuous evaluation, competency frameworks, moderation workflows, AI evaluation (flags stubbed)
 
 **Personas**
 - School admin, Teacher, HOD, Student/Parent (read), Platform (benchmarks later)
+
+**Phase 1 note:** Assessment **Configuration** Engine docs — [`assessment-configuration-engine.md`](assessment-configuration-engine.md). No marks entry in Phase 1 config ship.
 
 ---
 
@@ -779,7 +800,8 @@ First-class school events (PTM, annual day, sports) distinct from Calendar holid
 - Emit “notify audience” intents
 
 **Data owned**
-- Events, audience rules, RSVPs
+- `calendar_events` (categories, visibility, audience JSON, approval)
+- Future: RSVPs, competition sub-entities beyond category
 
 **Data it must never own**
 - Holiday master (Calendar)
@@ -787,16 +809,16 @@ First-class school events (PTM, annual day, sports) distinct from Calendar holid
 - SMTP delivery (Notification)
 
 **Inputs**
-- Admin/teacher creates event; Calendar for conflict awareness
+- Admin creates event via `lib/calendar/events-actions.ts`; Calendar for conflict awareness
 
 **Outputs**
-- Event records; notification intents; attendance-like check-in later
+- Event records; notification intents (stub `notify_on_publish`); attendance-like check-in later (`attendance_required`)
 
 **Dependencies**
 - Calendar, Structure/Enrollment (audience), Communication, Notification, Authorization
 
 **Future scalability**
-- Ticketing, paid events → Fee/Payments
+- Ticketing, paid events → Fee/Payments; recurrence / attachments / AI summaries
 
 **Personas**
 - School admin, Teacher, Parent, Student
@@ -810,12 +832,15 @@ First-class school events (PTM, annual day, sports) distinct from Calendar holid
 
 **Responsibilities**
 - Announcement records, chat/threads (future)
-- Template content & localization
-- Consent / opt-in flags (e.g. WhatsApp) — already seeded conceptually on guardians
-- Audience resolution requests (who should see this)
+- Template content & localization (**config shipped** — `lib/communications/`)
+- Announcement categories, priority levels, audience groups, delivery/approval rules (config)
+- Consent / opt-in flags (e.g. WhatsApp) — seeded conceptually on guardians
+- Audience resolution requests (who should see this) — resolution runtime future
 
 **Data owned**
-- Messages, templates, consent preferences, announcement entities
+- Messages (future), templates + versions, consent preferences, announcement entities (future school-wide)
+- `comm_*` configuration tables (categories, priorities, audiences, delivery/approval rules)
+- FUTURE shells: `comm_automations`, `comm_campaigns`
 
 **Data it must never own**
 - Provider delivery logs/retries (Notification)
@@ -826,18 +851,20 @@ First-class school events (PTM, annual day, sports) distinct from Calendar holid
 - Authors (admin/teacher); Event/Fee/Attendance triggers requesting a message
 
 **Outputs**
-- Rendered message payloads handed to Notification
-- In-app inbox items
+- Template / rule configuration today; later rendered message payloads handed to Notification
+- In-app inbox items (future)
 
 **Dependencies**
 - Identity/Enrollment (recipients), Authorization, Notification, Event/Fee/Assessment as producers
 
 **Future scalability**
-- Two-way WhatsApp; translation; moderation
+- Two-way WhatsApp; translation; moderation; automation/campaign execution
 - Delivery deep-dive: [`notification-engine.md`](notification-engine.md) (E19); this engine stays content/consent
 
 **Personas**
 - School admin, Teacher, Parent, Student
+
+**Phase 1 note:** Communication Configuration Engine — [`communication-configuration-engine.md`](communication-configuration-engine.md). **No sending.**
 
 ---
 
@@ -887,28 +914,32 @@ Generate and store official documents (report cards, TC, fee receipts, ID cards)
 - Templates, render jobs, signed PDFs
 - Versioning of issued certificates
 - Hash/integrity for verification
+- **Phase 1 shipped:** report card **templates** (`lib/report-cards/`) — boards, scopes, dynamic blocks, assessment refs, signature slots, immutable versions
 
 **Data owned**
-- Templates, issued document metadata, storage pointers
+- Templates, issued document metadata, storage pointers (issue future)
+- Report card template versions / scopes / blocks / signature config
 
 **Data it must never own**
 - Underlying marks/fees (reads Assessment/Fee/Enrollment)
 - Original attendance facts
 
 **Inputs**
-- Assessment results, Enrollment history, Fee receipts, Identity photos
+- Assessment **definitions** (template bindings); later Assessment results, Enrollment history, Fee receipts, Identity photos
 
 **Outputs**
-- Downloadable artifacts; verification codes
+- Template configuration today; later downloadable artifacts + verification codes
 
 **Dependencies**
 - Enrollment, Assessment, Fee, Identity, Media, Authorization, Audit
 
 **Future scalability**
-- DigiLocker; QR verify; bulk generation
+- DigiLocker; QR verify; bulk generation; digital signatures (`report_card_render_jobs` stubbed)
 
 **Personas**
 - School admin, Parent, Student, Teacher (progress reports)
+
+**Phase 1 note:** Report Card Template Engine — [`report-card-template-engine.md`](report-card-template-engine.md). No PDF issue in this ship.
 
 ---
 
@@ -1487,17 +1518,23 @@ Before implementing a feature, answer:
 | `teacher_employments` | **E05** | |
 | `employment_subjects` | **E05** | Eligibility |
 | `departments` | **E05** | Staff org |
+| `department_memberships` / subjects / assignments / announcements / resources / history | **E05** | Department Engine surface |
 | `student_admissions` | **E06** | |
 | `student_academic_years` | **E06** | |
 | `student_parent_links` | **E06** | |
-| `subjects`, `class_subjects` | **E07** | |
-| `houses`, `clubs` | **E07** | |
+| `subjects`, `subject_groups`, `subject_dependencies` | **E07** | Subject master |
+| `class_subjects` | **E07** | Class offer map |
+| `houses`, `clubs` | **E07** | Catalog + colour/logo/TIC/year |
+| `house_memberships`, `club_memberships` | **E07** | Roles + dated history |
+| `school_policies`, `school_policy_versions` | **E07** | Versioned admin policies (fee/transport stubs) |
 | `academic_years`, `terms` | **E08** | |
-| holidays / calendar exceptions (future) | **E08** | |
+| holidays / calendar exceptions | **E08** | `holidays`, `school_working_day_patterns` |
 | `classes`, `sections` (+ capacity) | **E09** | |
 | `sections.class_teacher_id` | **E09** | FK value references E05 id |
-| promotion_rules (future) | **E09** | |
-| `period_definitions`, `timetable_slots` | **E10** | |
+| promotion apply / rollover execution | **E09** + **E06** | Reads E07 `promotion_rules` |
+| `period_definitions`, `timetable_slots`, `timetable_grids`, `timetable_cycle_days` | **E10** | |
+| `teacher_availability`, `section_availability` | **E10** | |
+| `rooms`, `timetable_substitutions` | **E10** | FUTURE stubs |
 | `teacher_subject_assignments` | **E10** | Schedule map ≠ eligibility |
 | `exam_definitions`, schedules | **E11** | |
 | `exam_results` (future) | **E11** | Append-only |
@@ -1508,9 +1545,9 @@ Before implementing a feature, answer:
 | fee plans, invoices, ledger | **E15** | |
 | fee_heads (future) | **E15** | Not E07 |
 | payment txns, provider refs, settlements | **E16** | |
-| school events / RSVPs | **E17** | |
-| message content, templates, consent prefs | **E18** | |
-| notification jobs / delivery attempts | **E19** | |
+| school events / RSVPs | **E17** | `calendar_events` (+ RSVP future) |
+| message content, templates, consent prefs | **E18** | `comm_*` config shipped |
+| notification jobs / delivery attempts | **E19** | Not built |
 | document templates / issued docs metadata | **E20** | |
 | report definitions / execution logs | **E21** | |
 | analytics marts / aggregates | **E22** | |

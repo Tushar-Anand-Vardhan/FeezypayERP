@@ -45,6 +45,7 @@
 | [TeacherEmployment](#teacheremployment) | E05 | `SHIPPED` |
 | [EmploymentSubject](#employmentsubject) | E05 | `SHIPPED` |
 | [Department](#department) | E05 | `SHIPPED` |
+| [DepartmentMembership](#departmentmembership) | E05 | `SHIPPED` |
 | [StudentAdmission](#studentadmission) | E06 | `SHIPPED` |
 | [StudentPlacement](#studentplacement) | E06 | `SHIPPED` |
 | [StudentParentLink](#studentparentlink) | E06 | `SHIPPED` |
@@ -55,18 +56,21 @@
 |--------|-------|----------|
 | [AcademicYear](#academicyear) | E08 | `SHIPPED` |
 | [Term](#term) | E08 | `SHIPPED` |
-| [Holiday](#holiday) | E08 | `PLANNED` |
+| [Holiday](#holiday) | E08 | `SHIPPED` |
 | [Subject](#subject) | E07 | `SHIPPED` |
+| [SubjectGroup](#subjectgroup) | E07 | `SHIPPED` |
+| [SubjectDependency](#subjectdependency) | E07 | `SHIPPED` |
 | [ClassSubject](#classsubject) | E07 | `SHIPPED` |
 | [GradingScale](#gradingscale) | E07 | `PLANNED` |
 | [Class](#class) | E09 | `SHIPPED` |
 | [Section](#section) | E09 | `SHIPPED` |
-| [PromotionRule](#promotionrule) | E09 | `PLANNED` |
+| [PromotionRule](#promotionrule) | E07 (defs) / E09+E06 (apply) | `PARTIAL` (versioned policy §36; rollover apply planned) |
 | [House](#house) | E07 | `SHIPPED` |
 | [Club](#club) | E07 | `SHIPPED` |
-| [HouseMembership](#housemembership) | E06/E07 | `PARTIAL` (via admission.house today) |
-| [ClubMembership](#clubmembership) | E07 | `PLANNED` |
+| [HouseMembership](#housemembership) | E07 | `SHIPPED` |
+| [ClubMembership](#clubmembership) | E07 | `SHIPPED` |
 | [Period](#period) | E10 | `SHIPPED` |
+| [TimetableGrid](#timetablegrid) | E10 | `SHIPPED` |
 | [TimetableSlot](#timetableslot) | E10 | `SHIPPED` |
 | [TeachingAssignment](#teachingassignment) | E10 | `SHIPPED` |
 
@@ -74,8 +78,8 @@
 
 | Entity | Owner | Maturity |
 |--------|-------|----------|
-| [Assessment](#assessment) | E11 | `PARTIAL` (definitions shipped; results planned) |
-| [AssessmentSchedule](#assessmentschedule) | E11 | `SHIPPED` |
+| [Assessment](#assessment) | E11 | `PARTIAL` (config shipped §34; results planned) |
+| [AssessmentSchedule](#assessmentschedule) | E11 | `SHIPPED` (enriched) |
 | [AssessmentResult](#assessmentresult) | E11 | `PLANNED` |
 | [AttendanceRecord](#attendancerecord) | E12 | `PLANNED` |
 | [ConductIncident](#conductincident) | E13 | `PLANNED` |
@@ -96,15 +100,15 @@
 
 | Entity | Owner | Maturity |
 |--------|-------|----------|
-| [CalendarEvent](#calendarevent) | E17 | `PLANNED` |
+| [CalendarEvent](#calendarevent) | E17 | `SHIPPED` |
 | [Competition](#competition) | E17 | `PLANNED` |
-| [Announcement](#announcement) | E18 | `PLANNED` |
-| [MessageTemplate](#messagetemplate) | E18 | `PLANNED` |
+| [Announcement](#announcement) | E18 | `PLANNED` (categories shipped §37) |
+| [MessageTemplate](#messagetemplate) | E18 | `PARTIAL` (config + versions §37; send planned) |
 | [CommunicationConsent](#communicationconsent) | E18 | `PARTIAL` (seed fields historically) |
 | [Notification](#notification) | E19 | `PLANNED` |
-| [DocumentTemplate](#documenttemplate) | E20 | `PLANNED` |
+| [DocumentTemplate](#documenttemplate) | E20 | `PARTIAL` (report card templates §35; other docs planned) |
 | [IssuedDocument](#issueddocument) | E20 | `PLANNED` |
-| [ReportCard](#reportcard) | E20 | `PLANNED` (specialization of IssuedDocument) |
+| [ReportCard](#reportcard) | E20 | `PLANNED` (specialization of IssuedDocument; templates shipped) |
 
 ### 2.7 Cross-cutting & growth
 
@@ -112,7 +116,7 @@
 |--------|-------|----------|
 | [MediaAsset](#mediaasset) | E27 | `PARTIAL` |
 | [ImportJob](#importjob) | E26 | `PARTIAL` |
-| [AuditEntry](#auditentry) | E28 | `PLANNED` |
+| [AuditEntry](#auditentry) | E28 | `PARTIAL` (`audit_entries` via §38 editing framework) |
 | [MarketplaceListing](#marketplacelisting) | E24 | `PLANNED` |
 | [AISuggestion](#aisuggestion) | E23 | `PLANNED` |
 
@@ -326,17 +330,33 @@
 
 ### Department
 
-**Purpose:** Staff organizational unit (e.g. Science); HOD points here.
+**Purpose:** Staff organizational unit (e.g. Science). Owns **relationships**, never teachers.
 
-**Relationships:** School 1—*; TeacherEmployment.department optional; HOD flag on employment.
+**Relationships:** School 1—*; * DepartmentMembership → TeacherEmployment; * DepartmentSubject → Subject; * DepartmentTeachingAssignment; announcements/resources/history.
 
-**Lifecycle:** created as needed; rename; soft-archive.
+**Lifecycle:** created → active → archived (restore allowed).
 
 **Owner Engine:** **E05**
 
-**Dependencies:** School.
+**Dependencies:** School; Subject catalog (E07) for links only.
 
-**Future extensions:** Nested departments, cost centers.
+**Future extensions:** Nested departments (`parent_department_id`), cost centers.
+
+---
+
+### DepartmentMembership
+
+**Purpose:** Dated relationship of an employment to a department as head, coordinator, or member.
+
+**Relationships:** Department *—* TeacherEmployment (via membership rows).
+
+**Lifecycle:** joined → active → left (`left_on`). At most one active head per department.
+
+**Owner Engine:** **E05**
+
+**Dependencies:** TeacherEmployment (E05), not Person rows.
+
+**Future extensions:** Acting head / temporary covers.
 
 ---
 
@@ -438,17 +458,43 @@
 
 ### Subject
 
-**Purpose:** Teachable subject in school catalog (scholastic / co-scholastic).
+**Purpose:** School-wide teachable subject master — far more than a name.
 
-**Relationships:** School 1—*; * ClassSubject; * EmploymentSubject; used by TimetableSlot, AssessmentResult.
+**Relationships:** School 1—*; optional SubjectGroup; * ClassSubject, EmploymentSubject, DepartmentSubject, SubjectDependency; used by TimetableSlot, AssessmentResult.
 
-**Lifecycle:** created → active → archived (keep FK history).
+**Lifecycle:** created → active → archived (FK RESTRICT preserves history).
 
 **Owner Engine:** **E07**
 
+**Fields (v1):** category (scholastic/co_scholastic/language/elective), credits, weekly_periods, requires_lab, board mapping, assessment_rules JSON, display_order, language_code, textbook/AI/chapter stubs.
+
 **Dependencies:** School.
 
-**Future extensions:** Subject codes aligned to board; prerequisites.
+**Future extensions:** Full textbook catalog, AI lesson plans, chapter authoring.
+
+---
+
+### SubjectGroup
+
+**Purpose:** Group subjects for UI and reporting (e.g. Sciences, Languages).
+
+**Relationships:** School 1—*; 1—* Subject.
+
+**Lifecycle:** create → archive → restore.
+
+**Owner Engine:** **E07**
+
+---
+
+### SubjectDependency
+
+**Purpose:** Prerequisite / corequisite / recommended edges between subjects.
+
+**Relationships:** Subject → depends_on Subject.
+
+**Lifecycle:** link → archive (unlink).
+
+**Owner Engine:** **E07**
 
 ---
 
@@ -520,15 +566,17 @@
 
 **Purpose:** Defines how placements advance Class N → N+1 between years.
 
-**Relationships:** School/year scoped; produces StudentPlacement commands into E06.
+**Relationships:** School/year scoped policy (`school_policies.policy_kind = promotion_rules`); produces StudentPlacement commands into E06 at rollover.
 
-**Lifecycle:** draft → active → retired.
+**Lifecycle:** draft → published (versioned) → retired.
 
-**Owner Engine:** **E09** (rules). **E06** owns resulting placements.
+**Owner Engine:** **E07** owns versioned rule definitions. **E09/E06** apply at year rollover.
 
-**Dependencies:** Structure topology; Enrollment write API.
+**Dependencies:** Structure topology; Enrollment write API; optional Assessment results.
 
-**Future extensions:** Conditional promotion on Assessment results.
+**Future extensions:** Conditional promotion on Assessment results; automated rollover job.
+
+**Phase 1:** Stored as School Policy Engine kind `promotion_rules` — [`school-policy-engine.md`](school-policy-engine.md).
 
 ---
 
@@ -536,15 +584,15 @@
 
 **Purpose:** Cross-cutting student house for sports/spirit (school catalog).
 
-**Relationships:** School 1—*; optional on StudentAdmission; future HouseMembership.
+**Relationships:** School 1—*; * HouseMembership; optional TIC employment; optional AcademicYear scope; convenience pointer on StudentAdmission.
 
 **Lifecycle:** created when houses enabled; archive.
 
 **Owner Engine:** **E07**
 
-**Dependencies:** School feature flags.
+**Dependencies:** School feature flags; E05 for TIC; E27 for logo bytes.
 
-**Future extensions:** Points competitions (→ Competition).
+**Future extensions:** Points competitions (`house_point_ledger`).
 
 ---
 
@@ -552,27 +600,27 @@
 
 **Purpose:** Co-curricular club catalog entry.
 
-**Relationships:** School 1—*; future ClubMembership.
+**Relationships:** School 1—*; * ClubMembership; optional TIC employment; optional AcademicYear scope.
 
 **Lifecycle:** create/enable/archive.
 
 **Owner Engine:** **E07**
 
-**Dependencies:** School.
+**Dependencies:** School; E05 TIC; E17 via `club_event_links` (future).
 
-**Future extensions:** Advisors (Employment), meeting schedules (CalendarEvent).
+**Future extensions:** Club events, competitions, inter-house activities.
 
 ---
 
 ### HouseMembership
 
-**Purpose:** Explicit Person/Student ↔ House membership over time (today approximated by `admission.house_id`).
+**Purpose:** Dated StudentProfile ↔ House membership with roles (`member` / `captain` / `vice_captain`).
 
-**Relationships:** StudentAdmission or StudentProfile *— House; dated.
+**Relationships:** House *—* StudentProfile; optional AcademicYear. Syncs `admission.house_id`.
 
-**Lifecycle:** join → transfer → leave.
+**Lifecycle:** join → transfer → leave (`left_on`).
 
-**Owner Engine:** Prefer **E06** (enrollment-adjacent) or **E07** if purely club-like — **recommend E06** for student house; keep House catalog in E07.
+**Owner Engine:** **E07** (catalog membership; Enrollment still owns admission row)
 
 **Dependencies:** House, Admission/Profile.
 
@@ -582,49 +630,61 @@
 
 ### ClubMembership
 
-**Purpose:** Student/staff membership in a Club.
+**Purpose:** Dated StudentProfile ↔ Club membership with roles (`member` / `captain` / `vice_captain`).
 
-**Relationships:** Club *—* StudentProfile or Employment.
+**Relationships:** Club *—* StudentProfile; optional AcademicYear.
 
 **Lifecycle:** join → leave.
 
-**Owner Engine:** **E07** (or E06 if treated as enrollment enrichment — prefer **E07** with Enrollment read).
+**Owner Engine:** **E07**
 
 **Dependencies:** Club, Identity/Enrollment.
 
-**Future extensions:** Attendance at club sessions.
+**Future extensions:** Club session attendance.
 
 ---
 
 ### Period
 
-**Purpose:** Bell period definition within AcademicYear (number, start/end time).
+**Purpose:** Bell period definition within AcademicYear (number, start/end time, optional break).
 
 **Relationships:** AcademicYear 1—*; 1—* TimetableSlot.
 
-**Lifecycle:** defined in timetable setup; renumber carefully.
+**Lifecycle:** defined in timetable setup; lockable; archive without cascade-wipe of history when possible.
 
 **Owner Engine:** **E10**
 
 **Dependencies:** AcademicYear.
 
-**Future extensions:** Day-type variants (Mon vs Sat schedule).
+**Future extensions:** Day-type variants (already via grids/cycle days).
+
+---
+
+### TimetableGrid
+
+**Purpose:** Named schedule version (primary weekly, alternate, exam week).
+
+**Relationships:** AcademicYear 1—*; 1—* CycleDay; 1—* TimetableSlot.
+
+**Lifecycle:** create → activate → archive.
+
+**Owner Engine:** **E10**
 
 ---
 
 ### TimetableSlot
 
-**Purpose:** One scheduled cell: Section + weekday + Period + Subject + TeacherEmployment.
+**Purpose:** One scheduled cell: Section + weekday/cycle day + Period + Subject + TeacherEmployment (+ future Room).
 
-**Relationships:** Section, Period, Subject, TeacherEmployment.
+**Relationships:** Section, Period, Subject, TeacherEmployment; optional Grid, Room.
 
-**Lifecycle:** draft grid → published → superseded (versioned grids future).
+**Lifecycle:** draft → locked → archived; substitutions overlay future.
 
 **Owner Engine:** **E10**
 
 **Dependencies:** E09, E08, E07, E05.
 
-**Future extensions:** Room, substitution overlay, conflict resolution.
+**Future extensions:** Room allocation, substitution overlay, conflict resolution UX.
 
 ---
 
@@ -646,31 +706,31 @@
 
 ### Assessment
 
-**Purpose:** Exam/test definition for a year (name, category, term, weightage, max marks, grading type).
+**Purpose:** Exam/test definition for a year (name, type/category, term, weightage, max/pass marks, grading type/scale, publish/lock).
 
-**Relationships:** AcademicYear; optional Term; 1—* AssessmentSchedule; 1—* AssessmentResult.
+**Relationships:** AcademicYear; optional Term; optional ExamType / AssessmentCategory; optional SubjectGroup; 1—* AssessmentComponent; 1—* AssessmentSchedule; 1—* AssessmentResult (future).
 
-**Lifecycle:** draft → scheduled → open → closed → published.
+**Lifecycle:** draft → scheduled → published → locked (or retracted); archive preferred over delete.
 
 **Owner Engine:** **E11**
 
-**Dependencies:** E08, E07 (grading scale optional).
+**Dependencies:** E08, E07 (grading scale version + subject group optional).
 
-**Future extensions:** Continuous evaluation components; moderation.
+**Future extensions:** Continuous evaluation components; moderation; AI evaluation (flags only today).
 
 ---
 
 ### AssessmentSchedule
 
-**Purpose:** Per-subject sit date/time for an Assessment.
+**Purpose:** Per-subject (× class) schedule/config for an Assessment — max/pass marks, optional flag, component type, sit time.
 
-**Relationships:** Assessment 1—*; Subject.
+**Relationships:** Assessment 1—*; Subject; Class.
 
-**Lifecycle:** planned → completed.
+**Lifecycle:** planned → completed (marks entry future).
 
 **Owner Engine:** **E11**
 
-**Dependencies:** Subject, Assessment.
+**Dependencies:** Subject, Assessment, Class.
 
 **Future extensions:** Room allocation, invigilators (Employment).
 
@@ -888,15 +948,17 @@
 
 **Purpose:** Reusable copy with placeholders for fee reminders, attendance alerts, etc.
 
-**Relationships:** School or platform library; used by Announcement/Notification composition.
+**Relationships:** School; optional AnnouncementCategory; channel (email/whatsapp/sms/notification/in_app); versions; used by delivery rules / future Announcement composition.
 
-**Lifecycle:** draft → active → retired (versioned).
+**Lifecycle:** draft → published → retired (versioned). Tables: `comm_message_templates` + `comm_message_template_versions`.
 
 **Owner Engine:** **E18**
 
-**Dependencies:** None.
+**Dependencies:** None for config; E19 maps provider template ids at send-time.
 
-**Future extensions:** Locale variants, channel-specific bodies.
+**Future extensions:** Locale variants (locale column present), automation/campaign binding.
+
+**Phase 1:** Communication Configuration Engine — [`communication-configuration-engine.md`](communication-configuration-engine.md).
 
 ---
 
@@ -934,17 +996,17 @@
 
 ### DocumentTemplate
 
-**Purpose:** Layout for official artifacts (TC, ID card, fee receipt).
+**Purpose:** Layout for official artifacts (report cards, TC, ID card, fee receipt).
 
-**Relationships:** School; engine data bindings (Enrollment, Assessment, Fee).
+**Relationships:** School; optional Board; Class/Section scopes; Assessment definition refs; engine data bindings (Enrollment, Assessment, Fee).
 
-**Lifecycle:** draft → published → retired (version pin on issue).
+**Lifecycle:** draft → published → retired (version pin on issue). Report card templates: `report_card_templates` + `report_card_template_versions`.
 
 **Owner Engine:** **E20**
 
-**Dependencies:** Media fonts/images (E27).
+**Dependencies:** Media fonts/images (E27); E11 assessment defs for grade blocks.
 
-**Future extensions:** DigiLocker schemas.
+**Future extensions:** DigiLocker schemas; TC / ID / receipt template kinds.
 
 ---
 
@@ -966,9 +1028,9 @@
 
 ### ReportCard
 
-**Purpose:** Published academic report for a Placement × Term/Year — specialization of IssuedDocument plus structured result snapshot.
+**Purpose:** Published academic report for a Placement × Term/Year — specialization of IssuedDocument. Template config shipped; issue not built.
 
-**Relationships:** StudentPlacement; Term/AcademicYear; AssessmentResults; IssuedDocument.
+**Relationships:** StudentPlacement; Term/AcademicYear; AssessmentResults (read); DocumentTemplate version; IssuedDocument.
 
 **Lifecycle:** generating → issued → reissued (new version).
 
@@ -977,6 +1039,8 @@
 **Dependencies:** E11, E06, E04, E08.
 
 **Future extensions:** Progressive report cards, parent portal views without PDF.
+
+**Hard rule:** Templates reference assessments; they do not duplicate marks.
 
 ---
 

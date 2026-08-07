@@ -169,6 +169,7 @@ export async function getStaffStepDataAction(): Promise<StaffStepData> {
         .from("subjects")
         .select("id, name")
         .eq("school_id", schoolId)
+        .is("archived_at", null)
         .order("name"),
       supabase
         .from("departments")
@@ -295,7 +296,8 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
   const { data: subjects } = await supabase
     .from("subjects")
     .select("id, name")
-    .eq("school_id", schoolId);
+    .eq("school_id", schoolId)
+    .is("archived_at", null);
 
   const subjectByName = new Map(
     (subjects ?? []).map((row) => [row.name.toLowerCase(), row.id]),

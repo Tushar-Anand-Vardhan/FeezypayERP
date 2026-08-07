@@ -2,8 +2,8 @@
 
 > **Phase:** 0.5 — Architecture (design-only)  
 > **Created:** 2026-08-06  
-> **Status:** Canonical audit contract — **not yet implemented** (`AuditEntry` planned; E28 `NOT BUILT`)  
-> **Companions:** [`MASTER.md`](../MASTER.md) · [`business-engines.md`](business-engines.md) · [`domain-model.md`](domain-model.md) · [`system-events.md`](system-events.md) · [`rbac.md`](rbac.md) · [`versioning.md`](versioning.md)  
+> **Status:** Canonical audit contract — **minimal table shipped** (`audit_entries` via Configuration Editing Framework); full E28 worker/retention **NOT BUILT**  
+> **Companions:** [`MASTER.md`](../MASTER.md) · [`business-engines.md`](business-engines.md) · [`domain-model.md`](domain-model.md) · [`system-events.md`](system-events.md) · [`rbac.md`](rbac.md) · [`versioning.md`](versioning.md) · [`configuration-editing-framework.md`](configuration-editing-framework.md)  
 > **Owner engine:** **E28 Audit** — append-only; never business source of truth  
 > **Rule:** Every important mutating action in the ERP must be auditable.
 

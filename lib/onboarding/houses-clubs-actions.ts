@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { syncClubsCatalogAction, listClubsAction } from "@/lib/config/clubs-actions";
+import { syncHousesCatalogAction, listHousesAction } from "@/lib/config/houses-actions";
 import { getAuthenticatedSchoolContext } from "@/lib/onboarding/server-context";
 import {
   trimClubRows,
@@ -41,25 +43,24 @@ export async function getHousesClubsStepDataAction(): Promise<HousesClubsStepDat
     return { success: false, error: schoolError?.message ?? "Could not load school." };
   }
 
-  const [{ data: houses }, { data: clubs }] = await Promise.all([
-    supabase
-      .from("houses")
-      .select("name")
-      .eq("school_id", schoolId)
-      .order("display_order", { ascending: true }),
-    supabase
-      .from("clubs")
-      .select("name, description")
-      .eq("school_id", schoolId)
-      .order("display_order", { ascending: true }),
+  const [housesResult, clubsResult] = await Promise.all([
+    listHousesAction({ includeArchived: false }),
+    listClubsAction({ includeArchived: false }),
   ]);
+
+  if (!housesResult.success) {
+    return { success: false, error: housesResult.error };
+  }
+  if (!clubsResult.success) {
+    return { success: false, error: clubsResult.error };
+  }
 
   return {
     success: true,
     housesEnabled: school.houses_enabled,
     clubsEnabled: school.clubs_enabled,
-    houses: (houses ?? []).map((row) => ({ name: row.name })),
-    clubs: (clubs ?? []).map((row) => ({
+    houses: housesResult.houses.map((row) => ({ name: row.name })),
+    clubs: clubsResult.clubs.map((row) => ({
       name: row.name,
       description: row.description ?? "",
     })),
@@ -102,12 +103,7 @@ export async function saveHousesClubsAction(
     };
   }
 
-  const trimmedHouses = housesEnabled ? trimHouseRows(houses).filter((row) => row.name) : [];
-  const trimmedClubs = clubsEnabled
-    ? trimClubRows(clubs).filter((row) => row.name)
-    : [];
-
-  const { error: schoolError } = await supabase
+  const { error: flagsError } = await supabase
     .from("schools")
     .update({
       houses_enabled: housesEnabled,
@@ -117,53 +113,29 @@ export async function saveHousesClubsAction(
     })
     .eq("id", schoolId);
 
-  if (schoolError) {
-    return { success: false, error: schoolError.message };
+  if (flagsError) {
+    return { success: false, error: flagsError.message };
   }
 
-  const { error: deleteHousesError } = await supabase
-    .from("houses")
-    .delete()
-    .eq("school_id", schoolId);
-  if (deleteHousesError) {
-    return { success: false, error: deleteHousesError.message };
+  const houseRows = housesEnabled ? trimHouseRows(houses).filter((row) => row.name) : [];
+  const clubRows = clubsEnabled ? trimClubRows(clubs).filter((row) => row.name) : [];
+
+  const housesResult = await syncHousesCatalogAction(houseRows, {
+    requireAtLeastOne: housesEnabled,
+    archiveMissing: true,
+  });
+  if (!housesResult.success) {
+    return housesResult;
   }
 
-  const { error: deleteClubsError } = await supabase
-    .from("clubs")
-    .delete()
-    .eq("school_id", schoolId);
-  if (deleteClubsError) {
-    return { success: false, error: deleteClubsError.message };
-  }
-
-  if (trimmedHouses.length > 0) {
-    const { error } = await supabase.from("houses").insert(
-      trimmedHouses.map((row, index) => ({
-        school_id: schoolId,
-        name: row.name,
-        display_order: index,
-      })),
-    );
-    if (error) {
-      return { success: false, error: error.message };
-    }
-  }
-
-  if (trimmedClubs.length > 0) {
-    const { error } = await supabase.from("clubs").insert(
-      trimmedClubs.map((row, index) => ({
-        school_id: schoolId,
-        name: row.name,
-        description: row.description || null,
-        display_order: index,
-      })),
-    );
-    if (error) {
-      return { success: false, error: error.message };
-    }
+  const clubsResult = await syncClubsCatalogAction(clubRows, {
+    requireAtLeastOne: clubsEnabled,
+    archiveMissing: true,
+  });
+  if (!clubsResult.success) {
+    return clubsResult;
   }
 
   revalidatePath("/onboarding", "layout");
-  return { success: true, message: "Houses & clubs saved." };
+  return { success: true, message: "Houses and clubs saved." };
 }

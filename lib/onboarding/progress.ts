@@ -26,10 +26,14 @@ async function countRows(
   supabase: SupabaseClient,
   table: string,
   filters: Record<string, string>,
+  options?: { activeOnly?: boolean },
 ) {
   let query = supabase.from(table).select("id", { count: "exact", head: true });
   for (const [key, value] of Object.entries(filters)) {
     query = query.eq(key, value);
+  }
+  if (options?.activeOnly) {
+    query = query.is("archived_at", null);
   }
   const { count } = await query;
   return count ?? 0;
@@ -65,9 +69,9 @@ export async function getOnboardingProgress(
       academicYearId
         ? countRows(supabase, "classes", { academic_year_id: academicYearId })
         : Promise.resolve(0),
-      countRows(supabase, "subjects", { school_id: schoolId }),
-      countRows(supabase, "houses", { school_id: schoolId }),
-      countRows(supabase, "clubs", { school_id: schoolId }),
+      countRows(supabase, "subjects", { school_id: schoolId }, { activeOnly: true }),
+      countRows(supabase, "houses", { school_id: schoolId }, { activeOnly: true }),
+      countRows(supabase, "clubs", { school_id: schoolId }, { activeOnly: true }),
       countRows(supabase, "teacher_employments", {
         school_id: schoolId,
         status: "active",
@@ -79,7 +83,7 @@ export async function getOnboardingProgress(
       academicYearId
         ? countRows(supabase, "exam_definitions", {
             academic_year_id: academicYearId,
-          })
+          }, { activeOnly: true })
         : Promise.resolve(0),
       academicYearId
         ? countRows(supabase, "terms", { academic_year_id: academicYearId })

@@ -2,8 +2,8 @@
 
 > **Phase:** 0.5 — Architecture (design-only)  
 > **Created:** 2026-08-06  
-> **Status:** Canonical mutation rules — **not yet fully implemented** (some append-only patterns shipped; config versioning mostly planned)  
-> **Companions:** [`MASTER.md`](../MASTER.md) · [`business-engines.md`](business-engines.md) · [`domain-model.md`](domain-model.md) · [`system-events.md`](system-events.md) · [`rbac.md`](rbac.md) · [`audit-log.md`](audit-log.md)
+> **Status:** Canonical mutation rules — **framework shipped** (`lib/editing/`, `audit_entries`, `config_change_history`); remaining modules adopting gates incrementally  
+> **Companions:** [`MASTER.md`](../MASTER.md) · [`business-engines.md`](business-engines.md) · [`domain-model.md`](domain-model.md) · [`system-events.md`](system-events.md) · [`rbac.md`](rbac.md) · [`audit-log.md`](audit-log.md) · [`configuration-editing-framework.md`](configuration-editing-framework.md)  
 > **Rule:** Configuration must stay editable **without corrupting historical operational data**.
 
 ---

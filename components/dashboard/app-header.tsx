@@ -14,6 +14,9 @@ type AppHeaderProps = {
 
 const NAV_ITEMS = [
   { label: "Overview", href: "/dashboard", locked: false },
+  { label: "Configuration", href: "/dashboard/configuration", locked: false },
+  { label: "Calendar", href: "/dashboard/calendar", locked: false },
+  { label: "Houses & clubs", href: "/dashboard/houses-clubs", locked: false },
   { label: "Students", href: "#", locked: true },
   { label: "Attendance", href: "#", locked: true },
   { label: "Reports", href: "#", locked: true },

@@ -16,5 +16,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Notification Engine (Phase 0.5): [`docs/architecture/notification-engine.md`](docs/architecture/notification-engine.md)
 - AI architecture (Phase 0.5): [`docs/architecture/ai-architecture.md`](docs/architecture/ai-architecture.md)
 - Phase 0.5 review (COMPLETE): [`docs/architecture/phase-05-architecture-review.md`](docs/architecture/phase-05-architecture-review.md)
-- User journeys: [`docs/architecture/user-journeys.md`](docs/architecture/user-journeys.md)
+- Configuration Engine (Phase 1): [`docs/architecture/configuration-engine.md`](docs/architecture/configuration-engine.md) · `lib/config/`
+- Assessment Configuration Engine (Phase 1): [`docs/architecture/assessment-configuration-engine.md`](docs/architecture/assessment-configuration-engine.md) · `lib/assessment/`
+- Report Card Template Engine (Phase 1): [`docs/architecture/report-card-template-engine.md`](docs/architecture/report-card-template-engine.md) · `lib/report-cards/`
+- School Policy Engine (Phase 1): [`docs/architecture/school-policy-engine.md`](docs/architecture/school-policy-engine.md) · `lib/policies/`
+- Communication Configuration Engine (Phase 1): [`docs/architecture/communication-configuration-engine.md`](docs/architecture/communication-configuration-engine.md) · `lib/communications/`
+- Configuration Editing Framework (Phase 1): [`docs/architecture/configuration-editing-framework.md`](docs/architecture/configuration-editing-framework.md) · `lib/editing/`
+- Configuration Dashboard (Phase 1): [`docs/architecture/configuration-dashboard.md`](docs/architecture/configuration-dashboard.md) · `lib/config-dashboard/`
+- Phase 1 implementation audit: [`docs/architecture/phase-1-implementation-audit.md`](docs/architecture/phase-1-implementation-audit.md) — **production gate NOT PASSED**
 - Deferred identity follow-ups: [`docs/deferred-identity-followups.md`](docs/deferred-identity-followups.md)
