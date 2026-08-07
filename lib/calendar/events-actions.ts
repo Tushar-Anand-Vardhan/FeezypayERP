@@ -54,7 +54,7 @@ export async function listCalendarEventsAction(input: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.event.create");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -84,7 +84,7 @@ export async function listCalendarEventsAction(input: {
 export async function createCalendarEventAction(
   input: CalendarEventInput,
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.event.create");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -164,7 +164,7 @@ export async function createCalendarEventAction(
 export async function updateCalendarEventAction(
   input: CalendarEventInput & { id: string },
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.event.create");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -215,7 +215,7 @@ export async function setCalendarEventApprovalAction(
   eventId: string,
   approvalStatus: CalendarEventApprovalStatus,
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.event.create");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -235,6 +235,30 @@ export async function setCalendarEventApprovalAction(
     return { success: false, error: error.message };
   }
 
+  if (approvalStatus === "published") {
+    const { data: event } = await supabase
+      .from("calendar_events")
+      .select("id, title, starts_at, notify_on_publish")
+      .eq("id", eventId)
+      .eq("school_id", schoolId)
+      .maybeSingle();
+
+    if (event?.notify_on_publish !== false) {
+      const { emitDomainEvent } = await import("@/lib/domain-events/emit");
+      await emitDomainEvent(supabase, {
+        schoolId,
+        eventType: "engagement.event.published",
+        aggregateType: "calendar_event",
+        aggregateId: eventId,
+        payload: {
+          title: event?.title ?? "School event",
+          startsAt: event?.starts_at ?? null,
+        },
+        idempotencyKey: `engagement.event.published:${eventId}`,
+      });
+    }
+  }
+
   revalidatePath("/dashboard/calendar");
   return {
     success: true,
@@ -246,7 +270,7 @@ export async function setCalendarEventApprovalAction(
 export async function archiveCalendarEventAction(
   eventId: string,
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.event.create");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -272,7 +296,7 @@ export async function archiveCalendarEventAction(
 export async function restoreCalendarEventAction(
   eventId: string,
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.event.create");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

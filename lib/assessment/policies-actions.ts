@@ -40,7 +40,7 @@ export async function getAssessmentPolicyAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -84,7 +84,7 @@ export async function getAssessmentPolicyAction(
 export async function upsertAssessmentPolicyAction(
   input: AssessmentPolicyInput,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

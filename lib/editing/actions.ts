@@ -23,7 +23,7 @@ export async function listConfigEntityTypesAction(): Promise<
   | { success: true; entityTypes: string[] }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -41,7 +41,7 @@ export async function evaluateConfigEditAction(input: {
   | { success: true; evaluation: EditEvaluation }
   | { success: false; error: string; evaluation?: EditEvaluation }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -83,7 +83,7 @@ export async function listConfigChangeHistoryAction(input: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -129,7 +129,7 @@ export async function listConfigAuditEntriesAction(input: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -167,7 +167,7 @@ export async function duplicateConfigRowAction(input: {
   sourceId: string;
   nameSuffix?: string;
 }): Promise<EditingActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

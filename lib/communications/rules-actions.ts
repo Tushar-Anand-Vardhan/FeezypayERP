@@ -35,7 +35,7 @@ export async function listDeliveryRulesAction(options?: {
   | { success: true; rules: Array<Record<string, unknown>> }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -63,7 +63,7 @@ export async function listDeliveryRulesAction(options?: {
 export async function upsertDeliveryRuleAction(
   input: DeliveryRuleInput,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -164,7 +164,7 @@ export async function upsertDeliveryRuleAction(
 export async function archiveDeliveryRuleAction(
   ruleId: string,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -201,7 +201,7 @@ export async function listApprovalRulesAction(options?: {
   | { success: true; rules: Array<Record<string, unknown>> }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -229,7 +229,7 @@ export async function listApprovalRulesAction(options?: {
 export async function upsertApprovalRuleAction(
   input: ApprovalRuleInput,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -321,7 +321,7 @@ export async function upsertApprovalRuleAction(
 export async function archiveApprovalRuleAction(
   ruleId: string,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -356,7 +356,7 @@ export async function archiveApprovalRuleAction(
 export async function upsertAutomationAction(
   input: AutomationInput,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -441,7 +441,7 @@ export async function upsertAutomationAction(
 export async function upsertCampaignAction(
   input: CampaignInput,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

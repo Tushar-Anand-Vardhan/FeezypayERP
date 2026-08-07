@@ -43,7 +43,9 @@
 
 ### Categories
 
-`ptm` · `competition` · `sports` · `trip` · `assembly` · `workshop` · `teacher_meeting` · `annual_day` · `custom`
+`ptm` · `competition` · `sports` · `trip` · `assembly` · `workshop` · `teacher_meeting` · `annual_day` · `club_activity` · `house_activity` · `cultural` · `custom`
+
+Activity ops (participants, staff, awards, certificates): [`event-activity-engine.md`](event-activity-engine.md) · MASTER §47.
 
 ### Future (columns present, behavior deferred)
 

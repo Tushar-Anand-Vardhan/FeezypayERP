@@ -21,7 +21,7 @@ export async function listHousesAction(options?: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -49,7 +49,7 @@ export async function syncHousesCatalogAction(
   inputs: HouseInput[],
   options: { requireAtLeastOne?: boolean; archiveMissing?: boolean } = {},
 ): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -159,7 +159,7 @@ export async function syncHousesCatalogAction(
 export async function archiveHouseAction(
   houseId: string,
 ): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -186,7 +186,7 @@ export async function archiveHouseAction(
 export async function restoreHouseAction(
   houseId: string,
 ): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

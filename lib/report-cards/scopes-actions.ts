@@ -38,7 +38,7 @@ export async function listReportCardScopesAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -74,7 +74,7 @@ export async function listReportCardScopesAction(
 export async function upsertReportCardScopeAction(
   input: ScopeInput,
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -169,7 +169,7 @@ export async function upsertReportCardScopeAction(
 export async function archiveReportCardScopeAction(
   scopeId: string,
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

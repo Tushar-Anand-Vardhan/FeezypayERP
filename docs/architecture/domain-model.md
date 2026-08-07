@@ -29,6 +29,7 @@
 |--------|-------|----------|
 | [School](#school) | E01 (+ column owners E07/E08/E25) | `SHIPPED` |
 | [SchoolAdminMembership](#schooladminmembership) | E01 | `SHIPPED` |
+| [SchoolMembership](#schoolmembership) | E29 | `SHIPPED` |
 | [AuthUser](#authuser) | E02 | `SHIPPED` |
 | [Permission](#permission) | E03 | `PLANNED` |
 | [RolePermission](#rolepermission) | E03 | `PLANNED` |
@@ -80,9 +81,9 @@
 |--------|-------|----------|
 | [Assessment](#assessment) | E11 | `PARTIAL` (config shipped §34; results planned) |
 | [AssessmentSchedule](#assessmentschedule) | E11 | `SHIPPED` (enriched) |
-| [AssessmentResult](#assessmentresult) | E11 | `PLANNED` |
-| [AttendanceRecord](#attendancerecord) | E12 | `PLANNED` |
-| [ConductIncident](#conductincident) | E13 | `PLANNED` |
+| [AssessmentResult](#assessmentresult) | E11 | `SHIPPED` (backend §45; UI planned) |
+| [AttendanceRecord](#attendancerecord) | E12 | `SHIPPED` (backend §44; UI planned; period FUTURE) |
+| [ConductIncident](#conductincident) | E13 | `SHIPPED` (backend §48; UI planned) |
 | [HealthIncident](#healthincident) | E14 | `PLANNED` |
 | [LessonPlan](#lessonplan) | E10/E11-adjacent → **E10** (teaching) | `PLANNED` |
 
@@ -101,14 +102,14 @@
 | Entity | Owner | Maturity |
 |--------|-------|----------|
 | [CalendarEvent](#calendarevent) | E17 | `SHIPPED` |
-| [Competition](#competition) | E17 | `PLANNED` |
+| [Competition](#competition) | E17 | `SHIPPED` (backend §47; as calendar category + participation) |
 | [Announcement](#announcement) | E18 | `PLANNED` (categories shipped §37) |
 | [MessageTemplate](#messagetemplate) | E18 | `PARTIAL` (config + versions §37; send planned) |
 | [CommunicationConsent](#communicationconsent) | E18 | `PARTIAL` (seed fields historically) |
 | [Notification](#notification) | E19 | `PLANNED` |
 | [DocumentTemplate](#documenttemplate) | E20 | `PARTIAL` (report card templates §35; other docs planned) |
-| [IssuedDocument](#issueddocument) | E20 | `PLANNED` |
-| [ReportCard](#reportcard) | E20 | `PLANNED` (specialization of IssuedDocument; templates shipped) |
+| [IssuedDocument](#issueddocument) | E20 | `SHIPPED` (backend §46; PDF media planned) |
+| [ReportCard](#reportcard) | E20 | `SHIPPED` (backend §46; templates §35; PDF planned) |
 
 ### 2.7 Cross-cutting & growth
 
@@ -158,6 +159,22 @@
 **Dependencies:** E02 (auth user exists).
 
 **Future extensions:** Multiple admins per school; office staff subtypes; migrate toward Person-linked admin employment.
+
+---
+
+### SchoolMembership
+
+**Purpose:** Session/tenant index row linking a Person to a School with kind, status, effective dates, and persona. Projection synced from SchoolAdminMembership / TeacherEmployment / StudentAdmission / StudentParentLink.
+
+**Relationships:** Person *—*; School *—*; optional source employment/admission/parent/profile; 0—1 active preference pointer.
+
+**Lifecycle:** `invited` → `active` → `suspended` / `ended` / `transferred`; history append-only. Soft archive only.
+
+**Owner Engine:** **E29**
+
+**Dependencies:** E04 Person; source engines E01/E05/E06; E02 AuthUser for preferences; E03 for optional `authz_role_ids`.
+
+**Future extensions:** Consultant/substitute kinds as first-class; multi-admin without `profiles`.
 
 ---
 
@@ -308,7 +325,7 @@
 
 **Dependencies:** E04, E01, E07 (subject validation), E03.
 
-**Future extensions:** Contract type, FTE, salary band (HR), multi-school concurrent jobs.
+**Future extensions:** Contract type, FTE, salary band (HR), multi-school concurrent jobs; `consultant` / `substitute` employment_type (E05 columns; E29 indexes as staff).
 
 ---
 
@@ -740,15 +757,15 @@
 
 **Purpose:** Append-only marks/grades for a StudentPlacement × Assessment × Subject.
 
-**Relationships:** StudentPlacement, Assessment, Subject; optional GradingScale.
+**Relationships:** StudentPlacement, Assessment, Subject; optional GradingScaleVersion; MarkSession.
 
-**Lifecycle:** entered → locked → published (never overwrite; corrections = new version row).
+**Lifecycle:** draft entry → published (visible) → locked (Admin/HOD); corrections supersede prior rows + audit.
 
-**Owner Engine:** **E11**
+**Owner Engine:** **E11** — see [`assessment-operations-engine.md`](assessment-operations-engine.md).
 
 **Dependencies:** E06, E07.
 
-**Future extensions:** Remarking workflow, grade appeals.
+**Future extensions:** Remarking workflow, grade appeals, moderation UI.
 
 ---
 
@@ -756,31 +773,31 @@
 
 **Purpose:** Presence fact for a student (and optionally staff) on a date / period.
 
-**Relationships:** StudentPlacement (or Admission); optional TimetableSlot; Calendar date.
+**Relationships:** StudentPlacement (or Admission); optional TimetableSlot; Calendar date; AttendanceSession.
 
-**Lifecycle:** marked → corrected (append correction event / new row).
+**Lifecycle:** draft/submitted mark → approved/locked visibility → corrected (superseding row + audit).
 
-**Owner Engine:** **E12**
+**Owner Engine:** **E12** — see [`attendance-engine.md`](attendance-engine.md).
 
 **Dependencies:** E06, E09, E08, optional E10.
 
-**Future extensions:** Biometric source, staff attendance.
+**Future extensions:** Biometric source, staff attendance, full period UX.
 
 ---
 
 ### ConductIncident
 
-**Purpose:** Behaviour/discipline event with severity and actions.
+**Purpose:** Timestamped behaviour remark / discipline event (positive through disciplinary).
 
-**Relationships:** StudentProfile + StudentPlacement; recorder Employment/Admin.
+**Relationships:** StudentProfile + StudentPlacement; recorder Employment/Admin; BehaviourFollowUp.
 
-**Lifecycle:** reported → under_review → closed → appealed.
+**Lifecycle:** open → under_review → resolved | dismissed (archive over delete).
 
-**Owner Engine:** **E13**
+**Owner Engine:** **E13** — see [`behaviour-engine.md`](behaviour-engine.md).
 
-**Dependencies:** E04, E06, E03.
+**Dependencies:** E04, E06, E03; E07 `behaviour_rules` thresholds.
 
-**Future extensions:** Positive merits, counseling cases.
+**Future extensions:** Points dashboards, counseling case packs, AI summaries.
 
 ---
 
@@ -898,33 +915,33 @@
 
 ### CalendarEvent
 
-**Purpose:** First-class school occasion (PTM, annual day) — not a Holiday and not a TimetableSlot.
+**Purpose:** First-class school occasion (PTM, sports, trips, clubs, cultural) — not a Holiday and not a TimetableSlot.
 
-**Relationships:** School; optional audience Class/Section; * Announcement; RSVPs future.
+**Relationships:** School; optional audience Class/Section; House/Club; staff assignments; EventParticipants; Announcement; media refs.
 
-**Lifecycle:** draft → scheduled → published → completed | cancelled.
+**Lifecycle:** draft → pending/approved → published → completed | cancelled.
 
-**Owner Engine:** **E17**
+**Owner Engine:** **E17** — ops [`event-activity-engine.md`](event-activity-engine.md).
 
-**Dependencies:** E08 (conflict awareness), E09/E06 (audience).
+**Dependencies:** E08 (conflict awareness), E09/E06 (audience), E07 (house/club).
 
-**Future extensions:** Ticketing via Fee/Payments.
+**Future extensions:** Ticketing via Fee/Payments; RRULE; E27 media bytes.
 
 ---
 
 ### Competition
 
-**Purpose:** Contests (inter-house, olympiad) with participants and results.
+**Purpose:** Contests (inter-house, olympiad) modeled as `calendar_events.category = competition` with participants and results.
 
-**Relationships:** School; optional House; participants StudentProfile/Placement; may link CalendarEvent.
+**Relationships:** CalendarEvent; EventParticipant; optional competition_participations projection; House/Club.
 
-**Lifecycle:** announced → registration → in_progress → results_published → archived.
+**Lifecycle:** announced (published event) → participation recorded → results (position/award) → certificates optional.
 
-**Owner Engine:** **E17** (occasion-like). House points may update derived scores (Analytics).
+**Owner Engine:** **E17**. House points may update derived scores (Analytics) later.
 
-**Dependencies:** E07 House/Club, E06 participants, E18 announcements.
+**Dependencies:** E07 House/Club, E06 participants, E18 announcements, E20 certificates.
 
-**Future extensions:** External competition imports, certificates (Document).
+**Future extensions:** External competition imports; DigiLocker certificates.
 
 ---
 
@@ -1014,11 +1031,11 @@
 
 **Purpose:** Immutable issued artifact metadata + storage pointer (verification code).
 
-**Relationships:** Template version; subject Person/Admission; MediaAsset/PDF.
+**Relationships:** Template version; subject Person/Admission; MediaAsset/PDF; ReportCardIssueVersion.
 
-**Lifecycle:** issued → superseded | revoked (revocation record; keep bytes).
+**Lifecycle:** draft → issued → superseded | revoked (revocation record; keep bytes).
 
-**Owner Engine:** **E20**
+**Owner Engine:** **E20** — see [`report-card-engine.md`](report-card-engine.md).
 
 **Dependencies:** Domain engines for snapshot data; E27 storage.
 
@@ -1028,19 +1045,19 @@
 
 ### ReportCard
 
-**Purpose:** Published academic report for a Placement × Term/Year — specialization of IssuedDocument. Template config shipped; issue not built.
+**Purpose:** Published academic report for a Placement × Term/Year — specialization of IssuedDocument.
 
-**Relationships:** StudentPlacement; Term/AcademicYear; AssessmentResults (read); DocumentTemplate version; IssuedDocument.
+**Relationships:** StudentPlacement; Term/AcademicYear; AssessmentResults (**read** via `source_refs`); Attendance aggregates; Conduct; house/club; DocumentTemplate version; issue versions.
 
-**Lifecycle:** generating → issued → reissued (new version).
+**Lifecycle:** draft (assembled) → issued (frozen version) → reissued (new version) / revoked.
 
 **Owner Engine:** **E20** (artifact). Source marks remain **E11**.
 
-**Dependencies:** E11, E06, E04, E08.
+**Dependencies:** E11, E12, E13, E06, E04, E07, E08.
 
-**Future extensions:** Progressive report cards, parent portal views without PDF.
+**Future extensions:** Progressive report cards, parent portal views without PDF, DigiLocker.
 
-**Hard rule:** Templates reference assessments; they do not duplicate marks.
+**Hard rule:** Templates and issues reference assessments; they do not duplicate marks OLTP. `presentation_snapshot` is reprint display only.
 
 ---
 

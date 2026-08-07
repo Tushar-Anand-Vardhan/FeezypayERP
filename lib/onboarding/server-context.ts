@@ -1,27 +1,32 @@
-import { createClient } from "@/lib/supabase/server";
+import { requirePermission } from "@/lib/authz/require";
+import type { AuthzAttrs } from "@/lib/authz/types";
+import type { PermissionKey } from "@/lib/authz/catalog";
 
-export async function getAuthenticatedSchoolContext():
+/**
+ * School context for server actions.
+ * Defaults to tenant.school.read; pass `permission` for specific keys.
+ */
+export async function getAuthenticatedSchoolContext(
+  permission: PermissionKey = "tenant.school.read",
+  attrs?: AuthzAttrs,
+):
   Promise<
-    | { supabase: Awaited<ReturnType<typeof createClient>>; schoolId: string }
+    | {
+        supabase: Awaited<
+          ReturnType<typeof import("@/lib/supabase/server").createClient>
+        >;
+        schoolId: string;
+        actor?: import("@/lib/authz/types").AuthzActor;
+      }
     | { error: string }
   > {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const userId = claimsData?.claims?.sub;
-
-  if (typeof userId !== "string") {
-    return { error: "You must be signed in to continue." };
+  const result = await requirePermission(permission, attrs);
+  if ("error" in result) {
+    return { error: result.error };
   }
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("school_id")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (profileError || !profile?.school_id) {
-    return { error: "We could not find your school profile." };
-  }
-
-  return { supabase, schoolId: profile.school_id };
+  return {
+    supabase: result.supabase,
+    schoolId: result.schoolId,
+    actor: result.actor,
+  };
 }

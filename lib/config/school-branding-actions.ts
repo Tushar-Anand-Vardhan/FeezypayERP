@@ -15,7 +15,7 @@ import { getAuthenticatedSchoolContext } from "@/lib/onboarding/server-context";
 export async function updateSchoolBrandingAction(
   input: SchoolBrandingInput,
 ): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

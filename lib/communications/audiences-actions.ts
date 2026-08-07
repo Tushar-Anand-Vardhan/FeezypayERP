@@ -37,7 +37,7 @@ export async function listAudienceGroupsAction(options?: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -66,7 +66,7 @@ export async function listAudienceGroupsAction(options?: {
 export async function upsertAudienceGroupAction(
   input: AudienceGroupInput,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -133,7 +133,7 @@ export async function upsertAudienceGroupAction(
 export async function archiveAudienceGroupAction(
   groupId: string,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

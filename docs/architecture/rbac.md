@@ -1,10 +1,10 @@
 # FeezypayERP — RBAC Architecture
 
-> **Phase:** 0.5 — Architecture (design-only)  
+> **Phase:** 0.5 — Architecture (design-only for **permissions**)  
 > **Created:** 2026-08-06  
-> **Status:** Canonical authorization model — **not yet implemented** (today = implicit school_admin via `profiles`)  
-> **Companions:** [`MASTER.md`](../MASTER.md) · [`business-engines.md`](business-engines.md) · [`domain-model.md`](domain-model.md) · [`system-events.md`](system-events.md) · [`versioning.md`](versioning.md) · [`audit-log.md`](audit-log.md)
-> **Owner engine:** **E03 Authorization** evaluates policy; membership evidence owned by E01 / E04 / E05 / E06.
+> **Status:** Canonical authorization **matrix** + **runtime SHIPPED** (MASTER §56 / [`authorization-platform.md`](authorization-platform.md)). AuthN / membership helpers SHIPPED (§55). Use `requirePermission` in server actions; pages use `<Can>` — never hardcode persona strings for AuthZ.  
+> **Companions:** [`MASTER.md`](../MASTER.md) · [`business-engines.md`](business-engines.md) · [`domain-model.md`](domain-model.md) · [`system-events.md`](system-events.md) · [`versioning.md`](versioning.md) · [`audit-log.md`](audit-log.md) · [`authentication-platform.md`](authentication-platform.md) · [`authorization-platform.md`](authorization-platform.md)
+> **Owner engine:** **E03 Authorization** evaluates policy; membership **index** owned by **E29**; source facts E01 / E04 / E05 / E06 (+ §55 / §57 SQL helpers).
 
 ---
 
@@ -92,7 +92,7 @@ Where two scopes apply, the **narrower** wins unless both are required (e.g. HOD
 | `student` | Student | Active `student_admissions` | `student` |
 | `parent` | Parent | `parent_profiles` + `student_parent_links` | `parent` |
 
-**Today (SHIPPED):** only `school_admin` can log into product UI. Other personas are data rows only until RBAC-1+.
+**Today (SHIPPED):** AuthN (§55) + AuthZ runtime (§56). Personas bind via membership / employment / profiles; server actions use `requirePermission`. Parent/student **portal UIs** still `NOT BUILT`.
 
 ### 3.2 Future personas (first-class later)
 

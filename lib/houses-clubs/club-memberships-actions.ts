@@ -74,7 +74,7 @@ export async function listClubMembershipsAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -107,7 +107,7 @@ export async function listClubMembershipsAction(
 export async function addClubMembershipAction(
   input: ClubMembershipInput,
 ): Promise<HouseClubActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -206,7 +206,7 @@ export async function endClubMembershipAction(
   membershipId: string,
   leftOn?: string,
 ): Promise<HouseClubActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

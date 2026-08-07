@@ -32,7 +32,7 @@ export async function listMessageTemplatesAction(options?: {
   | { success: true; templates: Array<Record<string, unknown>> }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -64,7 +64,7 @@ export async function listMessageTemplatesAction(options?: {
 export async function upsertMessageTemplateAction(
   input: TemplateInput,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -171,7 +171,7 @@ export async function listMessageTemplateVersionsAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -201,7 +201,7 @@ export async function listMessageTemplateVersionsAction(
 export async function saveMessageTemplateDraftAction(
   input: TemplateVersionInput,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -310,7 +310,7 @@ export async function saveMessageTemplateDraftAction(
 export async function publishMessageTemplateVersionAction(
   templateId: string,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -389,7 +389,7 @@ export async function publishMessageTemplateVersionAction(
 export async function retireMessageTemplateAction(
   templateId: string,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -426,7 +426,7 @@ export async function retireMessageTemplateAction(
 export async function archiveMessageTemplateAction(
   templateId: string,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

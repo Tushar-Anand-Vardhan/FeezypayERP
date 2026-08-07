@@ -1,4 +1,4 @@
-/** Assessment Configuration Engine (E11 config surface) — no marks entry. */
+/** Assessment Configuration Engine (E11 config surface). Marks: see ops-types / results-actions. */
 
 export type AssessmentActionResult =
   | { success: true; message: string; id?: string }

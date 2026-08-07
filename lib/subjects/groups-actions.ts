@@ -34,7 +34,7 @@ export async function listSubjectGroupsAction(options?: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -61,7 +61,7 @@ export async function listSubjectGroupsAction(options?: {
 export async function createSubjectGroupAction(
   input: SubjectGroupInput,
 ): Promise<SubjectActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -107,7 +107,7 @@ export async function createSubjectGroupAction(
 export async function updateSubjectGroupAction(
   input: SubjectGroupInput & { id: string },
 ): Promise<SubjectActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -152,7 +152,7 @@ export async function updateSubjectGroupAction(
 export async function archiveSubjectGroupAction(
   groupId: string,
 ): Promise<SubjectActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -180,7 +180,7 @@ export async function archiveSubjectGroupAction(
 export async function restoreSubjectGroupAction(
   groupId: string,
 ): Promise<SubjectActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

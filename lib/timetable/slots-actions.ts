@@ -65,7 +65,7 @@ export async function listTimetableSlotsAction(input: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -111,7 +111,7 @@ export async function listTimetableSlotsAction(input: {
 export async function upsertTimetableSlotAction(
   input: SlotInput,
 ): Promise<TimetableActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -258,7 +258,7 @@ export async function setSlotLockAction(
   slotId: string,
   locked: boolean,
 ): Promise<TimetableActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -303,7 +303,7 @@ export async function setSlotLockAction(
 export async function archiveTimetableSlotAction(
   slotId: string,
 ): Promise<TimetableActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -346,7 +346,7 @@ export async function allocateTeacherToSlotAction(
   slotId: string,
   employmentId: string | null,
 ): Promise<TimetableActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

@@ -1,8 +1,9 @@
 # FeezypayERP — Notification Engine Architecture
 
-> **Phase:** 0.5 — Architecture (design-only)  
-> **Created:** 2026-08-06  
-> **Status:** Canonical design for **E19 Notification** — **runtime `NOT BUILT`**  
+> **Phase:** 0.5 design + Phase 2 runtime (minimal) + Phase 2.8 ops platform  
+> **Created:** 2026-08-06 · **Runtime:** 2026-08-07 (§49) · **Ops chains:** 2026-08-07 (§58)  
+> **Status:** Canonical design for **E19 Notification** — pipe `SHIPPED` (`lib/notifications/`); domain outbox + orchestrator + workers `SHIPPED` ([`notification-operations.md`](notification-operations.md)); provider adapters stub-safe until keys exist  
+> **Runtime companion:** [`communication-operations-engine.md`](communication-operations-engine.md)  
 > **Companions:** [`MASTER.md`](../MASTER.md) · [`business-engines.md`](business-engines.md) · [`domain-model.md`](domain-model.md) · [`system-events.md`](system-events.md) · [`rbac.md`](rbac.md) · [`versioning.md`](versioning.md) · [`audit-log.md`](audit-log.md)  
 > **Rule:** Notifications do **not** belong to Fee, Attendance, Assessment, or any other domain module. Domains **emit events**; Communication **composes**; Notification **delivers**.
 

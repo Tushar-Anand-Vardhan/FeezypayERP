@@ -9,6 +9,10 @@ import {
   validateStudentRows,
   type StudentFormRow,
 } from "@/lib/onboarding/students";
+import {
+  syncParentMembership,
+  syncStudentMembership,
+} from "@/lib/membership/sync";
 
 type Result =
   | { success: true; message: string }
@@ -129,7 +133,7 @@ async function resolveStudentPerson(
 }
 
 export async function getStudentsStepDataAction(): Promise<StudentsStepData> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -308,7 +312,7 @@ export async function getStudentsStepDataAction(): Promise<StudentsStepData> {
 }
 
 export async function saveStudentsAction(formData: FormData): Promise<Result> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -522,6 +526,7 @@ export async function saveStudentsAction(formData: FormData): Promise<Result> {
     }
 
     keepAdmissionIds.add(admissionId);
+    await syncStudentMembership(supabase, admissionId);
 
     const primaryGuardian = row.guardians[0];
     if (primaryGuardian?.fullName) {
@@ -582,6 +587,16 @@ export async function saveStudentsAction(formData: FormData): Promise<Result> {
         },
         { onConflict: "student_profile_id,parent_profile_id" },
       );
+
+      const { data: linkRow } = await supabase
+        .from("student_parent_links")
+        .select("id")
+        .eq("student_profile_id", resolved.studentProfileId)
+        .eq("parent_profile_id", parentProfileId)
+        .maybeSingle();
+      if (linkRow?.id) {
+        await syncParentMembership(supabase, linkRow.id);
+      }
     }
   }
 
@@ -607,6 +622,10 @@ export async function saveStudentsAction(formData: FormData): Promise<Result> {
         updated_at: new Date().toISOString(),
       })
       .in("id", toEnd);
+
+    for (const endedId of toEnd) {
+      await syncStudentMembership(supabase, endedId);
+    }
   }
 
   revalidatePath("/onboarding", "layout");

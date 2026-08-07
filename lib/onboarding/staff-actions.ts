@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 import { hashAadhaar } from "@/lib/identity/aadhaar";
 import { getActiveYearClassesForSchool } from "@/lib/onboarding/school-classes-server";
 import { getAuthenticatedSchoolContext } from "@/lib/onboarding/server-context";
@@ -10,6 +9,7 @@ import {
   validateStaffRows,
   type StaffFormRow,
 } from "@/lib/onboarding/staff";
+import { syncStaffMembership } from "@/lib/membership/sync";
 
 type Result =
   | { success: true; message: string }
@@ -149,7 +149,7 @@ async function resolvePersonAndTeacherProfile(
 }
 
 export async function getStaffStepDataAction(): Promise<StaffStepData> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -272,7 +272,7 @@ export async function getStaffStepDataAction(): Promise<StaffStepData> {
 }
 
 export async function saveStaffAction(formData: FormData): Promise<Result> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -371,7 +371,13 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
     .eq("status", "active");
 
   const keepEmploymentIds = new Set<string>();
-  const createdEmails: string[] = [];
+  const invitesToSend: Array<{
+    email: string;
+    personId: string;
+    employmentId: string;
+    isHod: boolean;
+    isNew: boolean;
+  }> = [];
 
   for (const row of trimmed) {
     const resolved = await resolvePersonAndTeacherProfile(supabase, row);
@@ -385,6 +391,8 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
     );
 
     let employmentId = existing?.id;
+    let isNewEmployment = false;
+    const schoolPersona = row.isHod ? "hod" : "teacher";
 
     if (employmentId) {
       const { error: updateError } = await supabase
@@ -396,6 +404,7 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
             ? (departmentIdByName.get(row.departmentName.toLowerCase()) ?? null)
             : null,
           is_hod: row.isHod,
+          school_persona: schoolPersona,
           status: "active",
           left_on: null,
           updated_at: new Date().toISOString(),
@@ -410,6 +419,7 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
         .delete()
         .eq("employment_id", employmentId);
     } else {
+      isNewEmployment = true;
       const { data: employment, error: employmentError } = await supabase
         .from("teacher_employments")
         .insert({
@@ -421,7 +431,8 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
             ? (departmentIdByName.get(row.departmentName.toLowerCase()) ?? null)
             : null,
           is_hod: row.isHod,
-          status: "active",
+          school_persona: schoolPersona,
+          status: row.email ? "invited" : "active",
           joined_on: new Date().toISOString().slice(0, 10),
         })
         .select("id")
@@ -437,6 +448,8 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
     }
 
     keepEmploymentIds.add(employmentId);
+
+    await syncStaffMembership(supabase, employmentId);
 
     if (row.subjectNames.length > 0) {
       const links = row.subjectNames
@@ -457,8 +470,14 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
       }
     }
 
-    if (row.email) {
-      createdEmails.push(row.email);
+    if (row.email && isNewEmployment) {
+      invitesToSend.push({
+        email: row.email,
+        personId: resolved.personId,
+        employmentId,
+        isHod: row.isHod,
+        isNew: true,
+      });
     }
   }
 
@@ -475,16 +494,27 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
         updated_at: new Date().toISOString(),
       })
       .in("id", toEnd);
+
+    for (const endedId of toEnd) {
+      await syncStaffMembership(supabase, endedId);
+    }
   }
 
-  if (createdEmails.length > 0) {
-    const authClient = await createClient();
-    const origin =
-      process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-    for (const email of createdEmails) {
-      await authClient.auth.resetPasswordForEmail(email, {
-        redirectTo: `${origin}/auth/confirm?next=/reset-password&type=recovery`,
+  const inviteWarnings: string[] = [];
+  if (invitesToSend.length > 0) {
+    const { createInviteAction } = await import("@/lib/auth/invites-actions");
+    for (const invite of invitesToSend) {
+      const result = await createInviteAction({
+        email: invite.email,
+        personId: invite.personId,
+        targetPersona: invite.isHod ? "hod" : "teacher",
+        employmentId: invite.employmentId,
       });
+      if (!result.success) {
+        inviteWarnings.push(`${invite.email}: ${result.error}`);
+      } else if (result.warning) {
+        inviteWarnings.push(`${invite.email}: ${result.warning}`);
+      }
     }
   }
 
@@ -492,8 +522,10 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
   return {
     success: true,
     message:
-      createdEmails.length > 0
-        ? "Staff saved. Password setup emails were sent only for emails that already have accounts."
+      invitesToSend.length > 0
+        ? inviteWarnings.length > 0
+          ? `Staff saved. Invites processed with notes: ${inviteWarnings.join("; ")}`
+          : "Staff saved. Auth invites were sent for new staff with email."
         : "Staff saved successfully.",
   };
 }

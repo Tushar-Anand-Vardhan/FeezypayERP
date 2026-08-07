@@ -38,7 +38,7 @@ export async function listPeriodsAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -78,7 +78,7 @@ export async function listPeriodsAction(
 export async function upsertPeriodAction(
   input: PeriodInput,
 ): Promise<TimetableActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -194,7 +194,7 @@ export async function setPeriodLockAction(
   periodId: string,
   locked: boolean,
 ): Promise<TimetableActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -238,7 +238,7 @@ export async function setPeriodLockAction(
 export async function archivePeriodAction(
   periodId: string,
 ): Promise<TimetableActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/dashboard/app-header";
+import { getAppHeaderAuth } from "@/lib/authz/bootstrap";
 import { getOnboardingProgress } from "@/lib/onboarding/progress";
 import { DEFAULT_ONBOARDING_PATH } from "@/lib/onboarding/steps";
 import { createClient } from "@/lib/supabase/server";
@@ -22,31 +23,40 @@ export default async function DashboardPage() {
   let onboardingComplete = false;
   let onboardingResumeHref: string = DEFAULT_ONBOARDING_PATH;
 
-  if (userId) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("school_id")
-      .eq("id", userId)
+  const headerAuth = await getAppHeaderAuth();
+  const {
+    memberships,
+    activeSchoolId,
+    activePersona,
+    authz,
+  } = headerAuth;
+
+  const schoolIdForName =
+    activeSchoolId ??
+    (userId
+      ? (
+          await supabase
+            .from("profiles")
+            .select("school_id")
+            .eq("id", userId)
+            .maybeSingle()
+        ).data?.school_id
+      : null);
+
+  if (schoolIdForName) {
+    const { data: school } = await supabase
+      .from("schools")
+      .select("name, onboarding_status")
+      .eq("id", schoolIdForName)
       .maybeSingle();
 
-    if (profile?.school_id) {
-      const { data: school } = await supabase
-        .from("schools")
-        .select("name, onboarding_status")
-        .eq("id", profile.school_id)
-        .maybeSingle();
+    schoolName = school?.name ?? null;
+    onboardingComplete = school?.onboarding_status === "completed";
 
-      schoolName = school?.name ?? null;
-      onboardingComplete = school?.onboarding_status === "completed";
-
-      if (!onboardingComplete) {
-        const progress = await getOnboardingProgress(
-          supabase,
-          profile.school_id,
-        );
-        if (!("error" in progress)) {
-          onboardingResumeHref = progress.nextHref;
-        }
+    if (!onboardingComplete && authz?.isSchoolAdmin) {
+      const progress = await getOnboardingProgress(supabase, schoolIdForName);
+      if (!("error" in progress)) {
+        onboardingResumeHref = progress.nextHref;
       }
     }
   }
@@ -56,6 +66,10 @@ export default async function DashboardPage() {
       <AppHeader
         schoolName={schoolName}
         onboardingComplete={onboardingComplete}
+        memberships={memberships}
+        activeSchoolId={activeSchoolId}
+        activePersona={activePersona}
+        authz={authz}
       />
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6">
         {!onboardingComplete ? (

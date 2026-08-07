@@ -24,4 +24,24 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Configuration Editing Framework (Phase 1): [`docs/architecture/configuration-editing-framework.md`](docs/architecture/configuration-editing-framework.md) · `lib/editing/`
 - Configuration Dashboard (Phase 1): [`docs/architecture/configuration-dashboard.md`](docs/architecture/configuration-dashboard.md) · `lib/config-dashboard/`
 - Phase 1 implementation audit: [`docs/architecture/phase-1-implementation-audit.md`](docs/architecture/phase-1-implementation-audit.md) — **production gate NOT PASSED**
+- Phase 2 daily workflows: [`docs/operations/daily-workflows.md`](docs/operations/daily-workflows.md) — cite workflow IDs before ops code
+- Phase 2 operations audit: [`docs/operations/phase2-audit.md`](docs/operations/phase2-audit.md) — **production gate NOT PASSED**; Phase 2 **not COMPLETE**
+- Authentication Platform (Phase 2.5): [`docs/architecture/authentication-platform.md`](docs/architecture/authentication-platform.md) · `lib/auth/` · `lib/supabase/admin.ts` — AuthN (F11, invites, membership)
+- Authorization Platform (Phase 2.6 / E03): [`docs/architecture/authorization-platform.md`](docs/architecture/authorization-platform.md) · [`rbac.md`](docs/architecture/rbac.md) · `lib/authz/` — `requirePermission` / `<Can>`; never hardcode persona for AuthZ
+- Membership Engine (Phase 2.7 / E29): [`docs/architecture/membership-engine.md`](docs/architecture/membership-engine.md) · `lib/membership/` — person↔school index, preferences, switch-school; sync on employment/admission/parent writers
+- Notification Operations (Phase 2.8): [`docs/architecture/notification-operations.md`](docs/architecture/notification-operations.md) · `lib/domain-events/` · `lib/notify-orchestration/` · `lib/notifications/` — emit → orchestrate → deliver; domains never call providers
+- Teacher Portal (Phase 2.9): [`docs/architecture/teacher-portal.md`](docs/architecture/teacher-portal.md) · `lib/teacher-portal/` · `components/teacher-portal/` · `/dashboard/teacher/*` — thin permission-gated UI over Phase 2 engines
+- Student Portal (Phase 2.10): [`docs/architecture/student-portal.md`](docs/architecture/student-portal.md) · `lib/student-portal/` · `components/student-portal/` · `/dashboard/student/*` — RO self-scoped UI over student-profile + engines
+- Student Profile Engine (Phase 2): [`docs/architecture/student-profile-engine.md`](docs/architecture/student-profile-engine.md) · `lib/student-profile/`
+- Teacher Workspace (Phase 2): [`docs/architecture/teacher-workspace.md`](docs/architecture/teacher-workspace.md) · `lib/teacher-workspace/` · `/dashboard/teacher`
+- Attendance Engine (Phase 2): [`docs/architecture/attendance-engine.md`](docs/architecture/attendance-engine.md) · `lib/attendance/`
+- Assessment Operations Engine (Phase 2): [`docs/architecture/assessment-operations-engine.md`](docs/architecture/assessment-operations-engine.md) · `lib/assessment/` (ops)
+- Report Card Engine (Phase 2): [`docs/architecture/report-card-engine.md`](docs/architecture/report-card-engine.md) · `lib/report-cards/` (issue)
+- Event & Activity Engine (Phase 2): [`docs/architecture/event-activity-engine.md`](docs/architecture/event-activity-engine.md) · `lib/events/`
+- Behaviour Engine (Phase 2): [`docs/architecture/behaviour-engine.md`](docs/architecture/behaviour-engine.md) · `lib/behaviour/`
+- Communication Operations (Phase 2): [`docs/architecture/communication-operations-engine.md`](docs/architecture/communication-operations-engine.md) · `lib/communications/` · `lib/notifications/`
+- Homework & Assignment Engine (Phase 2): [`docs/architecture/homework-assignment-engine.md`](docs/architecture/homework-assignment-engine.md) · `lib/homework/`
+- Student Analytics Engine (Phase 2): [`docs/architecture/student-analytics-engine.md`](docs/architecture/student-analytics-engine.md) · `lib/student-analytics/`
+- Teacher Analytics Engine (Phase 2): [`docs/architecture/teacher-analytics-engine.md`](docs/architecture/teacher-analytics-engine.md) · `lib/teacher-analytics/`
+- Principal Dashboard (Phase 2): [`docs/architecture/principal-dashboard.md`](docs/architecture/principal-dashboard.md) · `lib/principal-dashboard/` · `/dashboard/principal`
 - Deferred identity follow-ups: [`docs/deferred-identity-followups.md`](docs/deferred-identity-followups.md)

@@ -6,7 +6,7 @@ import { getAuthenticatedSchoolContext } from "@/lib/onboarding/server-context";
 
 /** School setup command centre — completion, warnings, deps, health. */
 export async function getConfigurationDashboardAction(): Promise<ConfigurationDashboardResult> {
-  const ctx = await getAuthenticatedSchoolContext();
+  const ctx = await getAuthenticatedSchoolContext("config.catalog.read");
   if ("error" in ctx) {
     return { success: false, error: ctx.error };
   }

@@ -24,31 +24,35 @@ Do **not** start these until the identity model is live and onboarding smoke-tes
 - Never overwrite prior year marks
 
 ## 3. Attendance
-- Daily attendance tables; summaries derived, not duplicated
+- Backend shipped (MASTER §44 / E12). UI still open.
 
 ## 4. Behaviour & remarks
-- Dated incident/remark records linked to student profile + academic year
+- Backend shipped (MASTER §48 / E13). UI still open.
 
 ## 5. Health records
 - Belong on `student_profiles` / related health tables (lifelong), not school admissions
 
 ## 6. Teacher invite + first-login profile wizard
 
-Schema already ready (Step 7):
+**Status:** AuthN platform **SHIPPED** (MASTER §55 / 2026-08-07). Configure `SUPABASE_SERVICE_ROLE_KEY` for live Auth invite emails.
+
+Schema + product path:
 - `persons.auth_user_id` (unique when set) — link to Supabase Auth
 - `persons.profile_completed_at` — null until first-login wizard finishes
 - `person_roles (person_id, role)` — `teacher|student|parent|admin` (multi-role OK)
-- `teacher_employments.status` includes `invited`
-- RLS: self can `SELECT`/`UPDATE` own person via `persons.auth_user_id = auth.uid()`
+- `teacher_employments.status` includes `invited`; `school_persona` for AuthN routing
+- `auth_invites` + `/invite/accept` + `/activate/profile`
+- RLS: `membership_schools(auth.uid())`; self person via `auth_user_id`
 
-**Planned invite flow (not built yet)**
-1. School admin invites teacher (email) during or after staff onboarding
-2. Create/reuse `persons` + `teacher_profiles`; create `teacher_employments` with `status=invited`
-3. Send auth invite / magic link / password setup for that email
-4. On first successful auth: set `persons.auth_user_id = auth.uid()` (1:1)
-5. App gate: if `profile_completed_at is null`, force profile wizard (phone, photo, career fields on `teacher_profiles`)
-6. Wizard save sets `profile_completed_at = now()` and flips employment `invited` → `active`
-7. Same pattern later for parents/students; a person may hold multiple `person_roles` (e.g. teacher+parent)
+**Implemented invite flow**
+1. School admin saves staff / calls `createInviteAction`
+2. Employment `status=invited` for new emailed staff; `auth_invites` pending
+3. Service-role `inviteUserByEmail` (or warn if key missing)
+4. Accept session binds `persons.auth_user_id`
+5. Profile wizard sets `profile_completed_at` and flips employment to `active`
+6. Same pattern available for parents/students via invite actions
+
+See [`docs/architecture/authentication-platform.md`](architecture/authentication-platform.md).
 
 ## 7. Teacher marketplace / public profiles
 - Public subset of `teacher_profiles` + verification

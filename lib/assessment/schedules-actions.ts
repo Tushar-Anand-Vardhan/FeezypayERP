@@ -43,7 +43,7 @@ export async function listExamSubjectSchedulesAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -82,7 +82,7 @@ export async function listExamSubjectSchedulesAction(
 export async function upsertExamSubjectScheduleAction(
   input: ExamSubjectScheduleInput,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -185,7 +185,7 @@ export async function upsertExamSubjectScheduleAction(
 export async function archiveExamSubjectScheduleAction(
   scheduleId: string,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

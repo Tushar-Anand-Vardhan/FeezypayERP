@@ -32,7 +32,7 @@ export async function listSubjectDependenciesAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -63,7 +63,7 @@ export async function listSubjectDependenciesAction(
 export async function addSubjectDependencyAction(
   input: SubjectDependencyInput,
 ): Promise<SubjectActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -151,7 +151,7 @@ export async function addSubjectDependencyAction(
 export async function archiveSubjectDependencyAction(
   dependencyId: string,
 ): Promise<SubjectActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

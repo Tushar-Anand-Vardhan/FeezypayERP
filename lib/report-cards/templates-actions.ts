@@ -37,7 +37,7 @@ export async function listReportCardTemplatesAction(options?: {
   | { success: true; templates: Array<Record<string, unknown>> }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -70,7 +70,7 @@ export async function listReportCardTemplatesAction(options?: {
 export async function upsertReportCardTemplateAction(
   input: TemplateInput,
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -220,7 +220,7 @@ export async function upsertReportCardTemplateAction(
 export async function publishReportCardTemplateAction(
   templateId: string,
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -304,7 +304,7 @@ export async function publishReportCardTemplateAction(
 export async function retireReportCardTemplateAction(
   templateId: string,
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -336,7 +336,7 @@ export async function retireReportCardTemplateAction(
 export async function archiveReportCardTemplateAction(
   templateId: string,
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -380,7 +380,7 @@ export async function listReportCardTemplateVersionsAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -414,7 +414,7 @@ export async function cloneReportCardTemplateAsDraftAction(
   templateId: string,
   options?: { name?: string },
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

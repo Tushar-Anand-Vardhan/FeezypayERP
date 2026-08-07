@@ -34,7 +34,7 @@ export type TimetableStepData =
   | { success: false; error: string };
 
 export async function getTimetableStepDataAction(): Promise<TimetableStepData> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -156,7 +156,7 @@ export async function getTimetableStepDataAction(): Promise<TimetableStepData> {
 }
 
 export async function saveTimetableAction(formData: FormData): Promise<Result> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

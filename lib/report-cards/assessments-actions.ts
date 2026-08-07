@@ -41,7 +41,7 @@ export async function listReportCardAssessmentBindingsAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -77,7 +77,7 @@ export async function listReportCardAssessmentBindingsAction(
 export async function upsertReportCardAssessmentBindingAction(
   input: AssessmentBindingInput,
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -164,7 +164,7 @@ export async function upsertReportCardAssessmentBindingAction(
 export async function archiveReportCardAssessmentBindingAction(
   bindingId: string,
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

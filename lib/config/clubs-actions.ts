@@ -20,7 +20,7 @@ export async function listClubsAction(options?: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -48,7 +48,7 @@ export async function syncClubsCatalogAction(
   inputs: ClubInput[],
   options: { requireAtLeastOne?: boolean; archiveMissing?: boolean } = {},
 ): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -157,7 +157,7 @@ export async function syncClubsCatalogAction(
 export async function archiveClubAction(
   clubId: string,
 ): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -184,7 +184,7 @@ export async function archiveClubAction(
 export async function restoreClubAction(
   clubId: string,
 ): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

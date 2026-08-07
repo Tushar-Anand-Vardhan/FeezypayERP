@@ -239,7 +239,7 @@ Vice Principal is omitted here (similar to Principal with fewer lock/delete righ
 
 ## 6. Teacher
 
-**Maturity:** Target (employment + invite + first-login). Identity/employment **shipped** as data; portal `NOT BUILT`.
+**Maturity:** Partial / **SHIPPED UI** — employment data + AuthN invite + Teacher Workspace homepage + Teacher Portal feature routes (`/dashboard/teacher/*`). Parent/student portals remain open.
 
 ### 6.1 Daily / weekly tasks
 
@@ -369,7 +369,7 @@ Vice Principal is omitted here (similar to Principal with fewer lock/delete righ
 
 ## 8. Student
 
-**Maturity:** Target (admission/placement shipped as data; portal `NOT BUILT`). Age/consent rules apply (RBAC-4).
+**Maturity:** Partial / **SHIPPED UI** — admission data + AuthN invite path + Student Portal RO routes (`/dashboard/student/*`). Homework submit, fees, AI remain open.
 
 ### 8.1 Daily / weekly tasks
 
@@ -477,9 +477,9 @@ Admin invites (E05) → access.invite (E19 email)
 | School Admin | Yes | Yes | **Live** (subset: onboarding-heavy) |
 | Principal | Via designation (future) | No | Target |
 | HOD | `is_hod` on employment | No | Target (flag shipped) |
-| Teacher | Employment + profile | No (invite blocked by F11) | Target |
+| Teacher | Employment + profile | Yes (AuthN + portal §59) | **Partial** (Teacher Portal spine) |
 | Parent | Links + profiles | No | Target |
-| Student | Admission + placement | No | Target |
+| Student | Admission + placement | Yes (AuthN + portal §60) | **Partial** (RO Student Portal) |
 
 ---
 

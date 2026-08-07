@@ -38,7 +38,7 @@ export async function listSchoolPoliciesAction(options?: {
   | { success: true; policies: Array<Record<string, unknown>> }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -74,7 +74,7 @@ export async function listSchoolPoliciesAction(options?: {
 export async function upsertSchoolPolicyAction(
   input: PolicyInput,
 ): Promise<PolicyActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -196,7 +196,7 @@ export async function listSchoolPolicyVersionsAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -230,7 +230,7 @@ export async function listSchoolPolicyVersionsAction(
 export async function saveSchoolPolicyDraftRulesAction(
   input: PolicyVersionInput,
 ): Promise<PolicyActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -339,7 +339,7 @@ export async function publishSchoolPolicyVersionAction(
   policyId: string,
   options?: { versionId?: string },
 ): Promise<PolicyActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -434,7 +434,7 @@ export async function getCurrentSchoolPolicyAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -484,7 +484,7 @@ export async function getCurrentSchoolPolicyAction(
 export async function retireSchoolPolicyAction(
   policyId: string,
 ): Promise<PolicyActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -522,7 +522,7 @@ export async function retireSchoolPolicyAction(
 export async function archiveSchoolPolicyAction(
   policyId: string,
 ): Promise<PolicyActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -562,7 +562,7 @@ export async function archiveSchoolPolicyAction(
  * Ensure school-wide defaults exist with filled default rules (idempotent for empty {}).
  */
 export async function ensureDefaultSchoolPoliciesAction(): Promise<PolicyActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

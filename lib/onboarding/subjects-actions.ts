@@ -80,7 +80,7 @@ export async function saveSubjectsAction(
 }
 
 export async function getSubjectsStepDataAction(): Promise<SubjectsStepDataResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -167,7 +167,7 @@ export async function getSubjectsStepDataAction(): Promise<SubjectsStepDataResul
 export async function saveSubjectsStepAction(
   formData: FormData,
 ): Promise<SubjectActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

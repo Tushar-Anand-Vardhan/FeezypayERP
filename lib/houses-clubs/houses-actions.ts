@@ -46,7 +46,7 @@ export async function listHousesCatalogAction(options?: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -78,7 +78,7 @@ export async function listHousesCatalogAction(options?: {
 export async function createHouseAction(
   input: HouseCatalogInput,
 ): Promise<HouseClubActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -147,7 +147,7 @@ export async function createHouseAction(
 export async function updateHouseAction(
   input: HouseCatalogInput & { id: string },
 ): Promise<HouseClubActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -216,7 +216,7 @@ export async function updateHouseAction(
 export async function archiveHouseAction(
   houseId: string,
 ): Promise<HouseClubActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -244,7 +244,7 @@ export async function archiveHouseAction(
 export async function restoreHouseAction(
   houseId: string,
 ): Promise<HouseClubActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -273,7 +273,7 @@ export async function setHouseTeacherInChargeAction(
   houseId: string,
   employmentId: string | null,
 ): Promise<HouseClubActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

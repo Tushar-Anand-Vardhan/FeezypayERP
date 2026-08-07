@@ -39,7 +39,7 @@ export async function listAssessmentComponentsAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -79,7 +79,7 @@ export async function listAssessmentComponentsAction(
 export async function upsertAssessmentComponentAction(
   input: AssessmentComponentInput,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -163,7 +163,7 @@ export async function upsertAssessmentComponentAction(
 export async function archiveAssessmentComponentAction(
   componentId: string,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

@@ -29,7 +29,7 @@ export async function listReportCardBoardsAction(options?: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -57,7 +57,7 @@ export async function listReportCardBoardsAction(options?: {
 export async function upsertReportCardBoardAction(
   input: BoardInput,
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -121,7 +121,7 @@ export async function upsertReportCardBoardAction(
 export async function archiveReportCardBoardAction(
   boardId: string,
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

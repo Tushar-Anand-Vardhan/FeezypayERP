@@ -52,7 +52,13 @@ export default function SignupPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { intent: "create_school" },
+      },
+    });
 
     if (error) {
       setFormError(formatAuthError(error));

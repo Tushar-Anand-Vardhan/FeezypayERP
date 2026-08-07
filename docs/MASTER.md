@@ -2,12 +2,12 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-07 (Phase 1 — Implementation Audit)  
+> **Last updated:** 2026-08-07 (Phase 2.10 — Student Portal)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
-> **Branch tip at last verification:** `main` @ `f78b48a` (+ Phase 1 engines §28–§39; audit §40)  
-> **Current phase:** **Phase 1 engines SHIPPED (§28–§39). Production gate NOT PASSED — Phase 1 not marked COMPLETE.** See [`docs/architecture/phase-1-implementation-audit.md`](architecture/phase-1-implementation-audit.md) + §40. Next: P0 hardening (same-school FKs, DELETE revoke, year lifecycle, editing adoption, seed-on-create, audit retention) then remaining §26 P0 (F11, membership RLS, outbox, Fee, rollover).
+> **Branch tip at last verification:** `main` @ `11836a7` (+ AuthN / AuthZ / Membership / Notify / Teacher + Student Portal uncommitted)  
+> **Current phase:** **Phase 2.10 — Student Portal SHIPPED (§60)** (read-only `/dashboard/student/*` self-scoped). Teacher Portal §59 shipped. Phase 2 ops gate still open (report-card PDF/admin UIs, live providers, Fee/parent portals).
 
 ---
 
@@ -53,6 +53,26 @@
 38. [Phase 1 — Configuration Editing Framework](#38-phase-1--configuration-editing-framework)
 39. [Phase 1 — Configuration Dashboard](#39-phase-1--configuration-dashboard)
 40. [Phase 1 — Implementation audit](#40-phase-1--implementation-audit)
+41. [Phase 2 — Daily operational workflows](#41-phase-2--daily-operational-workflows)
+42. [Phase 2 — Student Profile Engine](#42-phase-2--student-profile-engine)
+43. [Phase 2 — Teacher Workspace](#43-phase-2--teacher-workspace)
+44. [Phase 2 — Attendance Engine](#44-phase-2--attendance-engine)
+45. [Phase 2 — Assessment Operations Engine](#45-phase-2--assessment-operations-engine)
+46. [Phase 2 — Report Card Engine](#46-phase-2--report-card-engine)
+47. [Phase 2 — Event & Activity Engine](#47-phase-2--event--activity-engine)
+48. [Phase 2 — Behaviour Engine](#48-phase-2--behaviour-engine)
+49. [Phase 2 — Communication Operations Engine](#49-phase-2--communication-operations-engine)
+50. [Phase 2 — Homework & Assignment Engine](#50-phase-2--homework--assignment-engine)
+51. [Phase 2 — Student Analytics Engine](#51-phase-2--student-analytics-engine)
+52. [Phase 2 — Teacher Analytics Engine](#52-phase-2--teacher-analytics-engine)
+53. [Phase 2 — Principal Dashboard](#53-phase-2--principal-dashboard)
+54. [Phase 2 — Operations audit](#54-phase-2--operations-audit)
+55. [Phase 2.5 — Authentication Platform](#55-phase-25--authentication-platform)
+56. [Phase 2.6 — Authorization Platform](#56-phase-26--authorization-platform)
+57. [Phase 2.7 — Membership Engine](#57-phase-27--membership-engine)
+58. [Phase 2.8 — Notification Operations](#58-phase-28--notification-operations)
+59. [Phase 2.9 — Teacher Portal](#59-phase-29--teacher-portal)
+60. [Phase 2.10 — Student Portal](#60-phase-210--student-portal)
 
 ---
 
@@ -92,7 +112,27 @@
 | Configuration Editing Framework change | [`docs/architecture/configuration-editing-framework.md`](architecture/configuration-editing-framework.md) + §38 + `lib/editing/` |
 | Configuration Dashboard change | [`docs/architecture/configuration-dashboard.md`](architecture/configuration-dashboard.md) + §39 + `lib/config-dashboard/` |
 | Phase 1 implementation audit / production gate | [`docs/architecture/phase-1-implementation-audit.md`](architecture/phase-1-implementation-audit.md) + §40 |
-| New feature PR | Must name owning engine + entity + events + AuthZ + versioning + audit + notify + AI + persona; respect §26 P0; update maturity if shipping |
+| Phase 2 daily / routine ops workflow change | [`docs/operations/daily-workflows.md`](operations/daily-workflows.md) + §41 |
+| Student Profile Engine change | [`docs/architecture/student-profile-engine.md`](architecture/student-profile-engine.md) + §42 + `lib/student-profile/` |
+| Teacher Workspace change | [`docs/architecture/teacher-workspace.md`](architecture/teacher-workspace.md) + §43 + `lib/teacher-workspace/` |
+| Attendance Engine change | [`docs/architecture/attendance-engine.md`](architecture/attendance-engine.md) + §44 + `lib/attendance/` |
+| Assessment Operations Engine change | [`docs/architecture/assessment-operations-engine.md`](architecture/assessment-operations-engine.md) + §45 + `lib/assessment/` (ops) |
+| Report Card Engine change | [`docs/architecture/report-card-engine.md`](architecture/report-card-engine.md) + §46 + `lib/report-cards/` (issue) |
+| Event & Activity Engine change | [`docs/architecture/event-activity-engine.md`](architecture/event-activity-engine.md) + §47 + `lib/events/` |
+| Behaviour Engine change | [`docs/architecture/behaviour-engine.md`](architecture/behaviour-engine.md) + §48 + `lib/behaviour/` |
+| Communication Operations change | [`docs/architecture/communication-operations-engine.md`](architecture/communication-operations-engine.md) + §49 + `lib/communications/` + `lib/notifications/` |
+| Homework & Assignment Engine change | [`docs/architecture/homework-assignment-engine.md`](architecture/homework-assignment-engine.md) + §50 + `lib/homework/` |
+| Student Analytics Engine change | [`docs/architecture/student-analytics-engine.md`](architecture/student-analytics-engine.md) + §51 + `lib/student-analytics/` |
+| Teacher Analytics Engine change | [`docs/architecture/teacher-analytics-engine.md`](architecture/teacher-analytics-engine.md) + §52 + `lib/teacher-analytics/` |
+| Principal Dashboard change | [`docs/architecture/principal-dashboard.md`](architecture/principal-dashboard.md) + §53 + `lib/principal-dashboard/` |
+| Phase 2 operations audit / production gate | [`docs/operations/phase2-audit.md`](operations/phase2-audit.md) + §54 |
+| Authentication Platform change | [`docs/architecture/authentication-platform.md`](architecture/authentication-platform.md) + §55 + `lib/auth/` |
+| Authorization Platform change | [`docs/architecture/authorization-platform.md`](architecture/authorization-platform.md) + §56 + `lib/authz/` |
+| Membership Engine change | [`docs/architecture/membership-engine.md`](architecture/membership-engine.md) + §57 + `lib/membership/` |
+| Notification Operations change | [`docs/architecture/notification-operations.md`](architecture/notification-operations.md) + §58 + `lib/domain-events/` · `lib/notify-orchestration/` |
+| Teacher Portal change | [`docs/architecture/teacher-portal.md`](architecture/teacher-portal.md) + §59 + `lib/teacher-portal/` · `components/teacher-portal/` |
+| Student Portal change | [`docs/architecture/student-portal.md`](architecture/student-portal.md) + §60 + `lib/student-portal/` · `components/student-portal/` |
+| New feature PR | Must name owning engine + entity + events + AuthZ + versioning + audit + notify + AI + persona; **Phase 2+ also cite workflow ID(s)** from §41; respect §26 P0 + §54 P0; update maturity if shipping |
 
 **Conventions**
 
@@ -123,6 +163,26 @@
 - Configuration Editing Framework: [`docs/architecture/configuration-editing-framework.md`](architecture/configuration-editing-framework.md) — keep in sync with §38.
 - Configuration Dashboard: [`docs/architecture/configuration-dashboard.md`](architecture/configuration-dashboard.md) — keep in sync with §39.
 - Phase 1 implementation audit: [`docs/architecture/phase-1-implementation-audit.md`](architecture/phase-1-implementation-audit.md) — keep in sync with §40.
+- Phase 2 daily workflows: [`docs/operations/daily-workflows.md`](operations/daily-workflows.md) — keep in sync with §41.
+- Student Profile Engine: [`docs/architecture/student-profile-engine.md`](architecture/student-profile-engine.md) — keep in sync with §42.
+- Teacher Workspace: [`docs/architecture/teacher-workspace.md`](architecture/teacher-workspace.md) — keep in sync with §43.
+- Attendance Engine: [`docs/architecture/attendance-engine.md`](architecture/attendance-engine.md) — keep in sync with §44.
+- Assessment Operations Engine: [`docs/architecture/assessment-operations-engine.md`](architecture/assessment-operations-engine.md) — keep in sync with §45.
+- Report Card Engine: [`docs/architecture/report-card-engine.md`](architecture/report-card-engine.md) — keep in sync with §46.
+- Event & Activity Engine: [`docs/architecture/event-activity-engine.md`](architecture/event-activity-engine.md) — keep in sync with §47.
+- Behaviour Engine: [`docs/architecture/behaviour-engine.md`](architecture/behaviour-engine.md) — keep in sync with §48.
+- Communication Operations Engine: [`docs/architecture/communication-operations-engine.md`](architecture/communication-operations-engine.md) — keep in sync with §49.
+- Homework & Assignment Engine: [`docs/architecture/homework-assignment-engine.md`](architecture/homework-assignment-engine.md) — keep in sync with §50.
+- Student Analytics Engine: [`docs/architecture/student-analytics-engine.md`](architecture/student-analytics-engine.md) — keep in sync with §51.
+- Teacher Analytics Engine: [`docs/architecture/teacher-analytics-engine.md`](architecture/teacher-analytics-engine.md) — keep in sync with §52.
+- Principal Dashboard: [`docs/architecture/principal-dashboard.md`](architecture/principal-dashboard.md) — keep in sync with §53.
+- Phase 2 operations audit: [`docs/operations/phase2-audit.md`](operations/phase2-audit.md) — keep in sync with §54.
+- Authentication Platform: [`docs/architecture/authentication-platform.md`](architecture/authentication-platform.md) — keep in sync with §55.
+- Authorization Platform: [`docs/architecture/authorization-platform.md`](architecture/authorization-platform.md) — keep in sync with §56.
+- Membership Engine: [`docs/architecture/membership-engine.md`](architecture/membership-engine.md) — keep in sync with §57.
+- Notification Operations: [`docs/architecture/notification-operations.md`](architecture/notification-operations.md) — keep in sync with §58.
+- Teacher Portal: [`docs/architecture/teacher-portal.md`](architecture/teacher-portal.md) — keep in sync with §59.
+- Student Portal: [`docs/architecture/student-portal.md`](architecture/student-portal.md) — keep in sync with §60.
 
 ---
 
@@ -211,6 +271,26 @@ Teachers, students, and parents exist as **global identity rows** (`persons` + r
 | Y | **Phase 1 — Configuration Editing Framework** | Shared edit/archive/restore/duplicate/history/audit/version/deps/soft-migration — [`docs/architecture/configuration-editing-framework.md`](architecture/configuration-editing-framework.md) |
 | Z | **Phase 1 — Configuration Dashboard** | School setup command centre: completion, warnings, missing, deps, health + module links — [`docs/architecture/configuration-dashboard.md`](architecture/configuration-dashboard.md) |
 | AA | **Phase 1 — Implementation audit** | Schema/RLS/actions/validation/perf/deps/UI/future-compat review; **production gate NOT PASSED** — [`docs/architecture/phase-1-implementation-audit.md`](architecture/phase-1-implementation-audit.md) |
+| AB | **Phase 2 — Daily workflows** | Post-config ops by persona (Admin→Support); trigger/owner/data/deps/notify/AI — design only — [`docs/operations/daily-workflows.md`](operations/daily-workflows.md) |
+| AC | **Phase 2 — Student Profile Engine** | Aggregated student SSOT surface (17 modules); no OLTP duplication; SCHEMA-READY stubs — [`docs/architecture/student-profile-engine.md`](architecture/student-profile-engine.md) |
+| AD | **Phase 2 — Teacher Workspace** | Teacher homepage aggregate (timetable, attendance, assessments, homework, announcements, events, reminders, dept notices, AI placeholders) — [`docs/architecture/teacher-workspace.md`](architecture/teacher-workspace.md) |
+| AE | **Phase 2 — Attendance Engine** | E12: daily/bulk/leave/late/half-day; sessions approve/lock; corrections; audit; analytics; period FUTURE — [`docs/architecture/attendance-engine.md`](architecture/attendance-engine.md) |
+| AF | **Phase 2 — Assessment Operations** | E11 marks: scheduled + teacher-created; bulk/single; remarks; draft/publish/lock; corrections; audit — [`docs/architecture/assessment-operations-engine.md`](architecture/assessment-operations-engine.md) |
+| AG | **Phase 2 — Report Card Engine** | E20 issue: assemble from E11/E12/E13/house/club + remarks/promotion; version history; no marks OLTP copy — [`docs/architecture/report-card-engine.md`](architecture/report-card-engine.md) |
+| AH | **Phase 2 — Event & Activity Engine** | E17: calendar-origin activities; staff; participation; attendance; awards; certificates; profile by ref — [`docs/architecture/event-activity-engine.md`](architecture/event-activity-engine.md) |
+| AI | **Phase 2 — Behaviour Engine** | E13: positive/disciplinary/warning/commendation/teacher notes; visibility; follow-ups; year filter; analytics — [`docs/architecture/behaviour-engine.md`](architecture/behaviour-engine.md) |
+| AJ | **Phase 2 — Communication Operations** | E18 compose (announcements…student notices) + E19 delivery pipe (queue, in_app, receipts, history); providers stubbed — [`docs/architecture/communication-operations-engine.md`](architecture/communication-operations-engine.md) |
+| AK | **Phase 2 — Homework & Assignment Engine** | Homework / assignment / project briefs; due/late; attachments; marks; feedback; parent visibility; student submit + AI eval FUTURE — [`docs/architecture/homework-assignment-engine.md`](architecture/homework-assignment-engine.md) |
+| AL | **Phase 2 — Student Analytics Engine** | E22 student slice: deterministic aggregates + strengths/weaknesses/risks/progress graphs; no AI — [`docs/architecture/student-analytics-engine.md`](architecture/student-analytics-engine.md) |
+| AM | **Phase 2 — Teacher Analytics Engine** | E22 teacher slice: attendance/assessment/homework completion, student performance, workload, classes, department; AI FUTURE — [`docs/architecture/teacher-analytics-engine.md`](architecture/teacher-analytics-engine.md) |
+| AN | **Phase 2 — Principal Dashboard** | Data-driven school ops homepage: attendance, performance, events, approvals, report cards, assessments, notifications, health — [`docs/architecture/principal-dashboard.md`](architecture/principal-dashboard.md) |
+| AO | **Phase 2 — Operations audit** | Perf/schema/perms/versioning/audit/notify/deps review of §§41–53; **production gate NOT PASSED** — Phase 2 **not COMPLETE** — [`docs/operations/phase2-audit.md`](operations/phase2-audit.md) |
+| AP | **Phase 2.5 — Authentication Platform** | F11 split, auth_invites, membership_schools RLS, activate/profile, service-role invite adapter — [`docs/architecture/authentication-platform.md`](architecture/authentication-platform.md) |
+| AQ | **Phase 2.6 — Authorization Platform** | E03: permission catalog, role bundles, `requirePermission`, custom roles, `<Can>` nav, `has_permission` SQL — [`docs/architecture/authorization-platform.md`](architecture/authorization-platform.md) |
+| AR | **Phase 2.7 — Membership Engine** | E29: `school_memberships` index, history, preferences, switch-school, sync hooks — [`docs/architecture/membership-engine.md`](architecture/membership-engine.md) |
+| AS | **Phase 2.8 — Notification Operations** | Domain outbox → orchestrator → E19 workers + inbox — [`docs/architecture/notification-operations.md`](architecture/notification-operations.md) |
+| AT | **Phase 2.9 — Teacher Portal** | Permission-gated teacher feature routes over engines (attendance, marks, homework, …) — [`docs/architecture/teacher-portal.md`](architecture/teacher-portal.md) |
+| AU | **Phase 2.10 — Student Portal** | Read-only self-scoped student routes over student-profile + engines — [`docs/architecture/student-portal.md`](architecture/student-portal.md) |
 
 ### 3.3 Global Identity Steps 0–9 (gate status)
 
@@ -235,7 +315,7 @@ Do not reverse these without an explicit product decision and a §4 amendment.
 
 | # | Decision | Detail |
 |---|----------|--------|
-| D1 | Staff passwords | Attempt `resetPasswordForEmail` after staff save. **Only works for emails that already have Auth users.** No service-role invite yet. |
+| D1 | Staff passwords / invites | New staff with email → `auth_invites` + service-role invite (§55). Requires `SUPABASE_SERVICE_ROLE_KEY` for live email. |
 | D2 | `/` route | Signed in → `/dashboard`. Logged out → marketing landing. |
 | D3 | CSV imports | **Block entire import** if any row is invalid (staff & students). |
 | D4 | Global match keys | **Aadhaar** (unique when present) + **email** (unique when present). Match order: aadhaar_hash → email. |
@@ -257,160 +337,82 @@ One row in `public.schools`. All school-scoped data hangs off `school_id` (direc
 
 ### 5.2 How a tenant is born
 
-On `auth.users` **INSERT**, trigger `handle_new_user` (`20260731120100_handle_new_user_trigger.sql`):
+On `auth.users` **INSERT**, trigger `handle_new_user` (`20260807400000` replaces F11 behavior from `20260731120100`):
 
-1. Inserts a new `schools` row (default name / `onboarding_status = in_progress`).
-2. Inserts `profiles (id = auth.users.id, role = 'school_admin', school_id = new school)`.
+1. If `raw_user_meta_data.intent = 'create_school'`: insert `schools` + `profiles (role=school_admin)`.
+2. If `intent = 'accept_invite'` (or other): **do not** create a school/profile — app binds `persons.auth_user_id` after login.
 
-**Implication:** every `/signup` creates a **new school**. There is no “join existing school” path today.
+**Implication:** `/signup` must pass `intent=create_school` (done). Invites no longer spawn orphan schools.
 
 ### 5.3 App school context
 
-Server actions use `getAuthenticatedSchoolContext()` (`lib/onboarding/server-context.ts`):
+Server actions use `requirePermission` / `getAuthenticatedSchoolContext(permission)`:
 
-1. Resolve `auth.uid()` via Supabase server client.
-2. Read `profiles.school_id` for that user.
-3. Return `{ supabase, schoolId }` or an error.
+1. Resolve actor via AuthZ + E29 membership index (`membership_schools` / preferences).
+2. Prefer `user_school_preferences.active_school_id` (dual-written with `user_active_context`).
+3. Fall back to admin `profiles.school_id`, then first active membership.
+4. Return `{ supabase, schoolId, actor }` or an error.
+
+One Auth account may hold memberships at many schools; switching does **not** require a second login (§57).
 
 All onboarding writes must filter by this `schoolId`.
 
 ---
 
-## 6. Authentication — current (school admin only)
+## 6. Authentication — current (school admin + AuthN platform)
 
-**Status:** `SHIPPED` for school admins only.
+**Status:** School admin signup/login `SHIPPED`. Phase 2.5 AuthN (§55), Phase 2.6 AuthZ (§56), Phase 2.7 Membership (§57) `SHIPPED`. Parent/student portals still `NOT BUILT`.
 
-### 6.1 Clients
+Canonical: [`docs/architecture/authentication-platform.md`](architecture/authentication-platform.md)
 
-| Layer | File | Notes |
-|-------|------|-------|
-| Browser | `lib/supabase/client.ts` | `createBrowserClient` + anon key |
-| Server | `lib/supabase/server.ts` | `createServerClient` + cookie bridge |
-| Middleware | `lib/supabase/middleware.ts` + root `middleware.ts` | Refreshes session; enforces protected routes |
+### 6.1 What works today
 
-No service-role / admin API client in application code.
+- `/signup` with `intent=create_school` → school + `profiles.school_admin`
+- `/login`, email confirm, password reset
+- Invites via `createInviteAction` + service-role adapter (warns if key missing)
+- `/invite/accept` binds `persons.auth_user_id`; `/activate/profile` completes first login
+- `membership_schools(auth.uid())` tenant RLS; `user_active_context` school/persona switcher
+- Staff onboarding creates `auth_invites` for new emailed staff (replaces resetPassword hack)
 
-### 6.2 Routes & handlers
+### 6.2 Still open
 
-| Path | File | Behavior |
-|------|------|----------|
-| `/signup` | `app/(auth)/signup/page.tsx` | `signUp({ email, password })` → session? then post-auth dest : `/signup/confirm` |
-| `/signup/confirm` | `app/(auth)/signup/confirm/*` | Resend signup confirmation |
-| `/login` | `app/(auth)/login/page.tsx` | `signInWithPassword` → post-auth dest (**does not** currently honor `?next=`) |
-| `/forgot-password` | `app/(auth)/forgot-password/page.tsx` | `resetPasswordForEmail` → `/auth/confirm?next=/reset-password` |
-| `/reset-password` | `app/(auth)/reset-password/*` | Requires recovery session; `updateUser({ password })`; sign out → login |
-| `/auth/confirm` | `app/auth/confirm/route.ts` | `exchangeCodeForSession` **or** `verifyOtp({ token_hash, type })` |
-| `/auth/callback` | `app/auth/callback/route.ts` | PKCE `exchangeCodeForSession` |
-| Logout | `components/dashboard/app-header.tsx` | `signOut()` → `/login` |
-
-Validation helpers: `lib/auth/validation.ts`.
-
-### 6.3 Post-auth destination
-
-`lib/auth/routing.ts`:
-
-```text
-onboarding_status === 'completed'  →  /dashboard
-otherwise                          →  /onboarding   (index resumes earliest incomplete step)
-```
-
-### 6.4 Middleware protection
-
-1. Unauthenticated hit to `/dashboard` or `/onboarding/*` → `/login?next=<path>`.
-2. Authenticated on auth pages → bounce to post-auth destination.
-3. Completed schools on `/onboarding/[step]` → `/dashboard` (exact `/onboarding` allowed so resume redirect can run).
-4. **Dashboard is allowed during onboarding** (Save & Exit).
-
-### 6.5 `profiles` constraints (today)
-
-- `profiles.role` check allows **only** `'school_admin'`.
-- Authenticated users cannot change `role` or `school_id` (RLS).
-- Expanding roles requires a migration + auth product work (§7).
-
-### 6.6 Teacher password emails (current hack)
-
-After `saveStaffAction`, for each saved email the app calls `resetPasswordForEmail`. Success copy states emails only arrive for addresses that **already** exist in Auth. This is **not** an invite system.
+- E03 `requirePermission` / role bundles
+- Multi-persona portal GA (teacher/parent/student product UIs)
+- Live invite email without configuring `SUPABASE_SERVICE_ROLE_KEY`
 
 ---
 
-## 7. Authentication — future (teachers, students, parents) + RBAC
+## 7. Authentication — multi-persona + RBAC roadmap
 
-**Status:** `SCHEMA-READY` / product `NOT BUILT`.
+**Status:** AuthN platform `SHIPPED` (§55). RBAC-2 permission matrix still design-only ([`rbac.md`](architecture/rbac.md)).
 
-### 7.1 Schema already present
+### 7.1 Schema present
 
 | Piece | Purpose |
 |-------|---------|
-| `persons.auth_user_id` → `auth.users` (unique when set) | Attach login identity to global person |
-| `persons.profile_completed_at` | Gate first-login wizard |
-| `person_roles (person_id, role)` | `teacher \| student \| parent \| admin` — multi-role humans |
-| `teacher_employments.status` includes `invited` | Pre-active hire state |
-| RLS self-access | `persons.auth_user_id = auth.uid()` on SELECT/UPDATE |
+| `persons.auth_user_id` | Login ↔ global person |
+| `persons.profile_completed_at` | First-login gate |
+| `person_roles` | Capability classes |
+| `teacher_employments.status` / `school_persona` | Staff membership + AuthN persona |
+| `auth_invites` / `user_active_context` | Invite + session context |
+| `membership_schools()` | Tenant RLS helper |
 
-### 7.2 Planned invite → first login (teachers first)
+### 7.2 Invite → first login
 
-Documented also in [`deferred-identity-followups.md`](deferred-identity-followups.md) §6:
+See §55 and authentication-platform.md. Staff save wires invites.
 
-1. School admin invites teacher (email) during/after staff step.
-2. Create/reuse `persons` + `teacher_profiles`; employment `status = invited`.
-3. Send Auth invite / magic link / password setup (**needs service role or Supabase Invite API** — not in app today).
-4. On first auth success: set `persons.auth_user_id = auth.uid()` (1:1).
-5. If `profile_completed_at IS NULL` → force profile wizard (phone, photo, career fields on `teacher_profiles`).
-6. Wizard completion → `profile_completed_at = now()`, employment `invited` → `active`.
-7. Repeat pattern for parents/students later.
+### 7.3 F11 (SHIPPED)
 
-### 7.3 Critical design tension: signup trigger vs non-admin users
-
-Today `handle_new_user` **always** creates a new school + `school_admin` profile. That is correct for SaaS school signup and **wrong** for invited teachers/parents/students.
-
-**Forward plan (must implement before invite GA):**
-
-| Actor | Auth creation | `profiles` row? | School binding |
-|-------|---------------|-----------------|----------------|
-| New school owner | `/signup` | Yes — `school_admin` | Trigger creates school |
-| Invited teacher | Invite / magic link | Either expand `profiles.role` **or** stop using `profiles` for non-admins and authorize via `persons` + `person_roles` + employments | Employment `school_id` |
-| Parent / student | Invite / guardian link | Same decision as teachers | Admission / parent link |
-
-**Recommended direction (not locked — plan carefully):**
-
-1. Change `handle_new_user` to only create school when signup metadata says `intent=create_school` (or similar).
-2. Invited users: create Auth user without new school; link `persons.auth_user_id`.
-3. Introduce **RBAC** as a separate layer (§7.4).
+`handle_new_user` provisions school + admin **only** when `intent=create_school`. Invite path uses `intent=accept_invite` and does not create a school.
 
 ### 7.4 RBAC roadmap
 
-**Today:** implicit RBAC = “if you have a `profiles` row you are school_admin of that school.”
-
-**Target model:**
-
-```text
-auth.users
-   └── persons.auth_user_id
-         └── person_roles[]          (capability classes: teacher, student, parent, admin)
-         └── teacher_employments[]   (school-scoped job; status; department; subjects)
-         └── student_admissions[]    (school-scoped enrollment relationship)
-         └── student_parent_links    (via parent_profiles)
-
-Authorization decision ≈
-  auth.uid()
-    → person
-    → roles + active school links
-    → permission check for resource.school_id
-```
-
-**Phases (suggested):**
-
-| Phase | Work | Depends on |
-|-------|------|------------|
-| RBAC-0 | Keep school_admin via `profiles` (current) | — |
-| RBAC-1 | Invite teachers; attach `persons.auth_user_id`; first-login wizard | Trigger split (§7.3) |
-| RBAC-2 | Permission matrix — **canonical:** [`docs/architecture/rbac.md`](architecture/rbac.md) | RBAC-1 |
-| RBAC-3 | Parent portal (read child admissions / fees / results) | Admissions + parent links |
-| RBAC-4 | Student portal (limited self read) | Admissions + age/consent rules |
-| RBAC-5 | Multi-role sessions (teacher who is also parent at same/other school) | `person_roles` already supports multi-role |
-| RBAC-6 | Custom school roles + accountant persona | E03 permission catalog |
-
-**Do not** grant school admins unrestricted `SELECT` on all `persons` — current RLS links visibility through employments/admissions only (§12).
+| Phase | Work | Status |
+|-------|------|--------|
+| RBAC-0 | school_admin via `profiles` | SHIPPED |
+| RBAC-1 | Invite + auth bind + first login | **SHIPPED** (§55) |
+| RBAC-2 | Permission keys + server guards | **SHIPPED** (§56) |
+| RBAC-3…6 | Parent/student portals, multi-role UX polish | NOT BUILT (custom roles SHIPPED in §56) |
 
 ---
 
@@ -457,6 +459,21 @@ Authorization decision ≈
 | `20260807200000_school_policy_engine.sql` | E07 versioned school policies (attendance…behaviour; fee/transport stubs) |
 | `20260807210000_communication_configuration_engine.sql` | E18 categories, templates, priorities, audiences, delivery/approval rules; automation/campaign stubs |
 | `20260807220000_configuration_editing_framework.sql` | `audit_entries` + `config_change_history` (E28 minimal + config history) |
+| `20260807230000_student_profile_engine.sql` | Student profile SCHEMA-READY ops stubs (attendance later enriched by E12) |
+| `20260807240000_teacher_workspace.sql` | `homework_assignments` SCHEMA-READY stub |
+| `20260807250000_attendance_engine.sql` | E12: sessions, enriched `attendance_records`, leave, audit log |
+| `20260807260000_assessment_operations_engine.sql` | E11 marks: mark sessions, enrich `exam_results`, teacher origin/kinds, audit |
+| `20260807270000_report_card_engine.sql` | E20 issue: `report_card_issues` + versions, audit; enrich issued docs / render jobs |
+| `20260807280000_event_activity_engine.sql` | E17 ops: staff, enrich participants, house/club on events, audit |
+| `20260807290000_behaviour_engine.sql` | E13: enrich `conduct_incidents`, follow-ups, audit |
+| `20260807300000_communication_operations_engine.sql` | E18 `comm_messages` + audit; E19 types/deliveries/attempts/outbox |
+| `20260807310000_homework_assignment_engine.sql` | Enrich `homework_assignments`; `homework_submissions` + audit |
+| `20260807320000_student_analytics_engine.sql` | E22 student snapshots + analytics audit |
+| `20260807330000_teacher_analytics_engine.sql` | E22 teacher snapshots + analytics audit |
+| `20260807400000_authentication_platform.sql` | F11, auth_invites, user_active_context, membership_schools, RLS cutover |
+| `20260807410000_authorization_platform.sql` | authz_* tables, seeds, `has_permission` |
+| `20260807420000_membership_engine.sql` | school_memberships, history, preferences, helper rewrite |
+| `20260807430000_notification_operations.sql` | domain_event_outbox, notify type seeds, delivery statuses, provider configs |
 
 **Dropped legacy tables (must stay gone):** `teachers`, `teacher_subjects`, `students`, `guardians`, `student_guardians`, `student_section_enrollments` (+ `*_legacy` intermediates).
 
@@ -761,6 +778,8 @@ Staff list and student list plans used index scans on `teacher_employments_activ
 | `/` | Session → `/dashboard`; else marketing |
 | `/dashboard` | Allowed during onboarding; locked feature links + continue banner when incomplete |
 | `/dashboard/configuration` | School setup command centre (completion, warnings, deps, health) |
+| `/dashboard/teacher` | Teacher workspace homepage (employment picker until teacher login) |
+| `/dashboard/principal` | Principal / Admin school ops homepage (data-driven panels) |
 | `/dashboard/calendar` | Minimal academic calendar admin |
 | `/dashboard/houses-clubs` | Minimal houses/clubs admin |
 | `/onboarding` | Resume redirect via progress |
@@ -775,16 +794,28 @@ Keep [`deferred-identity-followups.md`](deferred-identity-followups.md) aligned 
 | ID | Item | Status | Links to |
 |----|------|--------|----------|
 | F1 | Student bulk input UX redesign | `DEFERRED` | D9, §9–§11 |
-| F2 | Append-only `exam_results` | `DEFERRED` | `student_academic_years` |
-| F3 | Attendance | `DEFERRED` | admissions / academic years |
-| F4 | Behaviour & remarks | `DEFERRED` | student profile + year |
+| F2 | Append-only `exam_results` | Backend `SHIPPED` (§45); Teacher Portal marks UI `SHIPPED` (§59) | E11 · `lib/assessment/` ops |
+| F3 | Attendance | Backend `SHIPPED` (§44); Teacher Portal UI `SHIPPED` (§59); period FUTURE | E12 · `lib/attendance/` |
+| F4 | Behaviour & remarks | Backend `SHIPPED` (§48); Teacher Portal UI `SHIPPED` (§59) | E13 · `lib/behaviour/` |
+| F13 | Communication sending | Backend `SHIPPED` (§49); UI `NOT BUILT` (teacher read of messages §59); external providers stubbed | E18/E19 · `lib/communications/` · `lib/notifications/` |
+| F14 | Homework & assignments | Backend `SHIPPED` (§50); Teacher Portal UI `SHIPPED` (§59); student self-submit FUTURE | `lib/homework/` |
+| F15 | Student analytics | Backend `SHIPPED` (§51); UI `NOT BUILT`; deterministic only (no AI) | E22 · `lib/student-analytics/` |
+| F16 | Teacher analytics | Backend `SHIPPED` (§52); UI `NOT BUILT`; AI insights FUTURE | E22 · `lib/teacher-analytics/` |
+| F17 | Principal dashboard | Aggregator + minimal UI `SHIPPED` (§53); Principal persona login FUTURE | `lib/principal-dashboard/` |
+| F18 | Phase 2 production gate | Audit `SHIPPED` (§54); gate **NOT PASSED** — Phase 2 **not COMPLETE** | [`phase2-audit.md`](operations/phase2-audit.md) |
+| F19 | Authentication Platform (AuthN) | `SHIPPED` (§55) | [`authentication-platform.md`](architecture/authentication-platform.md) |
+| F20 | Authorization Platform (AuthZ / E03) | `SHIPPED` (§56) | [`authorization-platform.md`](architecture/authorization-platform.md) |
+| F21 | Membership Engine (E29) | `SHIPPED` (§57) | [`membership-engine.md`](architecture/membership-engine.md) |
+| F22 | Notification Operations (domain → E19) | `SHIPPED` (§58); live providers stubbed | [`notification-operations.md`](architecture/notification-operations.md) |
 | F5 | Health records | `DEFERRED` | `student_profiles` |
-| F6 | Teacher invite + first-login wizard | `SCHEMA-READY` | §7 |
+| F6 | Teacher invite + first-login wizard | `SHIPPED` (AuthN §55); needs `SUPABASE_SERVICE_ROLE_KEY` for live email | §7 · §55 |
 | F7 | Teacher marketplace / public profiles | `DEFERRED` | `teacher_profiles` |
 | F8 | Transfers & certificates | `DEFERRED` | new admission/employment rows, never overwrite |
-| F9 | Full RBAC matrix | Design `SHIPPED` in [`architecture/rbac.md`](architecture/rbac.md); runtime `NOT BUILT` | §7.4, §21 |
-| F10 | Parent / student portals | `NOT BUILT` | §7 |
-| F11 | Split signup trigger for invited users | `NOT BUILT` | §7.3 — **blocker for F6** |
+| F9 | Full RBAC matrix | Design + runtime evaluator `SHIPPED` (§56 / [`rbac.md`](architecture/rbac.md)); portals still open | §7.4, §21, §56 |
+| F10 | Parent portal | `NOT BUILT` | §7 |
+| F23 | Teacher Portal | `SHIPPED` (§59); admin preview + linked teacher employment | [`teacher-portal.md`](architecture/teacher-portal.md) |
+| F24 | Student Portal | `SHIPPED` (§60); RO default; admin preview via `?studentProfileId=` | [`student-portal.md`](architecture/student-portal.md) |
+| F11 | Split signup trigger for invited users | `SHIPPED` (§55) | §7.3 · §55 |
 | F12 | Onboarding form UI polish | `DEFERRED` | D11 |
 
 ---
@@ -1062,6 +1093,243 @@ Also: `npx tsc --noEmit` after calendar module land.
 | **Production gate** | **NOT PASSED** |
 | **Mark Phase 1 COMPLETE** | **No** |
 
+### 15.22 Phase 2 — Daily operational workflows (design)
+
+**Date:** 2026-08-07 · review only (no application code) · [`docs/operations/daily-workflows.md`](operations/daily-workflows.md)
+
+| Check | Result |
+|-------|--------|
+| Architecture audited for post-config ops | PASS |
+| Workflows separated by persona (Admin, Pri, VP, HOD, Teacher, Student, Parent, Support) | PASS |
+| Each workflow has trigger / owner / create / update / deps / notify / AI | PASS |
+| Periodic + system workflows indexed | PASS |
+| Implementation deferred until catalogue accepted | PASS |
+
+### 15.23 Phase 2 — Student Profile Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-student-profile-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| 17 profile modules catalogued | PASS |
+| Personal validation | PASS |
+| AI summary placeholder (no invented facts) | PASS |
+| Aggregation does not own operational facts | PASS (by design) |
+
+### 15.24 Phase 2 — Teacher Workspace
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-teacher-workspace-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| 9 homepage panels catalogued | PASS |
+| Date / weekday helpers | PASS |
+| AI shortcuts are placeholders only (no hardcoding) | PASS |
+
+### 15.25 Phase 2 — Attendance Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-attendance-validation.ts` · migration `20260807250000` pushed
+
+| Check | Result |
+|-------|--------|
+| Mark statuses (present/absent/late/half_day/excused/leave) | PASS |
+| Daily + bulk validation | PASS |
+| Period FUTURE gate | PASS |
+| Leave + date range helpers | PASS |
+| Teacher edit / visibility rules (approve/lock → parent/student) | PASS |
+| `npx tsc --noEmit` | PASS |
+
+### 15.26 Phase 2 — Assessment Operations Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-assessment-ops-validation.ts` · migration `20260807260000` pushed
+
+| Check | Result |
+|-------|--------|
+| Operational kinds (class_test/project/practical/assignment/oral) | PASS |
+| Draft / published / locked + teacher edit until lock | PASS |
+| Publish/lock → parent/student visibility | PASS |
+| Teacher assessment + single/bulk/correction validation | PASS |
+| `npx tsc --noEmit` | PASS |
+
+### 15.27 Phase 2 — Report Card Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-report-card-ops-validation.ts` · migration `20260807270000` pushed
+
+| Check | Result |
+|-------|--------|
+| Issue / version statuses | PASS |
+| Draft regenerate / remarks edit gates | PASS |
+| Create / remarks / issue validation | PASS |
+| No-duplication contract (`source_refs` pointers only) | PASS |
+| `npx tsc --noEmit` | PASS |
+
+### 15.28 Phase 2 — Event & Activity Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-event-activity-validation.ts` · migration `20260807280000` pushed
+
+| Check | Result |
+|-------|--------|
+| Activity categories on calendar (sports…cultural) | PASS |
+| Club/house activity require house/club | PASS |
+| Staff / participant / certificate validation | PASS |
+| No student event-dump contract | PASS |
+| `npx tsc --noEmit` | PASS |
+
+### 15.29 Phase 2 — Behaviour Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-behaviour-validation.ts` · migration `20260807290000` pushed
+
+| Check | Result |
+|-------|--------|
+| Remark kinds (positive…teacher_note) | PASS |
+| Visibility → parent/student flags | PASS |
+| Create remark / follow-up / analytics validation | PASS |
+| `npx tsc --noEmit` | PASS |
+
+### 15.30 Phase 2 — Communication Operations Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-communication-ops-validation.ts` · migration `20260807300000` pushed
+
+| Check | Result |
+|-------|--------|
+| Message kinds → notification type codes | PASS |
+| Draft / schedule / publish validation | PASS |
+| Department / class required fields | PASS |
+| Delivery statuses include read receipts | PASS |
+| `npx tsc --noEmit` | PASS |
+
+### 15.31 Phase 2 — Homework & Assignment Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-homework-validation.ts` · migration `20260807310000` pushed
+
+| Check | Result |
+|-------|--------|
+| Assignment kinds (homework/assignment/project) | PASS |
+| Create / late-until / due date validation | PASS |
+| Late submission computation | PASS |
+| Grade / submission validation | PASS |
+| `npx tsc --noEmit` | PASS |
+
+### 15.32 Phase 2 — Student Analytics Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-student-analytics-validation.ts` · migration `20260807320000` pushed
+
+| Check | Result |
+|-------|--------|
+| Threshold constants documented | PASS |
+| Generate input validation | PASS |
+| Deterministic strengths / risks | PASS |
+| Same input → same insights | PASS |
+| `npx tsc --noEmit` | PASS |
+
+### 15.33 Phase 2 — Teacher Analytics Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-teacher-analytics-validation.ts` · migration `20260807330000` pushed
+
+| Check | Result |
+|-------|--------|
+| Threshold constants documented | PASS |
+| Generate input validation | PASS |
+| Deterministic strengths / risks | PASS |
+| AI insights placeholder `not_built` | PASS |
+| `npx tsc --noEmit` | PASS |
+
+### 15.34 Phase 2 — Principal Dashboard
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-principal-dashboard-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| 10 panels catalogued with sourceTables | PASS |
+| Teacher attendance documents staff FUTURE | PASS |
+| Date helpers | PASS |
+| `npx tsc --noEmit` | PASS |
+
+### 15.35 Phase 2 — Operations audit (review)
+
+**Date:** 2026-08-07 · review only · [`docs/operations/phase2-audit.md`](operations/phase2-audit.md)
+
+| Check | Result |
+|-------|--------|
+| §§41–53 deliverable inventory | PASS |
+| Ownership / anti-duplication | PASS (with notes) |
+| Engine-local audit coverage | PASS (partial vs E28) |
+| Ops UI parity | **FAIL** |
+| Multi-persona AuthZ / F11 (at audit date) | **FAIL** → later **PASS** (§15.36 / §15.37) |
+| Domain → notify chains | **FAIL** |
+| Fee / portals / providers | **FAIL** (deferred / stub) |
+| Phase 1 gate still open | **FAIL** |
+| Production gate / Phase 2 COMPLETE | **NOT PASSED / No** |
+
+### 15.36 Phase 2.5 — Authentication Platform
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-auth-membership-validation.ts` · `npx tsx scripts/smoke-auth-invite-validation.ts` · `npx tsc --noEmit`
+
+| Check | Result |
+|-------|--------|
+| F11 intent split documented + migration | PASS |
+| membership / invite validation smokes | PASS |
+| `npx tsc --noEmit` | PASS |
+| Service role configured in this environment | SKIP (unset — invite send warns) |
+| E03 permissions | OUT OF SCOPE (see §15.37) |
+
+### 15.37 Phase 2.6 — Authorization Platform
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-authz-catalog-validation.ts` · `npx tsx scripts/smoke-authz-evaluate-validation.ts` · `npx tsx scripts/smoke-authz-action-gate.ts` · `npx tsc --noEmit` · migration `20260807410000` pushed
+
+| Check | Result |
+|-------|--------|
+| Catalog / bundle / hierarchy smokes | PASS |
+| Evaluate + ABAC matrix smokes | PASS |
+| Action gate (no bare `getAuthenticatedSchoolContext`) | PASS (84 gated files) |
+| `npx tsc --noEmit` | PASS |
+| `has_permission` + authz_* migration applied | PASS |
+
+### 15.38 Phase 2.7 — Membership Engine
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-membership-validation.ts` · `npx tsc --noEmit` · migration `20260807420000` pushed
+
+| Check | Result |
+|-------|--------|
+| Kind / persona / transfer / date smokes | PASS |
+| `npx tsc --noEmit` | PASS |
+| Membership migration applied | PASS |
+
+### 15.39 Phase 2.8 — Notification Operations
+
+**Date:** 2026-08-07 · notify orchestration / worker / emit-gate smokes · `npx tsc --noEmit` · migration `20260807430000` pushed
+
+| Check | Result |
+|-------|--------|
+| Event→type map smoke | PASS |
+| Worker backoff + stub adapters | PASS |
+| Emit-gate (no provider imports in domains) | PASS |
+| `npx tsc --noEmit` | PASS |
+| Migration applied | PASS |
+
+### 15.40 Phase 2.9 — Teacher Portal
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-teacher-portal-validation.ts` · `npx tsc --noEmit`
+
+| Check | Result |
+|-------|--------|
+| 10 portal areas + nav route map | PASS |
+| Permission keys in AuthZ catalog | PASS |
+| `npx tsc --noEmit` | PASS |
+| Manual: mark attendance / enter marks / create homework (admin preview) | PENDING (ops) |
+
+### 15.41 Phase 2.10 — Student Portal
+
+**Date:** 2026-08-07 · `npx tsx scripts/smoke-student-portal-validation.ts` · `npx tsc --noEmit`
+
+| Check | Result |
+|-------|--------|
+| 12 portal areas + route map | PASS |
+| Permission keys in AuthZ catalog | PASS |
+| Write allowlist empty (RO v1) | PASS |
+| `npx tsc --noEmit` | PASS |
+| Manual: admin preview across tabs with visibleOnly | PENDING (ops) |
+
 ---
 
 ## 16. Key file index
@@ -1131,7 +1399,9 @@ Also: `npx tsc --noEmit` after calendar module land.
 - `lib/policies/**` ← School Policy Engine module
 - `scripts/smoke-policy-validation.ts`
 - `docs/architecture/communication-configuration-engine.md` ← E18 communication config
-- `lib/communications/**` ← Communication Configuration Engine module
+- `lib/communications/**` ← Communication Configuration + Operations module
+- `lib/notifications/**` ← E19 Notification delivery pipe
+- `docs/architecture/communication-operations-engine.md` ← E18/E19 ops
 - `scripts/smoke-communication-validation.ts`
 - `docs/architecture/configuration-editing-framework.md` ← shared editing framework
 - `lib/editing/**` ← Configuration Editing Framework
@@ -1141,6 +1411,65 @@ Also: `npx tsc --noEmit` after calendar module land.
 - `app/dashboard/configuration/page.tsx` ← minimal command-centre UI
 - `scripts/smoke-config-dashboard-validation.ts`
 - `docs/architecture/phase-1-implementation-audit.md` ← Phase 1 production gate audit
+- `docs/operations/daily-workflows.md` ← Phase 2 post-config ops by persona
+- `docs/operations/phase2-audit.md` ← Phase 2 operations production gate audit
+- `docs/architecture/authentication-platform.md` ← Phase 2.5 AuthN platform
+- `lib/auth/**` ← AuthN invites, membership, session, activation
+- `lib/supabase/admin.ts` ← service-role invite client
+- `app/invite/accept/page.tsx` · `app/activate/profile/page.tsx`
+- `supabase/migrations/20260807400000_authentication_platform.sql`
+- `scripts/smoke-auth-membership-validation.ts` · `scripts/smoke-auth-invite-validation.ts`
+- `docs/architecture/authorization-platform.md` ← Phase 2.6 AuthZ platform
+- `docs/architecture/rbac.md` ← matrix (runtime via §56)
+- `lib/authz/**` ← catalog, bundles, resolve, evaluate, require, Can, custom roles
+- `supabase/migrations/20260807410000_authorization_platform.sql`
+- `scripts/smoke-authz-catalog-validation.ts` · `smoke-authz-evaluate-validation.ts` · `smoke-authz-action-gate.ts`
+- `docs/architecture/membership-engine.md` ← Phase 2.7 Membership Engine (E29)
+- `lib/membership/**` ← sync, switch, preferences, transfer
+- `supabase/migrations/20260807420000_membership_engine.sql`
+- `scripts/smoke-membership-validation.ts`
+- `docs/architecture/notification-operations.md` ← Phase 2.8 notify ops platform
+- `lib/domain-events/**` · `lib/notify-orchestration/**`
+- `lib/notifications/adapters/**` · `process-domain-outbox.ts` · `worker.ts`
+- `app/dashboard/notifications/page.tsx` · `app/api/internal/notify-worker/route.ts`
+- `supabase/migrations/20260807430000_notification_operations.sql`
+- `scripts/smoke-notify-orchestration-validation.ts` · `smoke-notification-worker-validation.ts` · `smoke-notification-emit-gate.ts`
+- `docs/architecture/student-profile-engine.md` ← Student Profile aggregator
+- `lib/student-profile/**` ← Student Profile Engine module
+- `supabase/migrations/20260807230000_student_profile_engine.sql` ← SCHEMA-READY ops stubs
+- `scripts/smoke-student-profile-validation.ts`
+- `docs/architecture/teacher-workspace.md` ← Teacher homepage aggregate
+- `lib/teacher-workspace/**` ← Teacher Workspace module
+- `lib/teacher-portal/**` · `components/teacher-portal/**` ← Teacher Portal
+- `lib/student-portal/**` · `components/student-portal/**` ← Student Portal
+- `app/dashboard/teacher/page.tsx` ← teacher homepage UI
+- `docs/architecture/principal-dashboard.md` ← Principal ops homepage
+- `lib/principal-dashboard/**` ← Principal Dashboard aggregator
+- `app/dashboard/principal/page.tsx` ← principal homepage UI
+- `supabase/migrations/20260807240000_teacher_workspace.sql` ← homework stub (enriched §50)
+- `docs/architecture/homework-assignment-engine.md` ← Homework & Assignment Engine
+- `lib/homework/**` ← Homework & Assignment Engine module
+- `scripts/smoke-teacher-workspace-validation.ts`
+- `docs/architecture/attendance-engine.md` ← E12 Attendance Engine
+- `lib/attendance/**` ← Attendance Engine module
+- `supabase/migrations/20260807250000_attendance_engine.sql` ← sessions, leave, audit
+- `scripts/smoke-attendance-validation.ts`
+- `docs/architecture/assessment-operations-engine.md` ← E11 marks / ops
+- `lib/assessment/ops-*.ts` · `results-*.ts` · `mark-session-actions.ts` · `teacher-assessments-actions.ts`
+- `supabase/migrations/20260807260000_assessment_operations_engine.sql`
+- `scripts/smoke-assessment-ops-validation.ts`
+- `docs/architecture/report-card-engine.md` ← E20 report card issue
+- `lib/report-cards/assemble.ts` · `issue-*.ts` · `ops-*.ts`
+- `supabase/migrations/20260807270000_report_card_engine.sql`
+- `scripts/smoke-report-card-ops-validation.ts`
+- `docs/architecture/event-activity-engine.md` ← E17 Event & Activity Engine
+- `lib/events/**` ← Event & Activity module
+- `supabase/migrations/20260807280000_event_activity_engine.sql`
+- `scripts/smoke-event-activity-validation.ts`
+- `docs/architecture/behaviour-engine.md` ← E13 Behaviour Engine
+- `lib/behaviour/**` ← Behaviour Engine module
+- `supabase/migrations/20260807290000_behaviour_engine.sql`
+- `scripts/smoke-behaviour-validation.ts`
 - `scripts/smoke-identity-db.sql`
 
 ---
@@ -1195,6 +1524,10 @@ Also: `npx tsc --noEmit` after calendar module land.
 | `supabase/migrations/20260807210000_communication_configuration_engine.sql` | Categories, templates, rules, stubs |
 | `docs/architecture/communication-configuration-engine.md` + MASTER §37 | Communication config docs |
 | `scripts/smoke-communication-validation.ts` | Communication config validation smoke |
+| `lib/communications/` ops + `lib/notifications/**` | Communication Operations + Notification pipe |
+| `supabase/migrations/20260807300000_communication_operations_engine.sql` | Messages, deliveries, attempts, outbox |
+| `docs/architecture/communication-operations-engine.md` + MASTER §49 | Communication ops docs |
+| `scripts/smoke-communication-ops-validation.ts` | Communication ops validation smoke |
 | `lib/editing/**` | Configuration Editing Framework |
 | `supabase/migrations/20260807220000_configuration_editing_framework.sql` | Audit + config history tables |
 | `docs/architecture/configuration-editing-framework.md` + MASTER §38 | Editing framework docs |
@@ -1206,8 +1539,68 @@ Also: `npx tsc --noEmit` after calendar module land.
 | `scripts/smoke-config-dashboard-validation.ts` | Dashboard catalog smoke |
 | `components/dashboard/app-header.tsx` | Nav link → Configuration |
 | `docs/architecture/phase-1-implementation-audit.md` + MASTER §40 | Production gate audit (not COMPLETE) |
+| `docs/operations/daily-workflows.md` + MASTER §41 | Phase 2 daily ops catalogue (design only) |
+| `lib/student-profile/**` | Student Profile Engine aggregator |
+| `supabase/migrations/20260807230000_student_profile_engine.sql` | Attendance/results/conduct/medical/… stubs |
+| `docs/architecture/student-profile-engine.md` + MASTER §42 | Student profile docs |
+| `scripts/smoke-student-profile-validation.ts` | Profile catalogue smoke |
+| `lib/teacher-workspace/**` | Teacher Workspace aggregator |
+| `app/dashboard/teacher/**` + `components/teacher-workspace/**` | Teacher homepage UI |
+| `components/teacher-portal/**` + `lib/teacher-portal/**` | Teacher Portal feature clients + nav |
+| `supabase/migrations/20260807240000_teacher_workspace.sql` | homework_assignments stub |
+| `docs/architecture/teacher-workspace.md` + MASTER §43 | Teacher workspace docs |
+| `docs/architecture/teacher-portal.md` + MASTER §59 | Teacher Portal docs |
+| `scripts/smoke-teacher-workspace-validation.ts` | Workspace catalogue smoke |
+| `scripts/smoke-teacher-portal-validation.ts` | Portal nav/permission catalogue smoke |
+| `lib/student-portal/**` + `components/student-portal/**` | Student Portal binders + clients |
+| `app/dashboard/student/**` | Student Portal routes |
+| `docs/architecture/student-portal.md` + MASTER §60 | Student Portal docs |
+| `scripts/smoke-student-portal-validation.ts` | Student portal catalogue smoke |
+| `lib/attendance/**` | Attendance Engine backend |
+| `supabase/migrations/20260807250000_attendance_engine.sql` | Sessions, leave, audit; enrich records |
+| `docs/architecture/attendance-engine.md` + MASTER §44 | Attendance Engine docs |
+| `scripts/smoke-attendance-validation.ts` | Attendance validation smoke |
+| `lib/student-profile/loaders.ts` | Attendance module reads E12 live columns |
+| `lib/assessment/` ops modules | Assessment Operations (marks) backend |
+| `supabase/migrations/20260807260000_assessment_operations_engine.sql` | Mark sessions; enrich exam_results; audit |
+| `docs/architecture/assessment-operations-engine.md` + MASTER §45 | Assessment ops docs |
+| `scripts/smoke-assessment-ops-validation.ts` | Marks validation smoke |
+| `lib/report-cards/` issue modules | Report Card Engine (issue/generate) |
+| `supabase/migrations/20260807270000_report_card_engine.sql` | Issues, versions, audit |
+| `docs/architecture/report-card-engine.md` + MASTER §46 | Report card issue docs |
+| `scripts/smoke-report-card-ops-validation.ts` | Report card ops smoke |
+| `lib/events/**` | Event & Activity Engine backend |
+| `supabase/migrations/20260807280000_event_activity_engine.sql` | Staff + enriched participants |
+| `docs/architecture/event-activity-engine.md` + MASTER §47 | Event activity docs |
+| `scripts/smoke-event-activity-validation.ts` | Event activity smoke |
+| `lib/behaviour/**` | Behaviour Engine backend |
+| `supabase/migrations/20260807290000_behaviour_engine.sql` | Remarks enrich + follow-ups + audit |
+| `docs/architecture/behaviour-engine.md` + MASTER §48 | Behaviour docs |
+| `scripts/smoke-behaviour-validation.ts` | Behaviour validation smoke |
+| `lib/communications/` message/query + `lib/notifications/**` | E18 ops + E19 delivery |
+| `supabase/migrations/20260807300000_communication_operations_engine.sql` | Messages + notification pipe |
+| `docs/architecture/communication-operations-engine.md` + MASTER §49 | Communication ops docs |
+| `scripts/smoke-communication-ops-validation.ts` | Communication ops smoke |
+| `lib/homework/**` | Homework & Assignment Engine backend |
+| `supabase/migrations/20260807310000_homework_assignment_engine.sql` | Enrich homework + submissions |
+| `docs/architecture/homework-assignment-engine.md` + MASTER §50 | Homework docs |
+| `scripts/smoke-homework-validation.ts` | Homework validation smoke |
+| `lib/student-analytics/**` | Student Analytics Engine (E22 student slice) |
+| `supabase/migrations/20260807320000_student_analytics_engine.sql` | Snapshots + analytics audit |
+| `docs/architecture/student-analytics-engine.md` + MASTER §51 | Student analytics docs |
+| `scripts/smoke-student-analytics-validation.ts` | Student analytics smoke |
+| `lib/teacher-analytics/**` | Teacher Analytics Engine (E22 teacher slice) |
+| `supabase/migrations/20260807330000_teacher_analytics_engine.sql` | Teacher snapshots + audit |
+| `docs/architecture/teacher-analytics-engine.md` + MASTER §52 | Teacher analytics docs |
+| `scripts/smoke-teacher-analytics-validation.ts` | Teacher analytics smoke |
+| `lib/principal-dashboard/**` | Principal Dashboard aggregator |
+| `app/dashboard/principal/**` + `components/principal-dashboard/**` | Principal ops UI |
+| `docs/architecture/principal-dashboard.md` + MASTER §53 | Principal dashboard docs |
+| `scripts/smoke-principal-dashboard-validation.ts` | Principal dashboard smoke |
+| `components/dashboard/app-header.tsx` | Nav → Principal |
+| `docs/operations/phase2-audit.md` + MASTER §54 | Phase 2 ops production gate (**NOT PASSED**) |
 
-**Action:** commit + push; apply pending migrations via `npx supabase db push`. Prioritize §40 P0 before production.
+**Action:** Phase 2 **not COMPLETE**. Close §54 P0 (ops UIs, notify chains, F11/membership RLS) before Fee/portal GA; Phase 1 §40 still open.
 
 ### 17.2 Smoke data still in linked DB (known)
 
@@ -1228,25 +1621,35 @@ Safe to keep for manual QA; delete when cleaning staging.
 - Employment `invited` unused by app writes
 - Form UI polish deferred
 - **Phase 1 production gate open (§40)** — same-school FK guards, DELETE revoke leftovers, editing adoption, seed-on-create, onboarding hard-delete harden, etc.
+- **Phase 2 production gate open (§54)** — ops UIs, notify chains, F11, Fee/portals; backends alone are not COMPLETE.
 
 ### 17.4 Next planning suggestions
 
 1. Commit §17.1 deltas.  
 2. **Phase 0.5 is complete** — treat §18–§27 + architecture docs as binding.  
 3. **Phase 1 engines §28–§39 SHIPPED; production gate NOT PASSED (§40)** — do not mark Phase 1 COMPLETE until P0 hardening closes.  
-4. Close **§40.3 P0** (FK integrity, archive purity, year lifecycle, editing adoption, seeds, audit retention) **or** continue admin-only build with explicit risk acceptance.  
-5. Continue **§26 P0**: F11, membership RLS, outbox, Fee deep-dive, year-rollover — **before** Fee UI, portals, or WhatsApp.  
-6. Spec **RBAC-1** teacher invite after F11 + membership RLS.  
-7. Wire onboarding staff department creates through `lib/departments` + memberships (retire employment-only HOD flags as source of truth).  
-8. Prefer `house_memberships` over writing `admission.house_id` alone.  
-9. Department / assessment / policies / communications admin UIs after hardening.  
-10. Event outbox for domain events after P0 outbox ships.  
-11. Assessment **marks entry** (`exam_results`) remains deferred — config only (§34).  
-12. Report card **PDF issue** / digital signatures remain deferred — templates only (§35).  
-13. Fee / transport **policy runtime** remains deferred — kinds stubbed (§36).  
-14. Communication **sending** (E19) remains deferred — config only (§37).  
-15. Adopt **§38 editing framework** (`recordConfigMutation` / `evaluateConfigEdit`) in remaining config action modules.  
-16. Re-audit and mark Phase 1 **COMPLETE** only when §40 production gate PASSes.
+4. **Phase 2 backends §41–§53 SHIPPED; production gate NOT PASSED (§54)** — do **not** mark Phase 2 COMPLETE.  
+5. Close **§54 P0** (ops UIs for attendance/marks/report cards; wire absent_alert / results_published / conduct notify; F11 + membership RLS) **or** continue admin-only with explicit risk acceptance.  
+6. Close **§40.3 P0** (FK integrity, archive purity, year lifecycle, editing adoption, seeds, audit retention) **or** continue with risk acceptance.  
+7. Continue **§26 P0**: F11, membership RLS, outbox, Fee deep-dive, year-rollover — **before** Fee UI, portals, or WhatsApp.  
+8. Spec **RBAC-1** teacher invite after F11 + membership RLS.  
+9. Implement remaining Phase 2 by **workflow ID** (spine: attendance UI → marks UI → **report card UI** → wire notify → fees → portals).  
+10. Refresh `daily-workflows.md` maturity table to match §44–§53 backends (UI/notify/auth still open).  
+11. Wire onboarding staff department creates through `lib/departments` + memberships (retire employment-only HOD flags as source of truth).  
+12. Prefer `house_memberships` over writing `admission.house_id` alone.  
+13. Fix Principal dashboard / comms fan-out N+1 (§54 perf).  
+14. Bridge engine-local audits → E28; delivery retry worker (WF-SYS-04).  
+15. Assessment **marks UI** shipped for teachers (§59 / WF-TCH-05); HOD/admin publish oversight UI still open.  
+16. Report card **PDF media** remains deferred (issue backend §46 / WF-PER-02; DigiLocker later).  
+17. Fee / transport **policy runtime** remains deferred until Fee deep-dive + WF-SUP-ACC-*.  
+18. Communication **ops backend** shipped (§49); compose UI + real providers still open.  
+19. Adopt **§38 editing framework** in remaining config action modules.  
+20. Re-audit and mark Phase 1 **COMPLETE** only when §40 production gate PASSes.  
+21. Re-audit and mark Phase 2 **COMPLETE** only when §54 production gate PASSes.  
+22. Phase 3 (Fee / portals) may **design** with dependency on §54 P0; do not claim Phase 2 COMPLETE in kickoff.  
+23. Align Teacher Workspace “pending attendance” with `attendance_sessions` (Teacher Portal attendance UI §59 lands; refine session pending heuristics as needed).  
+24. Align Teacher Workspace “pending assessments” with `assessment_mark_sessions` (Teacher Portal marks UI §59 lands; refine pending heuristics as needed).  
+25. Parent portal remains open after Teacher (§59) + Student (§60) portals.
 
 ---
 
@@ -1412,9 +1815,9 @@ Every feature that affects another engine must list:
 
 ## 21. Phase 0.5 — RBAC
 
-**Status:** Design-only (2026-08-06). Matrix is the ERP authorization contract; **runtime evaluator / expanded RLS not implemented** (today = school_admin via `profiles` only).
+**Status:** Matrix design `SHIPPED` (2026-08-06). **Runtime AuthZ platform `SHIPPED` (§56)** — `lib/authz`, `requirePermission`, custom roles, SQL `has_permission`. Parent/student portal UX still open.
 
-**Canonical doc:** [`docs/architecture/rbac.md`](architecture/rbac.md)
+**Canonical docs:** [`docs/architecture/rbac.md`](architecture/rbac.md) · [`authorization-platform.md`](architecture/authorization-platform.md)
 
 ### 21.1 Personas
 
@@ -1529,31 +1932,32 @@ Every important write declares audit action, severity, retention tier, redacted 
 
 ## 24. Phase 0.5 — Notification Engine
 
-**Status:** Design-only (2026-08-06). **E19** delivery architecture; runtime `NOT BUILT`. Content/consent remain **E18**.
+**Status:** Design (2026-08-06) + E19 pipe `SHIPPED` (§49) + **ops chains `SHIPPED` (§58)** — domain outbox → orchestrator → workers. Provider adapters remain stub-safe until env keys. Content/consent remain **E18**.
 
-**Canonical doc:** [`docs/architecture/notification-engine.md`](architecture/notification-engine.md)
+**Canonical docs:** [`notification-engine.md`](architecture/notification-engine.md) · [`notification-operations.md`](architecture/notification-operations.md) · `lib/notifications/` · `lib/domain-events/` · `lib/notify-orchestration/`
 
 ### 24.1 Boundary
 
 ```text
-Domain event → E18 (template, audience, consent) → E19 (queue, channel, retry) → provider
+Domain emit → domain_event_outbox → orchestrator → E19 enqueue → worker → ChannelAdapter
+E18 human compose → fanOut → enqueueDelivery (unchanged)
 ```
 
 Domain modules must **not** own WhatsApp/email/SMS/push SDKs.
 
 ### 24.2 Coverage
 
-| Concern | Design |
-|---------|--------|
-| **Types** | Controlled codes (`fee.invoice_overdue`, `attendance.absent_alert`, …) |
-| **Channels** | `in_app` first; then email, WhatsApp, push, SMS |
-| **Recipients** | Resolvers (parent_of_admission, payer, section, …) via E18 |
-| **Templates** | E18 versioned MessageTemplate; E19 maps provider template ids |
-| **Priorities** | critical / high / normal / low (+ quiet hours) |
-| **Scheduling** | Immediate, delayed, digests, cancel-on-void |
-| **Triggers** | Catalogue events + announcements + cron reminders |
-| **Retry** | Exponential backoff; hard bounce → no retry; dead letter |
-| **Futures** | WhatsApp (Meta/BSP), Email (SES/etc.), Push (FCM/APNs), SMS (DLT) |
+| Concern | Design / runtime |
+|---------|------------------|
+| **Types** | Controlled codes; `notification_types` seeded (§49) |
+| **Channels** | `in_app` delivers immediately; email/whatsapp/sms/push queued (stub) |
+| **Recipients** | Resolvers via E18 `resolveMessageAudience` |
+| **Templates** | E18 versioned MessageTemplate; E19 maps provider template ids (future) |
+| **Priorities** | critical / high / normal / low (+ quiet hours future) |
+| **Scheduling** | `scheduled_for` on messages + delivery requests |
+| **Retry** | Outbox + attempts tables; worker loop future |
+| **Read receipts** | `read_at` / status `read` on delivery requests |
+| **History** | `listNotificationHistoryAction` |
 
 ### 24.3 Placement rule (notify)
 
@@ -2000,7 +2404,7 @@ Onboarding `saveExamsAction` soft-archives then inserts (DELETE revoked). Prefer
 
 ### 34.5 Placement rule
 
-Assessment **configuration** mutations go through `lib/assessment/*-actions.ts`. Grading scales / subject groups stay E07. Results remain future E11.
+Assessment **configuration** mutations go through `lib/assessment/*-actions.ts`. Grading scales / subject groups stay E07. Results: Assessment Operations Engine (§45).
 
 ---
 
@@ -2021,7 +2425,7 @@ Assessment **configuration** mutations go through `lib/assessment/*-actions.ts`.
 | Dynamic sections | `report_card_template_blocks` (+ reorder) |
 | Grades | Grades block + assessment bindings (`show_grades`) |
 | Remarks | Remarks block + include flag |
-| Attendance | Attendance block (binds E12 later; no facts owned) |
+| Attendance | Attendance block (binds E12 `attendance_records`; no facts owned) |
 | Co-curricular | Co-curricular block |
 | Teacher / principal comments | Dedicated blocks + include flags |
 | Signatures | `report_card_template_signatures` (wet_ink / placeholder / digital_stub) |
@@ -2031,13 +2435,13 @@ Assessment **configuration** mutations go through `lib/assessment/*-actions.ts`.
 | Future PDF | `pdf_generation_enabled` + `report_card_render_jobs` stub |
 | Future digital signatures | `digital_signature_enabled` + `requires_digital` flags |
 
-### 35.2 Explicit non-goals
+### 35.2 Explicit non-goals (template surface)
 
-No issued ReportCard rows, PDF bytes, DigiLocker, or duplicated marks/attendance facts.
+No DigiLocker. Marks/attendance facts stay in E11/E12. Issue/generation lives in §46.
 
 ### 35.3 Hard rule
 
-Templates reference assessments; they do **not** store marks. Future issued cards pin a template **version** and read E11 results at render time (or snapshot then — never mutate live joins for reprints).
+Templates reference assessments; they do **not** store marks. Issued cards (§46) pin a template **version** and record `source_refs` to E11 results (presentation snapshot for reprint only).
 
 ### 35.4 Tests
 
@@ -2045,7 +2449,7 @@ Templates reference assessments; they do **not** store marks. Future issued card
 
 ### 35.5 Placement rule
 
-Template mutations go through `lib/report-cards/*-actions.ts`. Marks remain E11; issued PDFs remain future E20.
+Template mutations go through `lib/report-cards/*-actions.ts`. Marks remain E11 (§45). Issue/generation: §46.
 
 ---
 
@@ -2258,4 +2662,798 @@ Do not claim Phase 1 COMPLETE in plans or releases until §40.3 P0 is closed (or
 
 ---
 
-*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§40 on architecture. Phase 0.5 closed; Phase 1 engines shipped; production gate open (§40).*
+## 41. Phase 2 — Daily operational workflows
+
+**Status:** Design catalogue `SHIPPED` (2026-08-07). **No Phase 2 application code yet.**  
+**Canonical doc:** [`docs/operations/daily-workflows.md`](operations/daily-workflows.md)
+
+### 41.1 Why
+
+Phase 1 configured the school. Phase 2 is **operations** — attendance, marks, fees, messaging, portals — which must be planned as named workflows per persona before coding.
+
+### 41.2 What was audited
+
+Business engines, domain model, system events, RBAC personas, notifications, AI services, versioning, user journeys, and Phase 1 engine handoffs (config vs facts).
+
+### 41.3 Catalogue contents
+
+| Section | Coverage |
+|---------|----------|
+| Personas | School Admin, Principal, Vice Principal, HOD, Teacher, Student, Parent, Support Staff (Accountant / Receptionist / Counsellor / Librarian) |
+| Per workflow | Trigger · Owner · Data Created · Data Updated · Dependencies · Notifications · Future AI |
+| Cross-chains | Absence→alert · Results→report card · Fee→pay · Teacher invite |
+| Periodic / system | Exam cycles, PTM, fee billing, year rollover, cron jobs |
+| Sequencing | Suggested implement order; P0 gates unchanged |
+
+### 41.4 Gate
+
+| Gate | Result |
+|------|--------|
+| Workflows documented | PASS |
+| Implementation may begin | **Only after catalogue acceptance** |
+| Phase 1 production gate (§40) | Still open (independent) |
+
+### 41.5 Placement rule
+
+Phase 2+ feature PRs must cite **workflow ID(s)** from `docs/operations/daily-workflows.md` in addition to engine / AuthZ / events / notify / AI.
+
+---
+
+## 42. Phase 2 — Student Profile Engine
+
+**Status:** Backend aggregator `SHIPPED` (2026-08-07). Student Portal UI `SHIPPED` (§60).  
+**Canonical doc:** [`docs/architecture/student-profile-engine.md`](architecture/student-profile-engine.md)  
+**Module:** `lib/student-profile/**`  
+**Migration:** `supabase/migrations/20260807230000_student_profile_engine.sql`  
+**UI:** `/dashboard/student/**` (§60)  
+**Workflows:** WF-ADM-01+, WF-TCH-*, WF-PAR-*, WF-STU-* (consume aggregate)
+
+### 42.1 Purpose
+
+Product **single source of truth surface** for a student. Aggregates every related module. **Never duplicates** operational rows into a profile blob.
+
+### 42.2 Modules (17)
+
+Personal · Admission · Academic history · Attendance · Assessments · Report cards · Events · Competitions · Achievements · Behaviour · Medical · Documents · Parents · Transport · House · Club membership · Future AI summary
+
+### 42.3 Live vs schema-ready
+
+| Live (read existing) | SCHEMA-READY stubs |
+|----------------------|--------------------|
+| persons, student_profiles, admissions, academic years, parents, houses/clubs memberships, exam schedules, calendar events, report templates, **`attendance_records` (E12)**, **`exam_results` (E11 ops)**, **`report_card_issues` / issued docs (E20)**, **`event_participants` / competition links (E17)**, **`conduct_incidents` (E13)** | `medical_incidents`, `student_achievements`, `student_transport_assignments` |
+
+### 42.4 API
+
+- `listStudentProfileDirectoryAction`  
+- `getStudentProfileAction` / `getStudentProfileModuleAction`  
+- `updateStudentPersonalInformationAction` → writes **E04/E14** tables only  
+
+### 42.5 Tests
+
+`npx tsx scripts/smoke-student-profile-validation.ts`
+
+### 42.6 Placement rule
+
+New student facts land in the **owning engine** table first; the profile module picks them up by reference. No `student_profiles.*_json` dumps.
+
+---
+
+## 43. Phase 2 — Teacher Workspace
+
+**Status:** Homepage aggregator `SHIPPED` (2026-08-07). Feature routes via Teacher Portal §59.  
+**Canonical doc:** [`docs/architecture/teacher-workspace.md`](architecture/teacher-workspace.md)  
+**Module:** `lib/teacher-workspace/**`  
+**UI:** `/dashboard/teacher` (homepage) · feature UIs under `/dashboard/teacher/*` (§59)  
+**Migration:** `supabase/migrations/20260807240000_teacher_workspace.sql`  
+**Workflows:** WF-TCH-01…11
+
+### 43.1 Panels (all from operational data)
+
+| Panel | Sources |
+|-------|---------|
+| Today's timetable | `timetable_slots` + periods/sections/subjects |
+| Pending attendance | Today's taught sections missing `attendance_records` → links `/attendance` |
+| Pending assessments | Published exam schedules without `exam_results` → links `/marks` |
+| Homework | `homework_assignments` (**SHIPPED** §50; Teacher Workspace reads live) → `/homework` |
+| Announcements | Published dept announcements (`staff`/`school`) → `/announcements` |
+| Upcoming events | Approved/published `calendar_events` → `/events` |
+| Class reminders | Remaining periods today + near-term events |
+| Department notices | Published `visibility=department` for memberships |
+| AI shortcuts | E23 service id placeholders only |
+
+### 43.2 API
+
+`getTeacherWorkspaceAction` · `listTeacherWorkspaceEmploymentsAction` · `resolveTeacherWorkspaceContextAction`
+
+### 43.3 Tests
+
+`npx tsx scripts/smoke-teacher-workspace-validation.ts`
+
+### 43.4 Placement rule
+
+No hardcoded timetable/homework/announcement demo content. Empty panels when tables have no rows. After AuthN binds `auth_user_id`, teacher post-login home → `/dashboard/teacher`. Feature writes live in §59 over engine actions only.
+
+---
+
+## 44. Phase 2 — Attendance Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Teacher Portal mark UI `SHIPPED` (§59). Period attendance API stubbed (`FUTURE`).  
+**Canonical doc:** [`docs/architecture/attendance-engine.md`](architecture/attendance-engine.md)  
+**Module:** `lib/attendance/**`  
+**Migration:** `supabase/migrations/20260807250000_attendance_engine.sql` (pushed)  
+**Workflows:** WF-TCH-01 (mark); WF-PAR-01 / WF-STU-03 (consume visible facts)
+
+### 44.1 Capabilities
+
+| Capability | Status |
+|------------|--------|
+| Daily attendance | `SHIPPED` |
+| Bulk attendance | `SHIPPED` |
+| Late / half day / leave / excused | `SHIPPED` (mark statuses + leave requests) |
+| Period attendance | Schema + stub API (`enablePeriodAttendance` gate) |
+| Session submit / approve / lock / unlock | `SHIPPED` |
+| Corrections (supersede + compensating row) | `SHIPPED` |
+| Engine audit log | `SHIPPED` |
+| Analytics (derived counts/rates) | `SHIPPED` |
+| Teacher edit until approved/locked | Enforced in actions |
+| Auto-visible to parents/students after approve/lock | `visible_to_guardians` / `visible_to_students` |
+
+### 44.2 Tables
+
+`attendance_sessions` · enriched `attendance_records` · `attendance_leave_requests` · `attendance_audit_log`
+
+### 44.3 API
+
+`upsertDailyAttendanceAction` · `bulkMarkDailyAttendanceAction` · `markPeriodAttendanceAction` (stub) · `submitAttendanceSessionAction` · `approveAttendanceSessionAction` · `lockAttendanceSessionAction` · `unlockAttendanceSessionAction` · `correctAttendanceAction` · leave create/decide/list · `listSectionAttendanceAction` · `listStudentAttendanceAction` · `getAttendanceAnalyticsAction` · `listAttendanceAuditAction`
+
+### 44.4 Tests
+
+`npx tsx scripts/smoke-attendance-validation.ts`
+
+### 44.5 Placement rule
+
+No student names/phones on attendance rows. After approve/lock, Student Profile and future portals read the same facts (no duplicate store). Fee fines stay E15. Marks entry is E11 ops (§45 / WF-TCH-05).
+
+---
+
+## 45. Phase 2 — Assessment Operations Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Teacher Portal marks UI `SHIPPED` (§59).  
+**Canonical doc:** [`docs/architecture/assessment-operations-engine.md`](architecture/assessment-operations-engine.md)  
+**Module:** `lib/assessment/**` (ops alongside config)  
+**Migration:** `supabase/migrations/20260807260000_assessment_operations_engine.sql` (pushed)  
+**Workflows:** WF-TCH-05 (enter marks); WF-HOD-03 / WF-PRI-08 (publish/lock); WF-PAR-05 / WF-STU-04 (consume)
+
+### 45.1 Capabilities
+
+| Capability | Status |
+|------------|--------|
+| Scheduled assessments (admin defs + schedules) | `SHIPPED` (list + marks against them) |
+| Teacher-created assessments | `SHIPPED` |
+| Class tests / projects / practicals / assignments / oral | `SHIPPED` (`operational_kind`) |
+| Marks entry (single) | `SHIPPED` |
+| Bulk marks entry | `SHIPPED` |
+| Teacher remarks | `SHIPPED` |
+| Draft / published / locked modes | `SHIPPED` |
+| Teacher edit until Admin/HOD lock | Enforced in actions |
+| Corrections (supersede + compensating row) | `SHIPPED` |
+| Results audit log | `SHIPPED` |
+| Marks analytics (derived) | `SHIPPED` |
+| Auto-visible to parents/students after publish/lock | `visible_to_*` flags |
+
+### 45.2 Tables
+
+`assessment_mark_sessions` · enriched `exam_results` · `assessment_results_audit_log` · `exam_definitions.origin` / `operational_kind` · `exam_subject_schedules.section_id`
+
+### 45.3 API
+
+`createTeacherAssessmentAction` · `listTeacherAssessmentsAction` · `listScheduledAssessmentsAction` · `archiveTeacherAssessmentAction` · `upsertMarkAction` · `bulkUpsertMarksAction` · `correctMarkAction` · `publishMarkSessionAction` · `lockMarkSessionAction` · `unlockMarkSessionAction` · `listSessionMarksAction` · `listStudentMarksAction` · `getMarksAnalyticsAction` · `listAssessmentResultsAuditAction`
+
+### 45.4 Tests
+
+`npx tsx scripts/smoke-assessment-ops-validation.ts`
+
+### 45.5 Placement rule
+
+No silent overwrite of historical marks — corrections supersede. Config stays §34; results never duplicated into report-card templates or student blobs.
+
+---
+
+## 46. Phase 2 — Report Card Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). UI `NOT BUILT`. PDF media `NOT BUILT` (render job queued on issue).  
+**Canonical doc:** [`docs/architecture/report-card-engine.md`](architecture/report-card-engine.md)  
+**Module:** `lib/report-cards/**` (issue alongside templates)  
+**Migration:** `supabase/migrations/20260807270000_report_card_engine.sql` (pushed)  
+**Workflows:** WF-PER-02 (issue); WF-PRI-09 (readiness); WF-TCH-08 (remarks); WF-PAR-06 / WF-STU-06 (consume)
+
+### 46.1 Capabilities
+
+| Capability | Status |
+|------------|--------|
+| Generate from assessment data (E11) | `SHIPPED` (`source_refs.examResultIds`) |
+| Attendance summary (E12) | `SHIPPED` |
+| Teacher remarks (per-subject + card-level) | `SHIPPED` |
+| Co-curricular (house/club) | `SHIPPED` |
+| Behaviour (conduct incidents) | `SHIPPED` (E13 §48) |
+| Promotion status | `SHIPPED` |
+| Principal remarks | `SHIPPED` |
+| No duplicated assessment OLTP | Enforced (`source_refs` + presentation snapshot only) |
+| Version history | `SHIPPED` (`report_card_issue_versions`) |
+| Issue / reissue / revoke | `SHIPPED` |
+| PDF bytes / DigiLocker | `NOT BUILT` |
+
+### 46.2 Tables
+
+`report_card_issues` · `report_card_issue_versions` · `report_card_audit_log` · enriched `student_issued_documents` · `report_card_render_jobs.report_card_issue_version_id`
+
+### 46.3 API
+
+`createReportCardDraftAction` · `regenerateReportCardDraftAction` · `updateReportCardRemarksAction` · `issueReportCardAction` · `revokeReportCardAction` · `previewReportCardAssemblyAction` · `listReportCardIssuesAction` · `getReportCardIssueAction` · `listReportCardVersionsAction` · `getReportCardVersionAction` · `listReportCardAuditAction`
+
+### 46.4 Tests
+
+`npx tsx scripts/smoke-report-card-ops-validation.ts`
+
+### 46.5 Placement rule
+
+Assemble from owning engines; never insert parallel `exam_results`. Issued versions are immutable; reissue opens a new version. Templates stay §35.
+
+---
+
+## 47. Phase 2 — Event & Activity Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). UI `NOT BUILT`. Media bytes `NOT BUILT` (uuid[] refs).  
+**Canonical doc:** [`docs/architecture/event-activity-engine.md`](architecture/event-activity-engine.md)  
+**Module:** `lib/events/**`  
+**Origin:** Always `calendar_events` (Academic Calendar / E17). Holidays remain E08.  
+**Migration:** `supabase/migrations/20260807280000_event_activity_engine.sql` (pushed)  
+**Workflows:** WF-ADM-07 · WF-PER-10/11 · WF-PAR-07 · WF-STU-09
+
+### 47.1 Activity types
+
+Sports · Competitions · Assemblies · Trips · Workshops · Club activities · House activities · Cultural programs (+ PTM / annual day / custom)
+
+### 47.2 Per-event capabilities
+
+| Capability | Status |
+|------------|--------|
+| Participants | `SHIPPED` |
+| Teachers in charge | `SHIPPED` (`event_staff_assignments`) |
+| Attendance | `SHIPPED` (`attendance_status`) |
+| Awards / positions | `SHIPPED` |
+| Certificates | `SHIPPED` (E20 issued doc link) |
+| Remarks | `SHIPPED` |
+| Attachments / photos | Schema refs `SHIPPED`; Media engine later |
+| Profile auto-surface | `SHIPPED` (read by FK — no event dump) |
+
+### 47.3 Tables
+
+Enriched `calendar_events` · `event_staff_assignments` · enriched `event_participants` · competition projection · `event_activity_audit_log`
+
+### 47.4 API
+
+`createActivityEventAction` · `updateActivityEventMetaAction` · `upsertEventStaffAssignmentAction` · `archiveEventStaffAssignmentAction` · `upsertEventParticipantAction` · `bulkUpsertEventParticipantsAction` · `archiveEventParticipantAction` · `issueEventCertificateAction` · `listActivityEventsAction` · `getActivityEventDetailAction` · `listStudentEventParticipationsAction` · `listEventActivityAuditAction`
+
+### 47.5 Tests
+
+`npx tsx scripts/smoke-event-activity-validation.ts`
+
+### 47.6 Placement rule
+
+Do not duplicate event information inside students. Participation rows hold FKs + outcomes; titles/dates/locations stay on `calendar_events`.
+
+---
+
+## 48. Phase 2 — Behaviour Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Teacher Portal remarks UI `SHIPPED` (§59).  
+**Canonical doc:** [`docs/architecture/behaviour-engine.md`](architecture/behaviour-engine.md)  
+**Module:** `lib/behaviour/**`  
+**Migration:** `supabase/migrations/20260807290000_behaviour_engine.sql` (pushed)  
+**Workflows:** WF-TCH-03 · WF-HOD-06 · WF-PRI-02 · WF-VP-02 · WF-ADM-12 · WF-SUP-COU-01 · WF-PAR-09
+
+### 48.1 Capabilities
+
+| Capability | Status |
+|------------|--------|
+| Positive remarks | `SHIPPED` (`remark_kind=positive`) |
+| Disciplinary remarks | `SHIPPED` |
+| Warnings | `SHIPPED` |
+| Commendations | `SHIPPED` |
+| Teacher notes | `SHIPPED` |
+| Private notes | `SHIPPED` (`visibility=private`) |
+| Parent visible notes | `SHIPPED` (`parent_visible` / `school`) |
+| Follow-up actions | `SHIPPED` (`behaviour_follow_ups`) |
+| Timestamped (`recorded_at`) | `SHIPPED` |
+| Filter by academic year | `SHIPPED` |
+| Future analytics (derived) | `SHIPPED` (`getBehaviourAnalyticsAction`) |
+
+### 48.2 Tables
+
+Enriched `conduct_incidents` · `behaviour_follow_ups` · `behaviour_audit_log`
+
+### 48.3 API
+
+`createBehaviourRemarkAction` · `updateBehaviourRemarkAction` · `setRemarkVisibilityAction` · `archiveBehaviourRemarkAction` · `createBehaviourFollowUpAction` · `updateBehaviourFollowUpAction` · `archiveBehaviourFollowUpAction` · `listBehaviourRemarksAction` · `getBehaviourRemarkAction` · `listBehaviourFollowUpsAction` · `getBehaviourAnalyticsAction` · `listBehaviourAuditAction`
+
+### 48.4 Tests
+
+`npx tsx scripts/smoke-behaviour-validation.ts`
+
+### 48.5 Placement rule
+
+Assessment/report remarks stay E11/E20. Behaviour facts live in E13; Student Profile and Report Cards read by reference.
+
+---
+
+## 49. Phase 2 — Communication Operations Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). UI `NOT BUILT`. External providers stubbed (`in_app` live).  
+**Canonical doc:** [`docs/architecture/communication-operations-engine.md`](architecture/communication-operations-engine.md)  
+**Modules:** `lib/communications/**` (ops) · `lib/notifications/**` (E19)  
+**Config:** §37 Communication Configuration remains the catalog/rules surface  
+**Migration:** `supabase/migrations/20260807300000_communication_operations_engine.sql` (pushed)  
+**Workflows:** WF-ADM-06 · WF-PRI-04 · WF-HOD-05 · WF-TCH-04 · WF-SYS-04
+
+### 49.1 Capabilities
+
+| Capability | Status |
+|------------|--------|
+| Announcements | `SHIPPED` (`message_kind=announcement`) |
+| Circulars | `SHIPPED` |
+| Department messages | `SHIPPED` |
+| Teacher messages | `SHIPPED` |
+| Class messages | `SHIPPED` |
+| Parent notifications | `SHIPPED` (`parent_notice`) |
+| Student notifications | `SHIPPED` (`student_notice`) |
+| Audience targeting | `SHIPPED` (`resolveMessageAudience`) |
+| Scheduling | `SHIPPED` (`scheduled` + `scheduled_for`) |
+| Attachments | `SHIPPED` (`attachment_media_ids` uuid refs) |
+| Read receipts | `SHIPPED` (`read_at` / `markNotificationReadAction`) |
+| Notification history | `SHIPPED` (`listNotificationHistoryAction`) |
+| Uses Notification Engine (E19) | `SHIPPED` (`enqueueDelivery` + outbox) |
+| Email / WhatsApp / SMS / push providers | Stub / queued only |
+
+### 49.2 Tables
+
+`comm_messages` · `comm_message_audit_log` · `notification_types` · `notification_delivery_requests` · `notification_delivery_attempts` · `notification_outbox`
+
+### 49.3 API
+
+**E18:** `createCommMessageAction` · `updateCommMessageAction` · `publishCommMessageAction` · `cancelCommMessageAction` · `archiveCommMessageAction` · `listCommMessagesAction` · `getCommMessageAction` · `listMessageReadReceiptsAction` · `listCommMessageAuditAction`
+
+**E19:** `enqueueDelivery` · `listNotificationHistoryAction` · `markNotificationReadAction` · `listNotificationAttemptsAction` · `listNotificationTypesAction`
+
+### 49.4 Tests
+
+`npx tsx scripts/smoke-communication-ops-validation.ts`
+
+### 49.5 Placement rule
+
+E18 owns content and audience intent; E19 owns delivery attempts and receipts. Domain engines emit events / call compose — they never embed provider SDKs. Config catalogs stay §37.
+
+---
+
+## 50. Phase 2 — Homework & Assignment Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). Teacher Portal UI `SHIPPED` (§59). Student self-submit `FUTURE`. AI evaluation schema-only.  
+**Canonical doc:** [`docs/architecture/homework-assignment-engine.md`](architecture/homework-assignment-engine.md)  
+**Module:** `lib/homework/**`  
+**Migration:** `supabase/migrations/20260807310000_homework_assignment_engine.sql` (pushed)  
+**Base stub:** enriched `homework_assignments` from §43 Teacher Workspace  
+**Workflows:** WF-STU-04 · WF-PAR-05 · WF-TCH-07 (adjacent lesson planning)
+
+### 50.1 Capabilities
+
+| Capability | Status |
+|------------|--------|
+| Homework | `SHIPPED` (`assignment_kind=homework`) |
+| Assignments | `SHIPPED` |
+| Projects | `SHIPPED` |
+| Attachments | `SHIPPED` (`attachment_media_ids` uuid refs) |
+| Submission dates | `SHIPPED` (`due_on` / `due_at` / `submitted_at`) |
+| Late submissions | `SHIPPED` (`allow_late`, `late_until`, `is_late`) |
+| Marks | `SHIPPED` (`max_marks` / `marks_awarded`) |
+| Teacher feedback | `SHIPPED` |
+| Student submissions (portal) | `FUTURE` (`submitHomeworkAsStudentAction` stub) |
+| Parent visibility | `SHIPPED` (`parent_visible` + `listStudentHomeworkAction`) |
+| Future AI evaluation | Schema + queue stub (`ai_evaluation_*`) |
+
+### 50.2 Tables
+
+Enriched `homework_assignments` · `homework_submissions` · `homework_audit_log`
+
+### 50.3 API
+
+`createHomeworkAction` · `updateHomeworkAction` · `publishHomeworkAction` · `closeHomeworkAction` · `archiveHomeworkAction` · `setHomeworkParentVisibilityAction` · `recordHomeworkSubmissionAction` · `gradeHomeworkSubmissionAction` · `submitHomeworkAsStudentAction` (FUTURE) · `requestHomeworkAiEvaluationAction` (stub) · `listHomeworkAction` · `getHomeworkAction` · `listHomeworkSubmissionsAction` · `listStudentHomeworkAction` · `listHomeworkAuditAction`
+
+### 50.4 Tests
+
+`npx tsx scripts/smoke-homework-validation.ts`
+
+### 50.5 Placement rule
+
+Homework marks are **not** Assessment `exam_results`. Formal exams stay E11. Teacher Workspace homework panel reads the same table. Media bytes stay E27.
+
+---
+
+## 51. Phase 2 — Student Analytics Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). UI `NOT BUILT`. **No AI** — deterministic rules only.  
+**Canonical doc:** [`docs/architecture/student-analytics-engine.md`](architecture/student-analytics-engine.md)  
+**Module:** `lib/student-analytics/**`  
+**Owner:** **E22 Analytics** (student slice)  
+**Migration:** `supabase/migrations/20260807320000_student_analytics_engine.sql` (pushed)  
+**Workflows:** WF-PRI-01 · WF-VP-01 · WF-ADM-08 · WF-PAR-06 (consume)
+
+### 51.1 Aggregates
+
+| Aggregate | Status | Source |
+|-----------|--------|--------|
+| Attendance | `SHIPPED` | E12 `attendance_records` |
+| Assessment performance | `SHIPPED` | E11 `exam_results` |
+| Subject trends | `SHIPPED` | Grouped marks + trend delta |
+| Participation | `SHIPPED` | E17 `event_participants` |
+| Behaviour | `SHIPPED` | E13 `conduct_incidents` |
+| Achievements | `SHIPPED` | Awards + commendations + high averages |
+| Teacher remarks | `SHIPPED` | Assessment / behaviour / homework feedback |
+
+### 51.2 Generated outputs
+
+| Output | Status |
+|--------|--------|
+| Strengths | `SHIPPED` (`deriveInsights`) |
+| Weaknesses | `SHIPPED` |
+| Risk indicators | `SHIPPED` (+ year rollup action) |
+| Progress graphs | `SHIPPED` (monthly attendance, by-exam, subject series) |
+| AI narration | `NOT IN SCOPE` (E23 later) |
+
+### 51.3 Tables
+
+`student_analytics_snapshots` · `student_analytics_audit_log`
+
+### 51.4 API
+
+`generateStudentAnalyticsAction` · `getLatestStudentAnalyticsSnapshotAction` · `listStudentAnalyticsSnapshotsAction` · `listStudentRiskIndicatorsAction` · `buildStudentAnalyticsReport` · `deriveInsights`
+
+### 51.5 Tests
+
+`npx tsx scripts/smoke-student-analytics-validation.ts`
+
+### 51.6 Placement rule
+
+Never writes OLTP facts. Snapshots are regenerate-able marts. Thresholds live in `ANALYTICS_THRESHOLDS`. E23 may narrate later but must not invent scores.
+
+---
+
+## 52. Phase 2 — Teacher Analytics Engine
+
+**Status:** Backend `SHIPPED` (2026-08-07). UI `NOT BUILT`. AI insights `FUTURE` (placeholder).  
+**Canonical doc:** [`docs/architecture/teacher-analytics-engine.md`](architecture/teacher-analytics-engine.md)  
+**Module:** `lib/teacher-analytics/**`  
+**Owner:** **E22 Analytics** (teacher slice)  
+**Migration:** `supabase/migrations/20260807330000_teacher_analytics_engine.sql` (pushed)  
+**Workflows:** WF-PRI-01 · WF-PRI-05 · WF-HOD-01 · WF-TCH-11
+
+### 52.1 Capabilities
+
+| Capability | Status |
+|------------|--------|
+| Attendance completion | `SHIPPED` |
+| Assessment completion | `SHIPPED` |
+| Homework completion | `SHIPPED` |
+| Average student performance | `SHIPPED` |
+| Teacher workload | `SHIPPED` |
+| Classes taught | `SHIPPED` |
+| Department contribution | `SHIPPED` |
+| Future AI insights | Placeholder (`aiInsights.status=not_built`) |
+
+### 52.2 Tables
+
+`teacher_analytics_snapshots` · `teacher_analytics_audit_log`
+
+### 52.3 API
+
+`generateTeacherAnalyticsAction` · `getLatestTeacherAnalyticsSnapshotAction` · `listTeacherAnalyticsSnapshotsAction` · `listTeacherWorkloadRisksAction` · `buildTeacherAnalyticsReport` · `deriveTeacherInsights`
+
+### 52.4 Tests
+
+`npx tsx scripts/smoke-teacher-analytics-validation.ts`
+
+### 52.5 Placement rule
+
+Never writes OLTP facts. Scoped by `employment_id` + year. Companion to §51 student slice. E23 may narrate later.
+
+---
+
+## 53. Phase 2 — Principal Dashboard
+
+**Status:** Backend aggregator + minimal UI `SHIPPED` (2026-08-07). Principal persona login `FUTURE`.  
+**Canonical doc:** [`docs/architecture/principal-dashboard.md`](architecture/principal-dashboard.md)  
+**Module:** `lib/principal-dashboard/**`  
+**UI:** `/dashboard/principal`  
+**Migration:** none (read-only over existing engines)  
+**Workflows:** WF-PRI-01 (primary) · WF-PRI-02/05/07/08/09 · WF-VP-01
+
+### 53.1 Panels (all data-driven)
+
+| Panel | Status | Notes |
+|-------|--------|-------|
+| School attendance | `SHIPPED` | Present rate + section gaps today |
+| Teacher attendance | `SHIPPED` | Marking-completion proxy; staff biometric FUTURE |
+| Student performance | `SHIPPED` | Published marks averages |
+| Department performance | `SHIPPED` | Members / subjects / mark averages |
+| Upcoming events | `SHIPPED` | Approved/published calendar |
+| Pending approvals | `SHIPPED` | Events, leave, conduct, draft marks |
+| Pending report cards | `SHIPPED` | Draft `report_card_issues` |
+| Pending assessments | `SHIPPED` | Draft sessions + exams without results |
+| Notifications | `SHIPPED` | Recent delivery requests |
+| School health indicators | `SHIPPED` | Deterministic composite |
+
+### 53.2 API
+
+`getPrincipalDashboardAction` · `buildPrincipalDashboard`
+
+### 53.3 Tests
+
+`npx tsx scripts/smoke-principal-dashboard-validation.ts`
+
+### 53.4 Placement rule
+
+Never writes OLTP. Empty panels when no rows. Teacher attendance is not staff presence until E12 staff attendance ships.
+
+---
+
+## 54. Phase 2 — Operations audit
+
+**Status:** Audit `SHIPPED` (2026-08-07). Phase 2 backends **SHIPPED** (§41–§53). Production gate **NOT PASSED**. Phase 2 **not marked COMPLETE**.  
+**Canonical doc:** [`docs/operations/phase2-audit.md`](operations/phase2-audit.md)
+
+### 54.1 Verdict
+
+| Gate | Result |
+|------|--------|
+| Workflow catalogue + engines §41–§53 backends | PASS |
+| Validation smokes §15.22–§15.34 | PASS |
+| Ownership / anti-duplication | PASS (with notes) |
+| Production-ready (ops UI, notify chains, Fee/portals, Phase 1 gate) | **FAIL** |
+| Mark Phase 2 COMPLETE | **No** |
+| AuthN (§55) / AuthZ (§56) | **PASS** (post-audit) |
+
+Safe for continued ops backend work under permission keys. Block Fee/send/portals GA and “Phase 2 COMPLETE” until remaining P0 closed (or waived in writing).
+
+### 54.2 Critical / high themes
+
+- ~~Profile-only AuthZ + F11~~ → **closed** by §55 / §56 (portals still open)
+- Ops UIs missing for attendance, marks, report cards, behaviour, events, homework, compose
+- Domain → notify unwired (`attendance.absent_alert`, `assessment.results_published`, `conduct.incident`)
+- E19 providers stubbed; delivery retry worker missing
+- Fee / Payments / Health / portals not in Phase 2 ship set
+- Principal dashboard N+1; communication fan-out per-recipient enrichment
+- Engine audits not bridged to unified E28
+- Phase 1 production gate still open (§40) — ops inherit FK / archive risks
+- `daily-workflows.md` maturity table stale vs shipped backends
+
+### 54.3 P0 before claiming Phase 2 COMPLETE (or before Phase 3 GA)
+
+See audit **§9 P2-P0-***: ops UIs (or explicit API-only waiver), wire notify chains, Phase 1 P0 accept/close. F11 + AuthZ platform closed in §55 / §56.
+
+### 54.4 Placement rule
+
+Do not mark Phase 2 COMPLETE in releases or Phase 3 kickoff decks. Phase 3 Fee/portal **design** may start with explicit dependency on §54 P0. Re-audit when the production gate flips.
+
+---
+
+## 55. Phase 2.5 — Authentication Platform
+
+**Status:** AuthN platform `SHIPPED` (2026-08-07). Permissions live in §56.  
+**Canonical doc:** [`docs/architecture/authentication-platform.md`](architecture/authentication-platform.md)  
+**Module:** `lib/auth/**` · `lib/supabase/admin.ts`  
+**Migration:** `supabase/migrations/20260807400000_authentication_platform.sql`  
+**UI:** `/invite/accept` · `/activate/profile` · header school/persona switcher
+
+### 55.1 Capabilities
+
+| Capability | Status |
+|------------|--------|
+| F11 `intent=create_school` vs `accept_invite` | `SHIPPED` |
+| `auth_invites` + create/revoke/resend | `SHIPPED` |
+| Service-role invite adapter | `SHIPPED` (requires env key) |
+| `membership_schools` + RLS cutover | `SHIPPED` |
+| `user_active_context` switcher | `SHIPPED` |
+| Profile completion → activate employment | `SHIPPED` |
+| Staff onboarding → real invites | `SHIPPED` |
+| E03 permission keys | **SHIPPED** (§56) |
+
+### 55.2 Tests
+
+`npx tsx scripts/smoke-auth-membership-validation.ts`  
+`npx tsx scripts/smoke-auth-invite-validation.ts`  
+`npx tsc --noEmit`
+
+### 55.3 Placement rule
+
+AuthN only for this section. Authorization is §56. Configure `SUPABASE_SERVICE_ROLE_KEY` for live invite emails.
+
+---
+
+## 56. Phase 2.6 — Authorization Platform
+
+**Status:** AuthZ platform `SHIPPED` (2026-08-07).  
+**Canonical doc:** [`docs/architecture/authorization-platform.md`](architecture/authorization-platform.md)  
+**Matrix:** [`docs/architecture/rbac.md`](architecture/rbac.md)  
+**Module:** `lib/authz/**`  
+**Migration:** `supabase/migrations/20260807410000_authorization_platform.sql`  
+**UI:** `<Can>` + permission-gated header nav; page loaders assert keys
+
+### 56.1 Capabilities
+
+| Capability | Status |
+|------------|--------|
+| Permission catalog (`{domain}.{resource}.{action}`) | `SHIPPED` |
+| System role bundles + hierarchy grant rules | `SHIPPED` |
+| `resolveActor` / `hasPermission` / ABAC ownership | `SHIPPED` |
+| `requirePermission` on server actions | `SHIPPED` |
+| SQL `has_permission(uid, school_id, key)` | `SHIPPED` |
+| Custom roles + grant/revoke | `SHIPPED` |
+| `<Can>` / bootstrap for nav | `SHIPPED` |
+| Parent/student portal features | **NOT BUILT** |
+
+### 56.2 Tests
+
+`npx tsx scripts/smoke-authz-catalog-validation.ts`  
+`npx tsx scripts/smoke-authz-evaluate-validation.ts`  
+`npx tsx scripts/smoke-authz-action-gate.ts`  
+`npx tsc --noEmit`
+
+### 56.3 Placement rule
+
+Every new server action must call `requirePermission` (or `getAuthenticatedSchoolContext(permission)`). Pages/nav use permission helpers — never `if (role === …)`. Do not claim multi-persona production readiness until portals + notify chains close.
+
+---
+
+## 57. Phase 2.7 — Membership Engine
+
+**Status:** Membership platform `SHIPPED` (2026-08-07).  
+**Canonical doc:** [`docs/architecture/membership-engine.md`](architecture/membership-engine.md)  
+**Module:** `lib/membership/**`  
+**Migration:** `supabase/migrations/20260807420000_membership_engine.sql`  
+**UI:** Header school switcher (names + persona) via active membership preferences
+
+### 57.1 Capabilities
+
+| Capability | Status |
+|------------|--------|
+| `school_memberships` index + history | `SHIPPED` |
+| `user_school_preferences` default/active | `SHIPPED` |
+| Sync from employment / admission / parent / admin profile | `SHIPPED` |
+| Switch school without second login | `SHIPPED` |
+| Student transfer membership orchestration | `SHIPPED` |
+| `consultant` / `substitute` employment types | `SHIPPED` (schema) |
+| Parent/student portal product | **NOT BUILT** |
+
+### 57.2 Tests
+
+`npx tsx scripts/smoke-membership-validation.ts`  
+`npx tsc --noEmit`
+
+### 57.3 Placement rule
+
+Writers that create person↔school links must call E29 sync. AuthN/AuthZ consume the membership index for school lists and RLS (`membership_schools`).
+
+---
+
+## 58. Phase 2.8 — Notification Operations
+
+**Status:** Ops notify platform `SHIPPED` (2026-08-07). External providers stub-safe.  
+**Canonical doc:** [`docs/architecture/notification-operations.md`](architecture/notification-operations.md)  
+**Modules:** `lib/domain-events/` · `lib/notify-orchestration/` · `lib/notifications/`  
+**Migration:** `supabase/migrations/20260807430000_notification_operations.sql`  
+**UI:** `/dashboard/notifications` inbox · principal panel reuses delivery history
+
+### 58.1 Capabilities
+
+| Capability | Status |
+|------------|--------|
+| `domain_event_outbox` + `emitDomainEvent` | `SHIPPED` |
+| Orchestrator event→type→audience→enqueue | `SHIPPED` |
+| Emit hooks (attendance, assessment, behaviour, homework, events, report cards) | `SHIPPED` |
+| Channel adapters + outbox worker + retry/dead-letter | `SHIPPED` |
+| Cron route `/api/internal/notify-worker` | `SHIPPED` |
+| Live WhatsApp/email/SMS/push | **STUB** until env keys |
+
+### 58.2 Tests
+
+`npx tsx scripts/smoke-notify-orchestration-validation.ts`  
+`npx tsx scripts/smoke-notification-worker-validation.ts`  
+`npx tsx scripts/smoke-notification-emit-gate.ts`  
+`npx tsc --noEmit`
+
+### 58.3 Placement rule
+
+Domains emit facts only (`emitDomainEvent`). Never import providers or `enqueueDelivery` from attendance/assessment/etc. Process outbox via worker script/route or inbox flush.
+
+---
+
+## 59. Phase 2.9 — Teacher Portal
+
+**Status:** Portal UI `SHIPPED` (2026-08-07). Thin clients over Phase 2 engines; no parallel OLTP.  
+**Canonical doc:** [`docs/architecture/teacher-portal.md`](architecture/teacher-portal.md)  
+**Modules:** `lib/teacher-portal/` · `components/teacher-portal/` · `app/dashboard/teacher/**`  
+**Entry gate:** `workforce.workspace.read`  
+**Workflows:** WF-TCH-01, WF-TCH-03, WF-TCH-04, WF-TCH-05 (+ reads for events/announcements/resources/dept/profile)
+
+### 59.1 Routes
+
+| Route | Engine reuse | Permission |
+|-------|--------------|------------|
+| `/dashboard/teacher` | teacher-workspace | `workforce.workspace.read` |
+| `/attendance` | attendance | `attendance.record.create` |
+| `/marks` | assessment | `assessment.results.enter` |
+| `/homework` · `/homework/[id]` | homework | `homework.read` / assign |
+| `/behaviour` | behaviour | `conduct.incident.record` |
+| `/events` | events | `engagement.event.read` |
+| `/announcements` | communications + departments | `communication.message.read` |
+| `/resources` · `/department` | departments | `workforce.department.read` |
+| `/profile` | identity / employment | `identity.person.read` |
+
+### 59.2 RBAC rules
+
+- Layout + pages use `requirePermission` / `<Can>` — never `role === 'teacher'`.
+- Engine `assertEmploymentOwned` remains authoritative for writes.
+- Admin preview via `?employment=` when actor has school-wide keys.
+
+### 59.3 Tests
+
+`npx tsx scripts/smoke-teacher-portal-validation.ts`  
+`npx tsc --noEmit`
+
+### 59.4 Placement rule
+
+Portal must not insert attendance/marks/homework outside owning `lib/*` engines. Homepage stays the aggregator (§43); feature pages are binders only.
+
+---
+
+## 60. Phase 2.10 — Student Portal
+
+**Status:** Portal UI `SHIPPED` (2026-08-07). Read-only-by-default; self-scoped over Student Profile + engines.  
+**Canonical doc:** [`docs/architecture/student-portal.md`](architecture/student-portal.md)  
+**Modules:** `lib/student-portal/` · `components/student-portal/` · `app/dashboard/student/**`  
+**Entry gate:** `enrollment.admission.read`  
+**Workflows:** WF-STU-02…06, WF-STU-09 (reads); submit/pay/AI not wired
+
+### 60.1 Routes
+
+| Route | Engine reuse | Mode |
+|-------|--------------|------|
+| `/dashboard/student` | student-profile + notifications | RO |
+| `/attendance` | attendance (`visibleOnly`) | RO |
+| `/homework` | homework (student list) | RO (no submit) |
+| `/assessments` | assessment (`visibleOnly`) | RO |
+| `/report-cards` | report-cards issues | RO |
+| `/announcements` | `listMessagesForStudentAction` | RO |
+| `/events` | events participations | RO |
+| `/behaviour` | behaviour (`visibleOnly`) | RO |
+| `/profile` · `/documents` · `/achievements` | student-profile modules | RO / stub |
+| `/ai` | placeholder `not_built` | Placeholder |
+
+### 60.2 RBAC / scope
+
+- Layout + pages: `requirePermission` / `<Can>` — never `role === 'student'`.
+- Linked `auth_user_id` → own profile; staff preview via `?studentProfileId=` only.
+- Write allowlist v1 empty (`STUDENT_PORTAL_WRITE_ALLOWLIST`).
+- Student bundle includes `conduct.incident.read` for visible remarks.
+
+### 60.3 Tests
+
+`npx tsx scripts/smoke-student-portal-validation.ts`  
+`npx tsc --noEmit`
+
+### 60.4 Placement rule
+
+Portal must not duplicate Student Profile OLTP or school-wide directories. Prefer engine query actions with visibility flags.
+
+---
+
+*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§60 on architecture/ops/auth/portals. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + Teacher + Student portals shipped.*

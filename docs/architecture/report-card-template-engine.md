@@ -2,8 +2,8 @@
 
 > **Phase:** 1 — Implementation  
 > **Created:** 2026-08-07  
-> **Owner engine:** **E20 Document** (templates only — **no PDF issue / marks copy**)  
-> **Companions:** [`MASTER.md`](../MASTER.md) · [`business-engines.md`](business-engines.md)
+> **Owner engine:** **E20 Document** (templates — issue lives in [`report-card-engine.md`](report-card-engine.md) / MASTER §46)  
+> **Companions:** [`MASTER.md`](../MASTER.md) · [`business-engines.md`](business-engines.md) · [`report-card-engine.md`](report-card-engine.md)
 
 ---
 

@@ -34,7 +34,7 @@ export async function listSubjectsAction(options?: {
   | { success: true; subjects: SubjectRow[] }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -66,7 +66,7 @@ export async function syncSubjectsCatalogAction(
   inputs: SubjectInput[],
   options: { requireAtLeastOne?: boolean; archiveMissing?: boolean } = {},
 ): Promise<ConfigActionResult & { subjectIdByName?: Record<string, string> }> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -193,7 +193,7 @@ export async function syncSubjectsCatalogAction(
 export async function archiveSubjectAction(
   subjectId: string,
 ): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -261,7 +261,7 @@ export async function archiveSubjectAction(
 export async function restoreSubjectAction(
   subjectId: string,
 ): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -319,7 +319,7 @@ export async function updateSubjectAction(input: {
   code?: string;
   type?: string;
 }): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

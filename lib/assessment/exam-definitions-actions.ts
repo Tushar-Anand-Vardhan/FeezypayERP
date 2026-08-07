@@ -45,7 +45,7 @@ export async function listExamDefinitionsAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -76,7 +76,7 @@ export async function listExamDefinitionsAction(
 export async function upsertExamDefinitionAction(
   input: ExamDefinitionInput,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -240,7 +240,7 @@ export async function upsertExamDefinitionAction(
 export async function publishExamDefinitionAction(
   examDefinitionId: string,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -320,7 +320,7 @@ export async function publishExamDefinitionAction(
 export async function lockExamDefinitionAction(
   examDefinitionId: string,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -359,7 +359,7 @@ export async function lockExamDefinitionAction(
 export async function unlockExamDefinitionAction(
   examDefinitionId: string,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -401,7 +401,7 @@ export async function unlockExamDefinitionAction(
 export async function retractExamDefinitionAction(
   examDefinitionId: string,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -447,7 +447,7 @@ export async function retractExamDefinitionAction(
 export async function archiveExamDefinitionAction(
   examDefinitionId: string,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -493,7 +493,7 @@ export async function archiveExamDefinitionAction(
 export async function restoreExamDefinitionAction(
   examDefinitionId: string,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

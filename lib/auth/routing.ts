@@ -7,6 +7,9 @@ export const AUTH_ROUTES = [
   "/signup",
   "/forgot-password",
   "/signup/confirm",
+  "/reset-password",
+  "/invite/accept",
+  "/activate/profile",
 ] as const;
 
 export function isAuthRoute(pathname: string) {
@@ -23,18 +26,59 @@ export function isOnboardingRoute(pathname: string) {
   return pathname === "/onboarding" || pathname.startsWith("/onboarding/");
 }
 
+export function isActivateRoute(pathname: string) {
+  return (
+    pathname === "/activate/profile" ||
+    pathname.startsWith("/activate/profile/")
+  );
+}
+
+export function isInviteAcceptRoute(pathname: string) {
+  return pathname === "/invite/accept" || pathname.startsWith("/invite/accept/");
+}
+
 export function isProtectedAppRoute(pathname: string) {
-  return isDashboardRoute(pathname) || isOnboardingRoute(pathname);
+  return (
+    isDashboardRoute(pathname) ||
+    isOnboardingRoute(pathname) ||
+    isActivateRoute(pathname) ||
+    isInviteAcceptRoute(pathname)
+  );
 }
 
 export function getPostAuthDestination(
   onboardingStatus: OnboardingStatus | null,
-): "/dashboard" | "/onboarding" {
+  options?: {
+    needsProfileCompletion?: boolean;
+    isSchoolAdmin?: boolean;
+    hasMembership?: boolean;
+  },
+): string {
+  if (options?.needsProfileCompletion) {
+    return "/activate/profile";
+  }
+
+  if (options?.isSchoolAdmin) {
+    if (onboardingStatus === "completed") {
+      return "/dashboard";
+    }
+    return "/onboarding";
+  }
+
+  if (options?.hasMembership) {
+    return "/dashboard";
+  }
+
+  // Invited user mid-bind
   if (onboardingStatus === "completed") {
     return "/dashboard";
   }
 
-  // `/onboarding` resolves to the earliest incomplete step.
+  // Legacy admin without flags
+  if (onboardingStatus === null) {
+    return "/invite/accept";
+  }
+
   return "/onboarding";
 }
 
@@ -71,21 +115,121 @@ export async function fetchUserOnboardingStatus(
   return school.onboarding_status as OnboardingStatus;
 }
 
+export async function fetchAuthGateState(supabase: SupabaseClient): Promise<{
+  onboardingStatus: OnboardingStatus | null;
+  needsProfileCompletion: boolean;
+  isSchoolAdmin: boolean;
+  hasMembership: boolean;
+  personBound: boolean;
+}> {
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
+  if (typeof userId !== "string") {
+    return {
+      onboardingStatus: null,
+      needsProfileCompletion: false,
+      isSchoolAdmin: false,
+      hasMembership: false,
+      personBound: false,
+    };
+  }
+
+  const onboardingStatus = await fetchUserOnboardingStatus(supabase);
+
+  const { data: person } = await supabase
+    .from("persons")
+    .select("id, profile_completed_at")
+    .eq("auth_user_id", userId)
+    .maybeSingle();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, role")
+    .eq("id", userId)
+    .maybeSingle();
+
+  let hasMembership = Boolean(profile?.id);
+  try {
+    const { data: schools } = await supabase.rpc("membership_schools");
+    if (Array.isArray(schools) && schools.length > 0) {
+      hasMembership = true;
+    }
+  } catch {
+    // RPC may not exist until migration applied
+  }
+
+  const isSchoolAdmin = profile?.role === "school_admin";
+  const personBound = Boolean(person?.id);
+  const needsProfileCompletion = Boolean(
+    personBound && person && person.profile_completed_at == null,
+  );
+
+  return {
+    onboardingStatus,
+    needsProfileCompletion,
+    isSchoolAdmin,
+    hasMembership: hasMembership || personBound,
+    personBound,
+  };
+}
+
 export function resolveAuthenticatedRouteRedirect(
   pathname: string,
   onboardingStatus: OnboardingStatus | null,
+  gate?: {
+    needsProfileCompletion?: boolean;
+    isSchoolAdmin?: boolean;
+    hasMembership?: boolean;
+    personBound?: boolean;
+  },
 ): string | null {
-  if (pathname === "/onboarding") {
-    // Let the onboarding index page compute the resume step.
+  // Allow activate + invite accept to proceed
+  if (isActivateRoute(pathname) || isInviteAcceptRoute(pathname)) {
+    if (gate?.needsProfileCompletion && isInviteAcceptRoute(pathname)) {
+      return null;
+    }
+    if (
+      !gate?.needsProfileCompletion &&
+      isActivateRoute(pathname) &&
+      gate?.personBound
+    ) {
+      return getPostAuthDestination(onboardingStatus, gate);
+    }
     return null;
   }
 
-  if (isAuthRoute(pathname)) {
-    return getPostAuthDestination(onboardingStatus);
+  if (pathname === "/onboarding") {
+    return null;
   }
 
-  // Dashboard is reachable during onboarding (Save & Exit). Features stay locked in UI.
+  // Force profile completion for bound persons
+  if (
+    gate?.needsProfileCompletion &&
+    !isActivateRoute(pathname) &&
+    !isInviteAcceptRoute(pathname)
+  ) {
+    return "/activate/profile";
+  }
+
+  if (isAuthRoute(pathname)) {
+    // Don't bounce invite/activate auth routes
+    if (isActivateRoute(pathname) || isInviteAcceptRoute(pathname)) {
+      return null;
+    }
+    return getPostAuthDestination(onboardingStatus, gate);
+  }
+
   if (isOnboardingRoute(pathname) && onboardingStatus === "completed") {
+    return "/dashboard";
+  }
+
+  // Non-admin with membership should not be forced into school onboarding
+  if (
+    isOnboardingRoute(pathname) &&
+    gate &&
+    !gate.isSchoolAdmin &&
+    gate.hasMembership
+  ) {
     return "/dashboard";
   }
 

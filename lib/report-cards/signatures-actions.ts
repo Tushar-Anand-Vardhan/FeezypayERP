@@ -37,7 +37,7 @@ export async function listReportCardSignaturesAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -73,7 +73,7 @@ export async function listReportCardSignaturesAction(
 export async function upsertReportCardSignatureAction(
   input: SignatureSlotInput,
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -147,7 +147,7 @@ export async function upsertReportCardSignatureAction(
 export async function archiveReportCardSignatureAction(
   signatureId: string,
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

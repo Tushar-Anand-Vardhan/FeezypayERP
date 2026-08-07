@@ -33,7 +33,7 @@ export async function listDepartmentTeachingAssignmentsAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("workforce.department.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -66,7 +66,7 @@ export async function listDepartmentTeachingAssignmentsAction(
 export async function createDepartmentTeachingAssignmentAction(
   input: TeachingAssignmentInput,
 ): Promise<DepartmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("workforce.department.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -157,7 +157,7 @@ export async function endDepartmentTeachingAssignmentAction(
   assignmentId: string,
   endedOn?: string,
 ): Promise<DepartmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("workforce.department.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

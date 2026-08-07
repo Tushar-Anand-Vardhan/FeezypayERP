@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import {
-  fetchUserOnboardingStatus,
+  fetchAuthGateState,
   isAuthRoute,
   isProtectedAppRoute,
   resolveAuthenticatedRouteRedirect,
@@ -46,10 +46,11 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isAuthenticated) {
-    const onboardingStatus = await fetchUserOnboardingStatus(supabase);
+    const gate = await fetchAuthGateState(supabase);
     const redirectPath = resolveAuthenticatedRouteRedirect(
       pathname,
-      onboardingStatus,
+      gate.onboardingStatus,
+      gate,
     );
 
     if (redirectPath) {
@@ -57,6 +58,18 @@ export async function updateSession(request: NextRequest) {
       url.pathname = redirectPath;
       url.search = "";
       return NextResponse.redirect(url);
+    }
+
+    // Honor ?next= when landing on login while already authenticated is handled by resolve
+    if (isAuthRoute(pathname) && pathname === "/login") {
+      const next = request.nextUrl.searchParams.get("next");
+      if (next && next.startsWith("/") && !next.startsWith("//")) {
+        const dest = resolveAuthenticatedRouteRedirect(next, gate.onboardingStatus, gate);
+        const url = request.nextUrl.clone();
+        url.pathname = dest ?? next;
+        url.search = "";
+        return NextResponse.redirect(url);
+      }
     }
   }
 

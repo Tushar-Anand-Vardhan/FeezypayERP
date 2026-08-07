@@ -58,7 +58,7 @@ export async function listSubjectMasterAction(options?: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -95,7 +95,7 @@ export async function getSubjectMasterAction(subjectId: string): Promise<
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -146,7 +146,7 @@ export async function getSubjectMasterAction(subjectId: string): Promise<
 export async function createSubjectMasterAction(
   input: SubjectMasterInput,
 ): Promise<SubjectActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -199,7 +199,7 @@ export async function createSubjectMasterAction(
 export async function updateSubjectMasterAction(
   input: SubjectMasterInput & { id: string },
 ): Promise<SubjectActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

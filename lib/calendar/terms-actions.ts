@@ -42,7 +42,7 @@ export async function listTermsAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -75,7 +75,7 @@ export async function listTermsAction(
 export async function createTermAction(
   input: TermInput,
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -124,7 +124,7 @@ export async function createTermAction(
 export async function updateTermAction(
   input: TermInput & { id: string },
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -172,7 +172,7 @@ export async function archiveTermAction(
   termId: string,
   academicYearId: string,
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -203,7 +203,7 @@ export async function restoreTermAction(
   termId: string,
   academicYearId: string,
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

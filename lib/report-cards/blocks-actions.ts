@@ -38,7 +38,7 @@ export async function listReportCardBlocksAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -74,7 +74,7 @@ export async function listReportCardBlocksAction(
 export async function upsertReportCardBlockAction(
   input: BlockInput,
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -147,7 +147,7 @@ export async function reorderReportCardBlocksAction(
   templateId: string,
   orderedBlockIds: string[],
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -186,7 +186,7 @@ export async function reorderReportCardBlocksAction(
 export async function archiveReportCardBlockAction(
   blockId: string,
 ): Promise<ReportCardActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("document.template.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

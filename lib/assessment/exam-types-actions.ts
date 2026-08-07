@@ -36,7 +36,7 @@ export async function listExamTypesAction(options?: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -66,7 +66,7 @@ export async function listExamTypesAction(options?: {
 export async function upsertExamTypeAction(
   input: ExamTypeInput,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -137,7 +137,7 @@ export async function upsertExamTypeAction(
 export async function archiveExamTypeAction(
   examTypeId: string,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -171,7 +171,7 @@ export async function archiveExamTypeAction(
 export async function restoreExamTypeAction(
   examTypeId: string,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

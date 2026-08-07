@@ -36,7 +36,7 @@ export async function listDepartmentAnnouncementsAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("workforce.department.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -69,7 +69,7 @@ export async function listDepartmentAnnouncementsAction(
 export async function createDepartmentAnnouncementAction(
   input: AnnouncementInput,
 ): Promise<DepartmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("workforce.department.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -134,7 +134,7 @@ export async function createDepartmentAnnouncementAction(
 export async function updateDepartmentAnnouncementAction(
   input: AnnouncementInput & { id: string },
 ): Promise<DepartmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("workforce.department.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -198,7 +198,7 @@ export async function updateDepartmentAnnouncementAction(
 export async function archiveDepartmentAnnouncementAction(
   announcementId: string,
 ): Promise<DepartmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("workforce.department.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

@@ -11,7 +11,7 @@ export async function getWorkingDayPatternAction(
   | { success: true; pattern: WorkingDayPatternInput & { id: string } }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -72,7 +72,7 @@ export async function getWorkingDayPatternAction(
 export async function upsertWorkingDayPatternAction(
   input: WorkingDayPatternInput,
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

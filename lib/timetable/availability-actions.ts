@@ -25,7 +25,7 @@ function revalidate() {
 export async function upsertTeacherAvailabilityAction(
   input: TeacherAvailabilityInput,
 ): Promise<TimetableActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -120,7 +120,7 @@ export async function upsertTeacherAvailabilityAction(
 export async function upsertSectionAvailabilityAction(
   input: SectionAvailabilityInput,
 ): Promise<TimetableActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -226,7 +226,7 @@ export async function listTeacherAvailabilityAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

@@ -130,10 +130,10 @@ Examples:
 | [30](#30-assessmentcreated) | `assessment.exam.created` | E11 | Async | Planned |
 | [31](#31-assessmentupdated) | `assessment.exam.updated` | E11 | Async | Planned |
 | [32](#32-assessmentpublished) | `assessment.exam.published` | E11 | Async | Planned |
-| [33](#33-assessmentresultspublished) | `assessment.results.published` | E11 | Async | Planned |
-| [34](#34-attendancemarked) | `attendance.record.marked` | E12 | Async | Planned |
+| [33](#33-assessmentresultspublished) | `assessment.results.published` | E11 | Async | **Wired** (§58) |
+| [34](#34-attendancemarked) | `attendance.record.marked` | E12 | Async | **Wired** (§58) |
 | [35](#35-attendancethresholdbreached) | `attendance.threshold.breached` | E12 | Async | Planned |
-| [36](#36-conductincidentrecorded) | `conduct.incident.recorded` | E13 | Async | Planned |
+| [36](#36-conductincidentrecorded) | `conduct.incident.recorded` | E13 | Async | **Wired** (§58) |
 | [37](#37-healthupdated) | `health.profile.updated` | E14 | Async | Planned |
 | [38](#38-feeinvoicecreated) | `fee.invoice.created` | E15 | Async | Planned |
 | [39](#39-feeinvoiceoverdue) | `fee.invoice.overdue` | E15 | Async | Planned |
@@ -143,7 +143,7 @@ Examples:
 | [43](#43-paymentfailed) | `payment.transaction.failed` | E16 | Async | Planned |
 | [44](#44-paymentrefunded) | `payment.transaction.refunded` | E16 | Sync† | Planned |
 | [45](#45-eventscheduled) | `engagement.event.scheduled` | E17 | Async | Planned |
-| [46](#46-eventpublished) | `engagement.event.published` | E17 | Async | Planned |
+| [46](#46-eventpublished) | `engagement.event.published` | E17 | Async | **Wired** (§58) |
 | [47](#47-eventcompleted) | `engagement.event.completed` | E17 | Async | Planned |
 | [48](#48-eventcancelled) | `engagement.event.cancelled` | E17 | Async | Planned |
 | [49](#49-competitionpublished) | `engagement.competition.published` | E17 | Async | Planned |
@@ -152,8 +152,9 @@ Examples:
 | [52](#52-notificationsent) | `notification.delivery.sent` | E19 | Async | Planned |
 | [53](#53-notificationdelivered) | `notification.delivery.delivered` | E19 | Async | Planned |
 | [54](#54-notificationbounced) | `notification.delivery.bounced` | E19 | Async | Planned |
-| [55](#55-documentissued) | `document.artifact.issued` | E20 | Async | Planned |
+| [55](#55-documentissued) | `document.artifact.issued` | E20 | Async | **Wired** (§58) |
 | [56](#56-reportcardgenerated) | `document.report_card.generated` | E20 | Async | Planned |
+| [H1](#h1-homeworkassigned) | `homework.assigned` | Homework | Async | **Wired** (§58) |
 | [57](#57-reportrequested) | `reporting.job.requested` | E21 | Async | Planned |
 | [58](#58-reportgenerated) | `reporting.job.completed` | E21 | Async | Planned |
 | [59](#59-analyticsbatchcompleted) | `analytics.batch.completed` | E22 | Async | Planned |

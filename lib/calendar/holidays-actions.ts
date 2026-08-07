@@ -35,7 +35,7 @@ export async function listHolidaysAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -65,7 +65,7 @@ export async function listHolidaysAction(
 export async function createHolidayAction(
   input: HolidayInput,
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -124,7 +124,7 @@ export async function createHolidayAction(
 export async function updateHolidayAction(
   input: HolidayInput & { id: string },
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -165,7 +165,7 @@ export async function updateHolidayAction(
 export async function archiveHolidayAction(
   holidayId: string,
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -191,7 +191,7 @@ export async function archiveHolidayAction(
 export async function restoreHolidayAction(
   holidayId: string,
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

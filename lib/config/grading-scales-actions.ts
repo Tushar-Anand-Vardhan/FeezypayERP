@@ -33,7 +33,7 @@ export async function listGradingScalesAction(options?: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -60,7 +60,7 @@ export async function listGradingScalesAction(options?: {
 export async function createGradingScaleAction(
   input: GradingScaleInput,
 ): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -124,7 +124,7 @@ export async function publishGradingScaleVersionAction(
   scaleId: string,
   bands: GradingScaleInput["bands"],
 ): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -218,7 +218,7 @@ export async function publishGradingScaleVersionAction(
 export async function archiveGradingScaleAction(
   scaleId: string,
 ): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -267,7 +267,7 @@ export async function archiveGradingScaleAction(
 export async function restoreGradingScaleAction(
   scaleId: string,
 ): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

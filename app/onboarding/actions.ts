@@ -156,7 +156,7 @@ function validateServerSchoolIdentityForm(
 export async function saveSchoolIdentityAction(
   formData: FormData,
 ): Promise<SchoolIdentityActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -295,7 +295,7 @@ export async function saveSchoolIdentityAction(
 }
 
 export async function getTermsStepDataAction(): Promise<TermsStepDataResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -375,7 +375,7 @@ export async function getTermsStepDataAction(): Promise<TermsStepDataResult> {
 export async function saveTermsAction(
   formData: FormData,
 ): Promise<SaveTermsActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -516,7 +516,7 @@ export async function saveTermsAction(
 }
 
 export async function getClassesStepDataAction(): Promise<ClassesStepDataResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -593,7 +593,7 @@ export async function getClassesStepDataAction(): Promise<ClassesStepDataResult>
 export async function saveClassesAction(
   formData: FormData,
 ): Promise<SaveClassesActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -754,7 +754,7 @@ export async function saveClassesAction(
 }
 
 export async function getSectionsStepDataAction(): Promise<SectionsStepDataResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -825,7 +825,7 @@ export async function getSectionsStepDataAction(): Promise<SectionsStepDataResul
 export async function saveSectionsAction(
   formData: FormData,
 ): Promise<SaveSectionsActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

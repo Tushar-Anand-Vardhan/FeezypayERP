@@ -35,7 +35,7 @@ export async function listAnnouncementCategoriesAction(options?: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -64,7 +64,7 @@ export async function listAnnouncementCategoriesAction(options?: {
 export async function upsertAnnouncementCategoryAction(
   input: CategoryInput,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -125,7 +125,7 @@ export async function upsertAnnouncementCategoryAction(
 export async function archiveAnnouncementCategoryAction(
   categoryId: string,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -170,7 +170,7 @@ export async function listPriorityLevelsAction(options?: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -198,7 +198,7 @@ export async function listPriorityLevelsAction(options?: {
 export async function upsertPriorityLevelAction(
   input: PriorityInput,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -260,7 +260,7 @@ export async function upsertPriorityLevelAction(
 export async function archivePriorityLevelAction(
   priorityId: string,
 ): Promise<CommActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("communication.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

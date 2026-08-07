@@ -35,7 +35,7 @@ export async function listDepartmentsAction(options?: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("workforce.department.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -64,7 +64,7 @@ export async function listDepartmentsAction(options?: {
 export async function createDepartmentAction(
   input: DepartmentInput,
 ): Promise<DepartmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("workforce.department.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -131,7 +131,7 @@ export async function createDepartmentAction(
 export async function updateDepartmentAction(
   input: DepartmentInput & { id: string },
 ): Promise<DepartmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("workforce.department.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -197,7 +197,7 @@ export async function updateDepartmentAction(
 export async function archiveDepartmentAction(
   departmentId: string,
 ): Promise<DepartmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("workforce.department.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -234,7 +234,7 @@ export async function archiveDepartmentAction(
 export async function restoreDepartmentAction(
   departmentId: string,
 ): Promise<DepartmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("workforce.department.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -284,7 +284,7 @@ export async function listDepartmentHistoryAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("workforce.department.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

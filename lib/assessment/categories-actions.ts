@@ -34,7 +34,7 @@ export async function listAssessmentCategoriesAction(options?: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -64,7 +64,7 @@ export async function listAssessmentCategoriesAction(options?: {
 export async function upsertAssessmentCategoryAction(
   input: AssessmentCategoryInput,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -133,7 +133,7 @@ export async function upsertAssessmentCategoryAction(
 export async function archiveAssessmentCategoryAction(
   categoryId: string,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -167,7 +167,7 @@ export async function archiveAssessmentCategoryAction(
 export async function restoreAssessmentCategoryAction(
   categoryId: string,
 ): Promise<AssessmentActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

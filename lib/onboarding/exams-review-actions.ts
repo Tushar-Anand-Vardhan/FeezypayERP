@@ -44,7 +44,7 @@ export type ReviewStepData =
   | { success: false; error: string };
 
 export async function getExamsStepDataAction(): Promise<ExamsStepData> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -113,7 +113,7 @@ export async function getExamsStepDataAction(): Promise<ExamsStepData> {
 }
 
 export async function saveExamsAction(formData: FormData): Promise<Result> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -217,7 +217,7 @@ export async function saveExamsAction(formData: FormData): Promise<Result> {
 }
 
 export async function getReviewStepDataAction(): Promise<ReviewStepData> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -244,7 +244,7 @@ export async function getReviewStepDataAction(): Promise<ReviewStepData> {
 }
 
 export async function completeOnboardingAction(): Promise<Result> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

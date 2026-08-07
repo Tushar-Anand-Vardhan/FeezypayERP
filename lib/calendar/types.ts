@@ -15,6 +15,9 @@ export type CalendarEventCategory =
   | "workshop"
   | "teacher_meeting"
   | "annual_day"
+  | "club_activity"
+  | "house_activity"
+  | "cultural"
   | "custom";
 
 export type CalendarEventVisibility =
@@ -100,6 +103,9 @@ export const CALENDAR_EVENT_CATEGORIES: CalendarEventCategory[] = [
   "workshop",
   "teacher_meeting",
   "annual_day",
+  "club_activity",
+  "house_activity",
+  "cultural",
   "custom",
 ];
 
@@ -115,5 +121,8 @@ export const CALENDAR_EVENT_CATEGORY_LABELS: Record<
   workshop: "Workshop",
   teacher_meeting: "Teacher meeting",
   annual_day: "Annual day",
+  club_activity: "Club activity",
+  house_activity: "House activity",
+  cultural: "Cultural program",
   custom: "Custom event",
 };

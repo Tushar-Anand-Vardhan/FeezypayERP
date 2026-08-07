@@ -64,24 +64,25 @@ School ERPs fail architecturally when:
 | E08 | **Calendar Engine** | Mostly `SHIPPED` | Academic years, terms, holidays, working days, school calendar truth |
 | E09 | **Structure Engine** | Mostly `SHIPPED` | Classes, sections, capacity, promotion topology |
 | E10 | **Timetable Engine** | Mostly `SHIPPED` | Periods, grids, cycle days, slots, availability, locks, conflict detection |
-| E11 | **Assessment Engine** | Partial `SHIPPED` (config); results `NOT BUILT` | Exam definitions/config shipped; marks/results deferred |
-| E12 | **Attendance Engine** | `DEFERRED` | Presence / absence facts |
-| E13 | **Conduct Engine** | `DEFERRED` | Behaviour, discipline, remarks |
+| E11 | **Assessment Engine** | Config `SHIPPED` + Ops backend `SHIPPED` (UI `NOT BUILT`) | Exam definitions + append-only marks — [`assessment-operations-engine.md`](assessment-operations-engine.md) |
+| E12 | **Attendance Engine** | Backend `SHIPPED` (UI `NOT BUILT`; period FUTURE) | Presence / absence facts — [`attendance-engine.md`](attendance-engine.md) |
+| E13 | **Conduct Engine** | Backend `SHIPPED` (UI `NOT BUILT`) | Behaviour remarks + follow-ups — [`behaviour-engine.md`](behaviour-engine.md) |
 | E14 | **Health Engine** | `DEFERRED` | Lifelong medical attributes & incidents |
 | E15 | **Fee Engine** | `NOT BUILT` (brand core) | Fee structures, invoices, student ledger |
 | E16 | **Payments Engine** | `NOT BUILT` | Payment rails, settlements, reconciliations |
-| E17 | **Event Engine** | Partial `SHIPPED` | `calendar_events` (PTM/sports/trips…); RSVP/notify deferred |
-| E18 | **Communication Engine** | Partial `SHIPPED` (config); send `NOT BUILT` | Templates/categories/rules shipped; delivery is E19 |
-| E19 | **Notification Engine** | `NOT BUILT` | Delivery pipelines, retries, channel adapters |
-| E20 | **Document Engine** | Partial `SHIPPED` (templates); issue `NOT BUILT` | Report card templates shipped; PDF issue deferred |
+| E17 | **Event Engine** | Calendar `SHIPPED` + Activity ops backend `SHIPPED` (UI/media later) | Occasions + participation — [`event-activity-engine.md`](event-activity-engine.md) |
+| E18 | **Communication Engine** | Config `SHIPPED` (§37); ops compose `SHIPPED` (§49); UI `NOT BUILT` | Templates/categories/rules + `comm_messages`; delivery is E19 |
+| E19 | **Notification Engine** | Minimal pipe `SHIPPED` (§49); providers stubbed | Delivery requests, attempts, outbox, read receipts; adapters future |
+| E20 | **Document Engine** | Templates `SHIPPED` + Issue backend `SHIPPED` (PDF media `NOT BUILT`) | Report cards assemble from sources; version history — [`report-card-engine.md`](report-card-engine.md) |
 | E21 | **Reporting Engine** | `NOT BUILT` | Operational reports & exports |
-| E22 | **Analytics Engine** | `NOT BUILT` | Aggregates, trends, dashboards (read-only) |
+| E22 | **Analytics Engine** | Student §51 + Teacher §52 slices `SHIPPED`; school-wide marts later | Deterministic aggregates + snapshots — [`student-analytics-engine.md`](student-analytics-engine.md) · [`teacher-analytics-engine.md`](teacher-analytics-engine.md) |
 | E23 | **AI Engine** | `NOT BUILT` | Assistive insights, drafting, anomaly hints |
 | E24 | **Marketplace Engine** | `DEFERRED` | Public/verified teacher profiles & discovery |
 | E25 | **Onboarding Engine** | Mostly `SHIPPED` | Wizard orchestration & completion gates |
 | E26 | **Ingestion Engine** | Partial `SHIPPED` | CSV/API bulk import validation & mapping |
 | E27 | **Media Engine** | Partial `SHIPPED` | Logos, photos, file storage metadata |
 | E28 | **Audit Engine** | Partial `SHIPPED` (config writes) | `audit_entries` via editing framework; full retention/SIEM later |
+| E29 | **Membership Engine** | `SHIPPED` | Person↔school index, preferences, switch — [`membership-engine.md`](membership-engine.md) |
 
 ---
 
@@ -564,6 +565,8 @@ Schedule teaching periods: who teaches what, where, when.
 **Personas**
 - School admin, Teacher, HOD, Student/Parent (read)
 
+**Phase 2 note:** Assigned homework / projects are **not** Timetable slots. Owned by Homework & Assignment Engine — [`homework-assignment-engine.md`](homework-assignment-engine.md) · MASTER §50 · `lib/homework/`. Lesson-plan drafts (WF-TCH-07) may still land under E10 later.
+
 ---
 
 ### E11 — Assessment Engine
@@ -571,16 +574,20 @@ Schedule teaching periods: who teaches what, where, when.
 **Purpose**  
 Define assessments and record **append-only results**.
 
+**Phase 1 note:** Assessment **Configuration** — [`assessment-configuration-engine.md`](assessment-configuration-engine.md) · `lib/assessment/` config actions.
+
+**Phase 2 note:** Assessment **Operations** (marks) backend shipped — [`assessment-operations-engine.md`](assessment-operations-engine.md) · migration `20260807260000`. Mark sessions (`draft`→`published`→`locked`); teacher-created kinds; bulk/single entry; remarks; corrections; audit; analytics. UI `NOT BUILT`.
+
 **Responsibilities**
 - `exam_definitions` (+ schedules) — **config shipped** (`lib/assessment/`)
 - Exam types, categories, components, weightages, pass marks, publish/lock rules
-- Future: `exam_results` linked to `student_academic_years` + subject + exam
-- Weightages, grading_type; compute derived totals via views
-- Never overwrite prior year marks
+- `exam_results` linked to student + year + subject + exam (ops shipped)
+- Weightages, grading_type; compute derived totals via views/queries
+- Never overwrite prior year / locked historical marks (supersede + correct)
 
 **Data owned**
 - Exam definitions/schedules/components/policies/types/categories
-- Results tables (future)
+- Results tables + mark sessions + results audit
 - Rubrics if skill-based (future)
 
 **Data it must never own**
@@ -593,11 +600,11 @@ Define assessments and record **append-only results**.
 - Calendar terms; Configuration subjects/groups/scales; Enrollment placements; Timetable optional
 
 **Outputs**
-- Published assessment **definitions** (config); later marks/grades for Document/Reporting/Analytics
+- Published assessment **definitions** (config); marks/grades for Document/Reporting/Analytics
 
 **Dependencies**
 - Calendar, Configuration, Enrollment, Structure
-- Authorization (who may enter marks — future)
+- Authorization (who may enter / lock marks)
 
 **Future scalability**
 - Continuous evaluation, competency frameworks, moderation workflows, AI evaluation (flags stubbed)
@@ -605,14 +612,14 @@ Define assessments and record **append-only results**.
 **Personas**
 - School admin, Teacher, HOD, Student/Parent (read), Platform (benchmarks later)
 
-**Phase 1 note:** Assessment **Configuration** Engine docs — [`assessment-configuration-engine.md`](assessment-configuration-engine.md). No marks entry in Phase 1 config ship.
-
 ---
 
 ### E12 — Attendance Engine
 
 **Purpose**  
 Record presence facts for students (and optionally staff).
+
+**Phase 2 note:** Backend shipped — [`attendance-engine.md`](attendance-engine.md) · `lib/attendance/` · migration `20260807250000`. Sessions (draft→submitted→approved→locked); leave; corrections; audit; analytics. Period marks API stubbed. UI `NOT BUILT`.
 
 **Responsibilities**
 - Daily / period attendance rows
@@ -649,32 +656,35 @@ Record presence facts for students (and optionally staff).
 **Purpose**  
 Behaviour incidents, discipline actions, qualitative remarks.
 
+**Phase 2 note:** Behaviour Engine backend shipped — [`behaviour-engine.md`](behaviour-engine.md) · `lib/behaviour/` · migration `20260807290000`. Remark kinds (positive/disciplinary/warning/commendation/teacher_note); visibility; follow-ups; year filter; derived analytics. UI `NOT BUILT`.
+
 **Responsibilities**
-- Dated incident records linked to student profile + academic year
-- Severity, actions taken, confidentiality flags
+- Timestamped remarks / incidents linked to student profile + academic year
+- Severity, follow-up actions, visibility / confidentiality flags
 
 **Data owned**
-- Incident/remark tables
+- `conduct_incidents` (enriched), `behaviour_follow_ups`, `behaviour_audit_log`
 
 **Data it must never own**
 - Health diagnoses (Health)
 - Attendance absences (Attendance)
 - Identity PII copies
+- Assessment / report-card remark fields (E11/E20)
 
 **Inputs**
-- Teacher/admin reports; Enrollment placement context
+- Teacher/admin reports; Enrollment placement context; E07 `behaviour_rules` thresholds
 
 **Outputs**
-- Conduct history for Document (TC remarks) / Parent notifications
+- Conduct history for Document (TC / report cards) / Parent notifications
 
 **Dependencies**
 - Identity, Enrollment, Calendar, Authorization, Notification, Document
 
 **Future scalability**
-- Positive behaviour points; counseling workflows
+- Positive behaviour points dashboards; counseling case packs; AI summaries
 
 **Personas**
-- Teacher, School admin, Parent (controlled), Counselor (future)
+- Teacher, School admin, Parent (controlled), Counselor
 
 ---
 
@@ -792,33 +802,38 @@ Move money and reconcile it; stay thin relative to Fee.
 ### E17 — Event Engine
 
 **Purpose**  
-First-class school events (PTM, annual day, sports) distinct from Calendar holidays and Timetable periods.
+First-class school events (PTM, annual day, sports, clubs, houses, cultural) distinct from Calendar holidays and Timetable periods.
+
+**Phase 1 note:** `calendar_events` CRUD via Academic Calendar — [`academic-calendar-engine.md`](academic-calendar-engine.md).
+
+**Phase 2 note:** Event & Activity ops backend shipped — [`event-activity-engine.md`](event-activity-engine.md) · `lib/events/` · migration `20260807280000`. Staff, participants, attendance, awards, positions, certificates, remarks, media refs. Profile reads by FK.
 
 **Responsibilities**
-- Event entities: time range, audience (class/section/whole school), venue
-- RSVP / consent later
-- Emit “notify audience” intents
+- Event entities on `calendar_events`: time range, audience, venue, category
+- Staff assignments, student participation, outcomes, certificate links
+- Emit “notify audience” intents (still stubbed)
 
 **Data owned**
-- `calendar_events` (categories, visibility, audience JSON, approval)
-- Future: RSVPs, competition sub-entities beyond category
+- `calendar_events` (+ house/club scope)
+- `event_staff_assignments`, `event_participants`, competition projections, activity audit
 
 **Data it must never own**
-- Holiday master (Calendar)
+- Holiday master (Calendar / E08)
 - Message body templates long-term (Communication)
 - SMTP delivery (Notification)
+- Duplicated event bodies on student profile rows
 
 **Inputs**
-- Admin creates event via `lib/calendar/events-actions.ts`; Calendar for conflict awareness
+- Admin/teacher creates via `lib/events` (activity) or `lib/calendar/events-actions.ts`
 
 **Outputs**
-- Event records; notification intents (stub `notify_on_publish`); attendance-like check-in later (`attendance_required`)
+- Event + participation facts; certificate docs via E20; notification intents later
 
 **Dependencies**
-- Calendar, Structure/Enrollment (audience), Communication, Notification, Authorization
+- Calendar, Structure/Enrollment, House/Club, Communication, Notification, Authorization, Document
 
 **Future scalability**
-- Ticketing, paid events → Fee/Payments; recurrence / attachments / AI summaries
+- Ticketing, paid events → Fee/Payments; RRULE expansion; E27 media bytes; DigiLocker certificates
 
 **Personas**
 - School admin, Teacher, Parent, Student
@@ -831,14 +846,14 @@ First-class school events (PTM, annual day, sports) distinct from Calendar holid
 **Content and conversations**: announcements, threads, WhatsApp/email copy, consent preferences.
 
 **Responsibilities**
-- Announcement records, chat/threads (future)
+- Announcement records, operational messages (`comm_messages`)
 - Template content & localization (**config shipped** — `lib/communications/`)
 - Announcement categories, priority levels, audience groups, delivery/approval rules (config)
 - Consent / opt-in flags (e.g. WhatsApp) — seeded conceptually on guardians
-- Audience resolution requests (who should see this) — resolution runtime future
+- Audience resolution at publish (`resolveMessageAudience`)
 
 **Data owned**
-- Messages (future), templates + versions, consent preferences, announcement entities (future school-wide)
+- Messages (`comm_messages`), templates + versions, consent preferences (future), announcement entities
 - `comm_*` configuration tables (categories, priorities, audiences, delivery/approval rules)
 - FUTURE shells: `comm_automations`, `comm_campaigns`
 
@@ -851,8 +866,8 @@ First-class school events (PTM, annual day, sports) distinct from Calendar holid
 - Authors (admin/teacher); Event/Fee/Attendance triggers requesting a message
 
 **Outputs**
-- Template / rule configuration today; later rendered message payloads handed to Notification
-- In-app inbox items (future)
+- Template / rule configuration; rendered message payloads handed to Notification
+- In-app inbox items via E19 delivery requests
 
 **Dependencies**
 - Identity/Enrollment (recipients), Authorization, Notification, Event/Fee/Assessment as producers
@@ -866,6 +881,8 @@ First-class school events (PTM, annual day, sports) distinct from Calendar holid
 
 **Phase 1 note:** Communication Configuration Engine — [`communication-configuration-engine.md`](communication-configuration-engine.md). **No sending.**
 
+**Phase 2 note:** Communication Operations — [`communication-operations-engine.md`](communication-operations-engine.md). Compose + fan-out to E19.
+
 ---
 
 ### E19 — Notification Engine
@@ -875,30 +892,37 @@ Reliable **delivery** across channels (email, WhatsApp, SMS, push, in-app).
 
 **Responsibilities**
 - Queue, retry, backoff, idempotency keys
-- Channel adapters (Twilio, Meta WhatsApp, SES, FCM)
-- Delivery status webhooks
-- Prefer receiving *already-rendered* or structured payloads from Communication
+- Delivery requests / attempts / outbox (tables + `lib/notifications/`)
+- Channel adapters (in_app live; others stubbed)
+- Read receipts + notification history
 
 **Data owned**
 - Notification jobs, delivery attempts, provider message ids
+- `notification_types`, `notification_delivery_requests`, `notification_delivery_attempts`, `notification_outbox`
 
 **Data it must never own**
-- Long-form editorial content as source of truth
-- Business decisions (who owes fees)
+- Editorial long-form as source of truth (Communication)
+- Fee balances, marks
 
 **Inputs**
+- Prefer receiving *already-rendered* or structured payloads from Communication
+
+**Outputs**
+- Notification jobs, delivery attempts, provider message ids
+- Delivery status / read receipts
+
+**Dependencies**
 - Communication payloads; Access password emails (or Auth mailer)
 - Preference checks (Communication consent)
 
-**Outputs**
-- Delivered / bounced / failed statuses
+**Personas**
+- All recipients
 
-**Dependencies**
-- Communication (content), Identity (addresses), Audit
+**Architecture:** [`notification-engine.md`](notification-engine.md) · runtime [`communication-operations-engine.md`](communication-operations-engine.md) §49
 
 **Future scalability**
-- Priority queues; quiet hours; multi-provider failover
-- Full design: [`notification-engine.md`](notification-engine.md)
+- Priority queues; quiet hours; multi-provider failover; Twilio / Meta / SES / FCM adapters
+- Delivery status webhooks
 
 **Personas**
 - System primarily; admins view delivery logs — see [`notification-engine.md`](notification-engine.md)
@@ -915,31 +939,34 @@ Generate and store official documents (report cards, TC, fee receipts, ID cards)
 - Versioning of issued certificates
 - Hash/integrity for verification
 - **Phase 1 shipped:** report card **templates** (`lib/report-cards/`) — boards, scopes, dynamic blocks, assessment refs, signature slots, immutable versions
+- **Phase 2 shipped:** report card **issue** — assemble from E11/E12/E13/house/club + remarks/promotion; `report_card_issues` + version history; no parallel marks store
 
 **Data owned**
-- Templates, issued document metadata, storage pointers (issue future)
+- Templates, issued document metadata, storage pointers
 - Report card template versions / scopes / blocks / signature config
+- Report card issues / issue versions / issue audit
 
 **Data it must never own**
-- Underlying marks/fees (reads Assessment/Fee/Enrollment)
+- Underlying marks/fees as OLTP (reads Assessment/Fee/Enrollment; `source_refs` pointers only)
 - Original attendance facts
 
 **Inputs**
-- Assessment **definitions** (template bindings); later Assessment results, Enrollment history, Fee receipts, Identity photos
+- Assessment definitions + results; Enrollment; Attendance aggregates; Conduct; house/club; Identity
 
 **Outputs**
-- Template configuration today; later downloadable artifacts + verification codes
+- Template configuration; issued report card versions (+ future PDF artifacts)
 
 **Dependencies**
-- Enrollment, Assessment, Fee, Identity, Media, Authorization, Audit
+- Enrollment, Assessment, Fee, Identity, Media, Authorization, Audit, Attendance, Conduct
 
 **Future scalability**
-- DigiLocker; QR verify; bulk generation; digital signatures (`report_card_render_jobs` stubbed)
+- DigiLocker; QR verify; bulk generation; digital signatures (`report_card_render_jobs` queued on issue)
 
 **Personas**
 - School admin, Parent, Student, Teacher (progress reports)
 
-**Phase 1 note:** Report Card Template Engine — [`report-card-template-engine.md`](report-card-template-engine.md). No PDF issue in this ship.
+**Phase 1 note:** Templates — [`report-card-template-engine.md`](report-card-template-engine.md).  
+**Phase 2 note:** Issue — [`report-card-engine.md`](report-card-engine.md) · migration `20260807270000`.
 
 ---
 
@@ -1007,6 +1034,8 @@ Aggregations, trends, benchmarks — **read-only**, eventually consistent.
 
 **Personas**
 - School admin, Platform, HOD; AI Engine as consumer
+
+**Phase 2 note:** Student Analytics Engine — [`student-analytics-engine.md`](student-analytics-engine.md) · MASTER §51 · `lib/student-analytics/`. Teacher Analytics Engine — [`teacher-analytics-engine.md`](teacher-analytics-engine.md) · MASTER §52 · `lib/teacher-analytics/`. Deterministic only; no AI.
 
 ---
 
@@ -1214,6 +1243,43 @@ Immutable record of who did what, for compliance and forensics.
 
 **Personas**
 - School admin (limited), Platform admin, System — see [`rbac.md`](rbac.md) + [`audit-log.md`](audit-log.md)
+
+---
+
+### E29 — Membership Engine
+
+**Purpose**  
+Index every person↔school relationship for session routing and tenant membership without duplicating HR/enrollment facts.
+
+**Responsibilities**
+- Maintain `school_memberships` synced from E01/E05/E06 source facts
+- Append-only membership history
+- Default / active school preferences (same Auth user, multi-school switch)
+- Student transfer membership end/start orchestration
+- Back `membership_schools(uid)` for RLS
+
+**Data owned**
+- `school_memberships`, `school_membership_history`, `user_school_preferences`
+
+**Data it must never own**
+- Person PII, employment HR fields, admission numbers, fee accounts, permission key evaluation (E03)
+
+**Inputs**
+- Profile admin rows (E01), employments (E05), admissions + parent links (E06)
+
+**Outputs**
+- Session school list; active membership context; RLS school set
+
+**Dependencies**
+- E02 (auth user), E04 (person), E01/E05/E06 (facts), E03 (optional role grant refs)
+
+**Future scalability**
+- Consultants/substitutes as first-class kinds; read-only alumni/former_staff portals
+
+**Canonical doc:** [`membership-engine.md`](membership-engine.md)
+
+**Personas**
+- All authenticated school members
 
 ---
 
@@ -1449,7 +1515,7 @@ Before implementing a feature, answer:
 ## 8. Phase 0.5 outcomes & next architecture tasks
 
 **Done in Phase 0.5:**
-- Named engines E01–E28
+- Named engines E01–E29
 - Initial ownership / non-ownership boundaries
 - Dependency graph
 - Mapping from shipped MASTER work
@@ -1559,6 +1625,7 @@ Before implementing a feature, answer:
 | `persons.photo_path` string | **E04** | Points at E27 object |
 | school logo path string on `schools` | **E07** | Points at E27 object |
 | audit log entries | **E28** | |
+| `school_memberships`, history, `user_school_preferences` | **E29** | Session index; facts remain E01/E05/E06 |
 
 ### 10.2 Derived / non-owned projections
 
@@ -1569,6 +1636,7 @@ Before implementing a feature, answer:
 | Analytics attendance % | E22 | E12 |
 | Report card PDF bytes | E20 | E11, E06, E04 |
 | Auth session claims | E02 | — |
+| School membership index | E29 | E01, E05, E06 |
 
 Derived data must be rebuildable from owners; never become a second write path.
 

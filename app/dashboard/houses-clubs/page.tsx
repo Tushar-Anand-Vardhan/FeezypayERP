@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/dashboard/app-header";
 import { HousesClubsAdminClient } from "@/components/houses-clubs/houses-clubs-admin-client";
+import { getAppHeaderAuth } from "@/lib/authz/bootstrap";
+import { requirePermission } from "@/lib/authz/require";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function HousesClubsDashboardPage() {
@@ -10,23 +12,13 @@ export default async function HousesClubsDashboardPage() {
     redirect("/login");
   }
 
-  const userId =
-    typeof claimsData.claims.sub === "string" ? claimsData.claims.sub : null;
-  if (!userId) {
-    redirect("/login");
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("school_id")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (!profile?.school_id) {
+  const authzCtx = await requirePermission("config.catalog.read");
+  if ("error" in authzCtx) {
     redirect("/dashboard");
   }
 
-  const schoolId = profile.school_id;
+  const schoolId = authzCtx.schoolId;
+  const headerAuth = await getAppHeaderAuth();
 
   const { data: school } = await supabase
     .from("schools")
@@ -87,6 +79,10 @@ export default async function HousesClubsDashboardPage() {
       <AppHeader
         schoolName={school?.name ?? null}
         onboardingComplete={onboardingComplete}
+        memberships={headerAuth.memberships}
+        activeSchoolId={headerAuth.activeSchoolId}
+        activePersona={headerAuth.activePersona}
+        authz={headerAuth.authz}
       />
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6">
         <header>

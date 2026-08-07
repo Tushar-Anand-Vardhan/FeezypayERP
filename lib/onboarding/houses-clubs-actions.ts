@@ -27,7 +27,7 @@ export type HousesClubsStepData =
   | { success: false; error: string };
 
 export async function getHousesClubsStepDataAction(): Promise<HousesClubsStepData> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -70,7 +70,7 @@ export async function getHousesClubsStepDataAction(): Promise<HousesClubsStepDat
 export async function saveHousesClubsAction(
   formData: FormData,
 ): Promise<Result> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

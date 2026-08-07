@@ -24,7 +24,7 @@ export async function listAcademicYearsAction(options?: {
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -62,7 +62,7 @@ export async function createAcademicYearAction(input: {
   endDate?: string | null;
   activate?: boolean;
 }): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -118,7 +118,7 @@ export async function createAcademicYearAction(input: {
 export async function activateAcademicYearAction(
   yearId: string,
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -158,7 +158,7 @@ export async function activateAcademicYearAction(
 export async function closeAcademicYearAction(
   yearId: string,
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -185,7 +185,7 @@ export async function closeAcademicYearAction(
 export async function archiveAcademicYearAction(
   yearId: string,
 ): Promise<CalendarActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("calendar.year.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

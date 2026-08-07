@@ -2,16 +2,16 @@
 
 > **Phase:** 1 — Implementation  
 > **Created:** 2026-08-07  
-> **Owner engine:** **E11 Assessment** (definitions only — **no marks entry**)  
-> **Companions:** [`MASTER.md`](../MASTER.md) · [`business-engines.md`](business-engines.md)
+> **Owner engine:** **E11 Assessment** (config surface — marks live in [`assessment-operations-engine.md`](assessment-operations-engine.md) / MASTER §45)  
+> **Companions:** [`MASTER.md`](../MASTER.md) · [`business-engines.md`](business-engines.md) · [`assessment-operations-engine.md`](assessment-operations-engine.md)
 
 ---
 
 ## 1. Scope
 
-| Supported (config) | Explicitly out of scope |
-|--------------------|-------------------------|
-| Exam types catalog | `exam_results` / marks entry |
+| Supported (config) | Explicitly out of scope (this doc) |
+|--------------------|-------------------------------------|
+| Exam types catalog | Marks entry → **ops engine** (§45) |
 | Assessment categories (theory/internal/practical/project/oral/optional) | Moderation workflow UI |
 | School/year assessment policies | AI evaluation behavior |
 | Exam definitions (+ weightage, pass marks, grading type) | Report card generation |

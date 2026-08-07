@@ -73,7 +73,7 @@ async function verifyActiveSubjectIds(
 export async function replaceClassSubjectsAction(
   rows: ClassSubjectAssignmentInput[],
 ): Promise<ConfigActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

@@ -50,7 +50,7 @@ export async function listTimetableGridsAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -80,7 +80,7 @@ export async function listTimetableGridsAction(
 export async function createTimetableGridAction(
   input: GridInput,
 ): Promise<TimetableActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -161,7 +161,7 @@ export async function createTimetableGridAction(
 export async function activateTimetableGridAction(
   gridId: string,
 ): Promise<TimetableActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -212,7 +212,7 @@ export async function activateTimetableGridAction(
 export async function archiveTimetableGridAction(
   gridId: string,
 ): Promise<TimetableActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -255,7 +255,7 @@ export async function listCycleDaysAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
@@ -281,7 +281,7 @@ export async function listCycleDaysAction(
 export async function upsertCycleDayAction(
   input: CycleDayInput & { id?: string },
 ): Promise<TimetableActionResult> {
-  const context = await getAuthenticatedSchoolContext();
+  const context = await getAuthenticatedSchoolContext("timetable.grid.edit");
   if ("error" in context) {
     return { success: false, error: context.error };
   }
