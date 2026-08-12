@@ -95,6 +95,19 @@ export async function createTermAction(
     return { success: false, error: "Academic year not found." };
   }
 
+  const { isTermCountLocked } = await import("@/lib/calendar/term-edit-guards");
+  const lock = await isTermCountLocked(
+    supabase,
+    schoolId,
+    trimmed.academicYearId,
+  );
+  if (lock.locked) {
+    return {
+      success: false,
+      error: lock.reason ?? "Term count is locked for this year.",
+    };
+  }
+
   const { data, error } = await supabase
     .from("terms")
     .insert({
@@ -118,6 +131,7 @@ export async function createTermAction(
   }
 
   revalidatePath("/dashboard/calendar");
+  revalidatePath("/dashboard/configuration");
   return { success: true, message: "Term created.", id: data.id };
 }
 
@@ -144,6 +158,22 @@ export async function updateTermAction(
     return { success: false, error: "Academic year not found." };
   }
 
+  const { findTermDateConflicts } = await import(
+    "@/lib/calendar/term-edit-guards"
+  );
+  const conflicts = await findTermDateConflicts(
+    supabase,
+    input.id,
+    trimmed.startDate,
+    trimmed.endDate,
+  );
+  if (conflicts.length > 0) {
+    return {
+      success: false,
+      error: `Cancel or move conflicting events first: ${conflicts.slice(0, 3).join(" ")}`,
+    };
+  }
+
   const { error } = await supabase
     .from("terms")
     .update({
@@ -165,6 +195,7 @@ export async function updateTermAction(
   }
 
   revalidatePath("/dashboard/calendar");
+  revalidatePath("/dashboard/configuration");
   return { success: true, message: "Term updated.", id: input.id };
 }
 
@@ -182,6 +213,15 @@ export async function archiveTermAction(
     return { success: false, error: "Academic year not found." };
   }
 
+  const { isTermCountLocked } = await import("@/lib/calendar/term-edit-guards");
+  const lock = await isTermCountLocked(supabase, schoolId, academicYearId);
+  if (lock.locked) {
+    return {
+      success: false,
+      error: lock.reason ?? "Term count is locked for this year.",
+    };
+  }
+
   const { error } = await supabase
     .from("terms")
     .update({
@@ -196,6 +236,7 @@ export async function archiveTermAction(
   }
 
   revalidatePath("/dashboard/calendar");
+  revalidatePath("/dashboard/configuration");
   return { success: true, message: "Term archived.", id: termId };
 }
 
@@ -227,5 +268,6 @@ export async function restoreTermAction(
   }
 
   revalidatePath("/dashboard/calendar");
+  revalidatePath("/dashboard/configuration");
   return { success: true, message: "Term restored.", id: termId };
 }

@@ -125,6 +125,8 @@ export async function createDepartmentAction(
   });
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/departments");
+  revalidatePath("/dashboard/configuration");
   return { success: true, message: "Department created.", id: data.id };
 }
 
@@ -191,6 +193,8 @@ export async function updateDepartmentAction(
   });
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/departments");
+  revalidatePath("/dashboard/configuration");
   return { success: true, message: "Department updated.", id: input.id };
 }
 
@@ -228,6 +232,8 @@ export async function archiveDepartmentAction(
   });
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/departments");
+  revalidatePath("/dashboard/configuration");
   return { success: true, message: "Department archived.", id: departmentId };
 }
 
@@ -265,6 +271,8 @@ export async function restoreDepartmentAction(
   });
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/departments");
+  revalidatePath("/dashboard/configuration");
   return { success: true, message: "Department restored.", id: departmentId };
 }
 

@@ -20,6 +20,7 @@ import { saveSchoolIdentityAction } from "@/app/onboarding/actions";
 
 const emptyValues: SchoolIdentityFormValues = {
   name: "",
+  code: "",
   addressStreet: "",
   addressCity: "",
   addressState: "",
@@ -34,6 +35,7 @@ const emptyValues: SchoolIdentityFormValues = {
 
 type LoadedSchool = {
   name: string | null;
+  code: string | null;
   logo_path: string | null;
   address_street: string | null;
   address_city: string | null;
@@ -97,7 +99,7 @@ export function SchoolIdentityForm() {
       const { data: school, error: schoolError } = await supabase
         .from("schools")
         .select(
-          "name, logo_path, address_street, address_city, address_state, address_pincode, contact_phone, contact_email, board, affiliation_number, academic_year_start_month",
+          "name, code, logo_path, address_street, address_city, address_state, address_pincode, contact_phone, contact_email, board, affiliation_number, academic_year_start_month",
         )
         .eq("id", profile.school_id)
         .maybeSingle();
@@ -116,6 +118,7 @@ export function SchoolIdentityForm() {
       if (!cancelled) {
         setValues({
           name: loaded.name ?? "",
+          code: loaded.code ?? "",
           addressStreet: loaded.address_street ?? "",
           addressCity: loaded.address_city ?? "",
           addressState: loaded.address_state ?? "",
@@ -192,6 +195,7 @@ export function SchoolIdentityForm() {
     const trimmed = trimSchoolIdentityValues(values);
     const formData = new FormData();
     formData.set("name", trimmed.name);
+    formData.set("code", trimmed.code);
     formData.set("addressStreet", trimmed.addressStreet);
     formData.set("addressCity", trimmed.addressCity);
     formData.set("addressState", trimmed.addressState);
@@ -300,6 +304,16 @@ export function SchoolIdentityForm() {
             error={fieldErrors.name}
             required
           />
+          <FormField
+            id="code"
+            label="School code (optional)"
+            value={values.code}
+            onChange={(value) => updateField("code", value)}
+            error={fieldErrors.code}
+          />
+          <p className="-mt-4 text-xs text-muted">
+            Short unique code. Distinct from board affiliation number.
+          </p>
 
           <div className="space-y-2">
             <label htmlFor="logo" className="block text-sm font-medium">

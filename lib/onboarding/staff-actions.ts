@@ -420,6 +420,20 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
         .eq("employment_id", employmentId);
     } else {
       isNewEmployment = true;
+      const { assertNoOtherActiveEmployment } = await import(
+        "@/lib/workforce/employment-guards"
+      );
+      const d15 = await assertNoOtherActiveEmployment(
+        supabase,
+        resolved.teacherProfileId,
+        schoolId,
+      );
+      if (!d15.ok) {
+        return {
+          success: false,
+          error: `${row.fullName}: ${d15.error}`,
+        };
+      }
       const { data: employment, error: employmentError } = await supabase
         .from("teacher_employments")
         .insert({

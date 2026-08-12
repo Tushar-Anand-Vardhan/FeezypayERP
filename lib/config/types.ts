@@ -53,6 +53,7 @@ export type GradingScaleInput = {
 
 export type SchoolBrandingInput = {
   name: string;
+  code?: string;
   addressStreet: string;
   addressCity: string;
   addressState: string;

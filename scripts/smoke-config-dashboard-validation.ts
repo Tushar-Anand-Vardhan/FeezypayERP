@@ -5,6 +5,10 @@
 import assert from "node:assert/strict";
 import { CONFIG_DASHBOARD_MODULES } from "../lib/config-dashboard/catalog";
 import {
+  onboardingStepsCoveredByHub,
+  resolveConfigHubTab,
+} from "../lib/config-dashboard/hub-tabs";
+import {
   completionLabel,
   healthLabel,
 } from "../lib/config-dashboard/labels";
@@ -46,6 +50,21 @@ section("labels");
 assert.equal(completionLabel("complete"), "Complete");
 assert.equal(completionLabel("backend_only"), "Configured (API)");
 assert.equal(healthLabel("critical"), "Critical");
+console.log("OK");
+
+section("config hub tabs");
+assert.equal(resolveConfigHubTab(undefined), "health");
+assert.equal(resolveConfigHubTab("school-identity"), "school-identity");
+assert.equal(resolveConfigHubTab("classes"), "structure");
+assert.equal(resolveConfigHubTab("sections"), "structure");
+assert.equal(resolveConfigHubTab("nope"), "health");
+assert.ok(onboardingStepsCoveredByHub(), "hub covers onboarding steps");
+for (const mod of CONFIG_DASHBOARD_MODULES) {
+  assert.ok(
+    !mod.href.startsWith("/onboarding/"),
+    `${mod.id} should not deep-link completed schools into onboarding (${mod.href})`,
+  );
+}
 console.log("OK");
 
 console.log("\nAll config dashboard smoke checks passed.");

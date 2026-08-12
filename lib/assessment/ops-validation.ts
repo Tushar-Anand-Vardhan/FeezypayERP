@@ -27,6 +27,24 @@ export function teacherMayEditMarks(
   return status === "draft" || status === "published";
 }
 
+/** Calendar marking window on exam_subject_schedules (null bounds = always open). */
+export function isMarkingWindowOpen(opts: {
+  markingOpensAt: string | null;
+  markingClosesAt: string | null;
+  now?: Date;
+}): boolean {
+  const now = opts.now ?? new Date();
+  if (opts.markingOpensAt) {
+    const opens = new Date(opts.markingOpensAt);
+    if (!Number.isNaN(opens.getTime()) && now < opens) return false;
+  }
+  if (opts.markingClosesAt) {
+    const closes = new Date(opts.markingClosesAt);
+    if (!Number.isNaN(closes.getTime()) && now > closes) return false;
+  }
+  return true;
+}
+
 /** Publish or lock → visible to parents/students. */
 export function visibilityForMarksWorkflow(status: string): {
   visible_to_guardians: boolean;

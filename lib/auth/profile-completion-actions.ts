@@ -8,11 +8,17 @@ type Result =
   | { success: false; error: string };
 
 /**
- * First-login profile completion: sets profile_completed_at and activates invited employments.
+ * First-login profile completion: person fields + optional teacher career profile.
+ * Activates invited employments after save.
  */
 export async function completeProfileAction(input: {
   phone?: string | null;
   fullName?: string | null;
+  qualification?: string | null;
+  yearsExperience?: number | null;
+  preferredSubjects?: string;
+  preferredStandards?: string | null;
+  bio?: string | null;
 }): Promise<Result> {
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
@@ -52,7 +58,6 @@ export async function completeProfileAction(input: {
     return { success: false, error: updError.message };
   }
 
-  // Activate invited employments for this person
   const { data: teacherProfile } = await supabase
     .from("teacher_profiles")
     .select("id")
@@ -60,6 +65,26 @@ export async function completeProfileAction(input: {
     .maybeSingle();
 
   if (teacherProfile) {
+    const subjects = (input.preferredSubjects ?? "")
+      .split(/[,;\n]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    await supabase
+      .from("teacher_profiles")
+      .update({
+        qualification: input.qualification?.trim() || null,
+        years_experience:
+          input.yearsExperience != null && !Number.isNaN(input.yearsExperience)
+            ? input.yearsExperience
+            : null,
+        preferred_subjects: subjects,
+        preferred_standards: input.preferredStandards?.trim() || null,
+        bio: input.bio?.trim() || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", teacherProfile.id);
+
     const { data: activated } = await supabase
       .from("teacher_employments")
       .update({
@@ -78,5 +103,6 @@ export async function completeProfileAction(input: {
 
   revalidatePath("/dashboard");
   revalidatePath("/activate/profile");
+  revalidatePath("/dashboard/teacher/profile");
   return { success: true, redirectTo: "/dashboard" };
 }

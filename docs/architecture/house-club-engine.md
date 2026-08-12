@@ -20,6 +20,12 @@
 
 **Hard rule:** Houses/clubs own **relationships**, not Person rows. TIC → `teacher_employments`. Memberships → `student_profiles` via admissions.
 
+### Wave 4 — Membership CSV
+
+- Headers: `admission_number`, `house_code`, `role` (`member` | `captain` | `vice_captain`)
+- `importHouseMembershipsCsvAction` + `parseHouseMembershipCsv` (blocking validation)
+- UI flash: students without a house for the active year (`listStudentsWithoutHouseAction`) on `/dashboard/houses-clubs`
+
 ---
 
 ## 2. Schema
@@ -45,6 +51,7 @@ lib/houses-clubs/
   houses-actions.ts
   clubs-actions.ts
   house-memberships-actions.ts
+  house-memberships-csv.ts
   club-memberships-actions.ts
 ```
 
@@ -57,8 +64,9 @@ UI: `/dashboard/houses-clubs`
 
 ## 4. Tests
 
-`npx tsx scripts/smoke-houses-clubs-validation.ts`
+`npx tsx scripts/smoke-houses-clubs-validation.ts`  
+`npx tsx scripts/smoke-enrollment-wave4-validation.ts`
 
 ---
 
-*MASTER §31.*
+*MASTER §31 · §68 Wave 4.*

@@ -8,6 +8,7 @@ export function trimSchoolBrandingInput(
 ): SchoolBrandingInput {
   return {
     name: input.name.trim(),
+    code: input.code?.trim() ?? "",
     addressStreet: input.addressStreet.trim(),
     addressCity: input.addressCity.trim(),
     addressState: input.addressState.trim(),
@@ -42,6 +43,10 @@ export function validateSchoolBrandingInput(
   }
   if (trimmed.addressPincode && !/^\d{6}$/.test(trimmed.addressPincode)) {
     errors.addressPincode = "Pincode must be 6 digits.";
+  }
+  if (trimmed.code && !/^[A-Za-z0-9_-]{2,32}$/.test(trimmed.code)) {
+    errors.code =
+      "School code must be 2–32 characters (letters, numbers, _ or -).";
   }
 
   return errors;

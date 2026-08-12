@@ -8,6 +8,7 @@ import {
   listTeacherSections,
   loadSectionRosterWithNames,
 } from "@/lib/teacher-portal/server-helpers";
+import { resolveTeacherEmploymentId } from "@/lib/teacher-portal/students";
 import { createClient } from "@/lib/supabase/server";
 
 type PageProps = {
@@ -28,7 +29,10 @@ export default async function TeacherAttendancePage({ searchParams }: PageProps)
   const params = await searchParams;
   const today = new Date().toISOString().slice(0, 10);
   const attendanceDate = params.date ?? today;
-  const employmentId = params.employment ?? null;
+  const employmentId = await resolveTeacherEmploymentId(
+    authzCtx.schoolId,
+    params.employment ?? null,
+  );
 
   const academicYearId = await getActiveAcademicYearId(
     supabase,
@@ -64,8 +68,9 @@ export default async function TeacherAttendancePage({ searchParams }: PageProps)
     );
   }
 
-  const sectionLabel =
-    sections.find((s) => s.id === sectionId)?.label ?? sectionId;
+  const selectedSection = sections.find((s) => s.id === sectionId);
+  const sectionLabel = selectedSection?.label ?? sectionId;
+  const isHomeClassroom = selectedSection?.isHomeClassroom ?? false;
   const roster = await loadSectionRosterWithNames(supabase, sectionId);
   const existing = await listSectionAttendanceAction({
     sectionId,
@@ -98,7 +103,8 @@ export default async function TeacherAttendancePage({ searchParams }: PageProps)
           Attendance
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Mark daily attendance and submit the session when ready (WF-TCH-01).
+          Morning roll-call for your home classroom first, then other taught
+          sections (WF-TCH-01).
         </p>
       </header>
       <TeacherAttendanceClient
@@ -107,6 +113,7 @@ export default async function TeacherAttendancePage({ searchParams }: PageProps)
         sectionId={sectionId}
         attendanceDate={attendanceDate}
         sectionLabel={sectionLabel}
+        isHomeClassroom={isHomeClassroom}
         students={students}
         sessionId={sessionId || null}
         sections={sections}

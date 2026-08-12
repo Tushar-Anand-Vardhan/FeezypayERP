@@ -33,6 +33,7 @@ export async function updateSchoolBrandingAction(
   const { supabase, schoolId } = context;
   const patch: Record<string, unknown> = {
     name: trimmed.name,
+    code: trimmed.code || null,
     address_street: trimmed.addressStreet || null,
     address_city: trimmed.addressCity || null,
     address_state: trimmed.addressState || null,
@@ -65,5 +66,6 @@ export async function updateSchoolBrandingAction(
 
   revalidatePath("/onboarding", "layout");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/configuration");
   return { success: true, message: "School branding saved." };
 }

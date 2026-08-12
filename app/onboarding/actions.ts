@@ -165,6 +165,7 @@ export async function saveSchoolIdentityAction(
 
   const values: SchoolIdentityFormValues = {
     name: String(formData.get("name") ?? ""),
+    code: String(formData.get("code") ?? ""),
     addressStreet: String(formData.get("addressStreet") ?? ""),
     addressCity: String(formData.get("addressCity") ?? ""),
     addressState: String(formData.get("addressState") ?? ""),
@@ -248,6 +249,7 @@ export async function saveSchoolIdentityAction(
 
   const updatePayload: Record<string, string | number | null> = {
     name: trimmed.name,
+    code: trimmed.code || null,
     address_street: trimmed.addressStreet,
     address_city: trimmed.addressCity,
     address_state: trimmed.addressState,

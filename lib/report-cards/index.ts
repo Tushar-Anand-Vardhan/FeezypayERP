@@ -28,3 +28,23 @@ export {
   archiveReportCardFieldAssignmentAction,
   listReportCardFieldAssignmentsAction,
 } from "@/lib/report-cards/field-assignments-actions";
+
+export {
+  listReportCardTemplatesAction,
+  upsertReportCardTemplateAction,
+  publishReportCardTemplateAction,
+  retireReportCardTemplateAction,
+  cloneReportCardTemplateAsDraftAction,
+} from "@/lib/report-cards/templates-actions";
+
+export {
+  listReportCardBlocksAction,
+  upsertReportCardBlockAction,
+  archiveReportCardBlockAction,
+} from "@/lib/report-cards/blocks-actions";
+
+export {
+  listReportCardScopesAction,
+  upsertReportCardScopeAction,
+  archiveReportCardScopeAction,
+} from "@/lib/report-cards/scopes-actions";

@@ -230,6 +230,30 @@ export function validateExamSubjectScheduleInput(
   ) {
     errors.componentType = "Invalid component type.";
   }
+  if (
+    input.dayKind &&
+    input.dayKind !== "half_day" &&
+    input.dayKind !== "full_day"
+  ) {
+    errors.dayKind = "Day kind must be half_day or full_day.";
+  }
+  const starts = input.startsAt || input.scheduledAt;
+  const ends = input.endsAt;
+  if (starts && ends && new Date(ends).getTime() < new Date(starts).getTime()) {
+    errors.endsAt = "End must be on or after start.";
+  }
+  const opens = input.markingOpensAt;
+  const closes = input.markingClosesAt;
+  if (
+    opens &&
+    closes &&
+    new Date(closes).getTime() < new Date(opens).getTime()
+  ) {
+    errors.markingClosesAt = "Marking close must be on or after open.";
+  }
+  if (input.gradingType === "rubric" && !input.rubricId?.trim()) {
+    errors.rubricId = "Select a rubric when grading type is rubric.";
+  }
   return errors;
 }
 

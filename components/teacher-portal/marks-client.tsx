@@ -6,12 +6,17 @@ import {
   bulkUpsertMarksAction,
   publishMarkSessionAction,
 } from "@/lib/assessment";
+import {
+  matchMarksCsvToRoster,
+  parseMarksCsv,
+} from "@/lib/assessment/marks-csv";
 
 type MarkRow = {
   studentProfileId: string;
   fullName: string;
   marksObtained: string;
   isAbsent: boolean;
+  admissionNumber?: string | null;
 };
 
 type ScheduleOption = {
@@ -22,6 +27,7 @@ type ScheduleOption = {
   maxMarks: number | null;
   sectionId: string | null;
   classId: string | null;
+  markingOpen?: boolean;
 };
 
 type Props = {
@@ -58,6 +64,58 @@ export function TeacherMarksClient({
     router.push(`/dashboard/teacher/marks?${params.toString()}`);
   }
 
+  function onCsvFile(file: File | null) {
+    if (!file || !selected) return;
+    setError(null);
+    setMessage(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? "");
+      const parsed = parseMarksCsv(text);
+      if (parsed.error) {
+        setError(parsed.error);
+        return;
+      }
+      const matched = matchMarksCsvToRoster(
+        parsed.rows,
+        rows.map((r) => ({
+          studentProfileId: r.studentProfileId,
+          fullName: r.fullName,
+          admissionNumber: r.admissionNumber,
+        })),
+      );
+      if (matched.unmatched.length > 0) {
+        setError(
+          `Unmatched rows: ${matched.unmatched.slice(0, 5).join(", ")}${
+            matched.unmatched.length > 5 ? "…" : ""
+          }`,
+        );
+      }
+      setRows((prev) =>
+        prev.map((r) => {
+          const hit = matched.marks.find(
+            (m) => m.studentProfileId === r.studentProfileId,
+          );
+          if (!hit) return r;
+          return {
+            ...r,
+            isAbsent: hit.isAbsent,
+            marksObtained:
+              hit.isAbsent || hit.marksObtained == null
+                ? ""
+                : String(hit.marksObtained),
+          };
+        }),
+      );
+      if (matched.marks.length > 0) {
+        setMessage(
+          `Loaded ${matched.marks.length} mark(s) from CSV. Review and save.`,
+        );
+      }
+    };
+    reader.readAsText(file);
+  }
+
   if (!selected) {
     return (
       <div className="flex flex-col gap-4">
@@ -76,6 +134,7 @@ export function TeacherMarksClient({
                   onClick={() => selectSchedule(s.scheduleId)}
                 >
                   {s.label}
+                  {s.markingOpen === false ? " · Window closed" : ""}
                 </button>
               </li>
             ))}
@@ -84,6 +143,8 @@ export function TeacherMarksClient({
       </div>
     );
   }
+
+  const windowClosed = selected.markingOpen === false;
 
   return (
     <div className="flex flex-col gap-6">
@@ -97,9 +158,31 @@ export function TeacherMarksClient({
           {schedules.map((s) => (
             <option key={s.scheduleId} value={s.scheduleId}>
               {s.label}
+              {s.markingOpen === false ? " (closed)" : ""}
             </option>
           ))}
         </select>
+      </label>
+
+      {windowClosed ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Marking window is closed for this schedule. You can view the roster
+          but cannot save.
+        </p>
+      ) : null}
+
+      <label className="flex max-w-lg flex-col gap-1 text-sm">
+        <span className="text-xs text-muted">
+          Upload CSV (student_profile_id or admission_number or name, marks,
+          absent)
+        </span>
+        <input
+          type="file"
+          accept=".csv,text/csv"
+          disabled={windowClosed || pending || rows.length === 0}
+          className="text-sm"
+          onChange={(e) => onCsvFile(e.target.files?.[0] ?? null)}
+        />
       </label>
 
       {rows.length === 0 ? (
@@ -120,6 +203,7 @@ export function TeacherMarksClient({
                 <input
                   type="checkbox"
                   checked={row.isAbsent}
+                  disabled={windowClosed}
                   onChange={(e) =>
                     setRows((prev) =>
                       prev.map((r) =>
@@ -135,7 +219,7 @@ export function TeacherMarksClient({
               <input
                 type="number"
                 className="w-24 rounded-md border border-border bg-background px-2 py-1 text-sm"
-                disabled={row.isAbsent}
+                disabled={row.isAbsent || windowClosed}
                 value={row.marksObtained}
                 placeholder={
                   selected.maxMarks != null ? `/${selected.maxMarks}` : "marks"
@@ -158,7 +242,7 @@ export function TeacherMarksClient({
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          disabled={pending || rows.length === 0}
+          disabled={pending || rows.length === 0 || windowClosed}
           className="rounded-md bg-feezy-indigo px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           onClick={() => {
             setError(null);

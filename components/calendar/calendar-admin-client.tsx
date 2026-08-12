@@ -17,6 +17,7 @@ import {
   setCalendarEventApprovalAction,
 } from "@/lib/calendar/events-actions";
 import { createTermAction, archiveTermAction } from "@/lib/calendar/terms-actions";
+import { CalendarGrid } from "@/components/calendar/calendar-grid";
 
 type YearRow = {
   id: string;
@@ -133,6 +134,10 @@ export function CalendarAdminClient({
         <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </p>
+      ) : null}
+
+      {selectedYearId ? (
+        <CalendarGrid terms={terms} holidays={holidays} events={events} />
       ) : null}
 
       <section className="space-y-4">

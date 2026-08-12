@@ -109,6 +109,8 @@ export async function createGradingScaleAction(
   }
 
   revalidatePath("/onboarding", "layout");
+  revalidatePath("/dashboard/grading-scales");
+  revalidatePath("/dashboard/configuration");
   return {
     success: true,
     message: "Grading scale created.",
@@ -208,6 +210,8 @@ export async function publishGradingScaleVersionAction(
   });
 
   revalidatePath("/onboarding", "layout");
+  revalidatePath("/dashboard/grading-scales");
+  revalidatePath("/dashboard/configuration");
   return {
     success: true,
     message: `Grading scale version ${nextVersion} published.`,
@@ -261,6 +265,9 @@ export async function archiveGradingScaleAction(
     after: { ...before, archived_at: new Date().toISOString() },
   });
 
+  revalidatePath("/onboarding", "layout");
+  revalidatePath("/dashboard/grading-scales");
+  revalidatePath("/dashboard/configuration");
   return { success: true, message: "Grading scale archived.", id: scaleId };
 }
 

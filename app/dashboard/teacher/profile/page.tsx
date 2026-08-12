@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { TeacherProfileClient } from "@/components/teacher-portal/profile-client";
 import { requirePermission } from "@/lib/authz/require";
 import {
+  listMyEmploymentHistoryAction,
+} from "@/lib/workforce/career-actions";
+import {
   getEmploymentInSchool,
   listActiveEmployments,
   resolveEmploymentForAuthUser,
@@ -49,6 +52,15 @@ export default async function TeacherProfilePage({ searchParams }: PageProps) {
     phone: string | null;
   } | null = null;
 
+  let career: {
+    qualification: string | null;
+    yearsExperience: number | null;
+    bio: string | null;
+    linkedinUrl: string | null;
+    preferredSubjects: string[];
+    preferredStandards: string | null;
+  } | null = null;
+
   if (employment?.personId) {
     const { data } = await supabase
       .from("persons")
@@ -62,7 +74,30 @@ export default async function TeacherProfilePage({ searchParams }: PageProps) {
         phone: data.phone,
       };
     }
+
+    const { data: tp } = await supabase
+      .from("teacher_profiles")
+      .select(
+        "qualification, years_experience, bio, linkedin_url, preferred_subjects, preferred_standards",
+      )
+      .eq("person_id", employment.personId)
+      .maybeSingle();
+    if (tp) {
+      career = {
+        qualification: tp.qualification,
+        yearsExperience: tp.years_experience,
+        bio: tp.bio,
+        linkedinUrl: tp.linkedin_url,
+        preferredSubjects: Array.isArray(tp.preferred_subjects)
+          ? tp.preferred_subjects
+          : [],
+        preferredStandards: tp.preferred_standards,
+      };
+    }
   }
+
+  const historyRes = await listMyEmploymentHistoryAction();
+  const history = historyRes.success ? historyRes.history : [];
 
   return (
     <>
@@ -71,7 +106,7 @@ export default async function TeacherProfilePage({ searchParams }: PageProps) {
           Profile
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Your person record and teaching employment.
+          Career preferences, affiliations, and self-serve leave.
         </p>
       </header>
       <TeacherProfileClient
@@ -92,7 +127,12 @@ export default async function TeacherProfilePage({ searchParams }: PageProps) {
           fullName: e.fullName,
           designation: e.designation,
         }))}
+        career={career}
+        history={history}
         canEditSelf={authzCtx.actor.permissionKeys.has("identity.person.edit")}
+        canLeave={authzCtx.actor.permissionKeys.has(
+          "workforce.employment.self_end",
+        )}
       />
     </>
   );

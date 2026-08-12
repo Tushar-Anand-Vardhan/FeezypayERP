@@ -20,9 +20,10 @@ type Props = {
   sectionId: string;
   attendanceDate: string;
   sectionLabel: string;
+  isHomeClassroom: boolean;
   students: StudentRow[];
   sessionId: string | null;
-  sections: Array<{ id: string; label: string }>;
+  sections: Array<{ id: string; label: string; isHomeClassroom: boolean }>;
 };
 
 const STATUSES: AttendanceMarkStatus[] = [
@@ -40,6 +41,7 @@ export function TeacherAttendanceClient({
   sectionId,
   attendanceDate,
   sectionLabel,
+  isHomeClassroom,
   students: initial,
   sessionId,
   sections,
@@ -79,6 +81,7 @@ export function TeacherAttendanceClient({
             {sections.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.label}
+                {s.isHomeClassroom ? " · Home classroom" : ""}
               </option>
             ))}
           </select>
@@ -95,8 +98,9 @@ export function TeacherAttendanceClient({
       </div>
 
       <p className="text-sm text-muted">
-        Marking <span className="font-medium text-foreground">{sectionLabel}</span>{" "}
-        for {attendanceDate}.
+        Marking{" "}
+        <span className="font-medium text-foreground">{sectionLabel}</span>
+        {isHomeClassroom ? " (Home classroom)" : ""} for {attendanceDate}.
       </p>
 
       {rows.length === 0 ? (

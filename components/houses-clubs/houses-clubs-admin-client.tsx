@@ -12,6 +12,9 @@ import {
   createHouseAction,
   setHouseTeacherInChargeAction,
 } from "@/lib/houses-clubs/houses-actions";
+import { importHouseMembershipsCsvAction } from "@/lib/houses-clubs/house-memberships-actions";
+import { HOUSE_MEMBERSHIP_CSV_HEADERS } from "@/lib/houses-clubs/house-memberships-csv";
+import { downloadCsvTemplate } from "@/lib/onboarding/csv";
 
 type HouseRow = {
   id: string;
@@ -52,6 +55,16 @@ type Props = {
   years: YearOption[];
   housesEnabled: boolean;
   clubsEnabled: boolean;
+  canEditMemberships?: boolean;
+  academicYearId?: string | null;
+  unassigned?: Array<{
+    admissionId: string;
+    studentProfileId: string;
+    fullName: string;
+    admissionNumber: string | null;
+    className: string | null;
+    sectionName: string | null;
+  }>;
 };
 
 export function HousesClubsAdminClient({
@@ -61,6 +74,9 @@ export function HousesClubsAdminClient({
   years,
   housesEnabled,
   clubsEnabled,
+  canEditMemberships = false,
+  academicYearId = null,
+  unassigned = [],
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -118,7 +134,79 @@ export function HousesClubsAdminClient({
         school branding).
       </p>
 
-      <section className="space-y-4">
+      {housesEnabled ? (
+        <section
+          id="house-memberships"
+          className="scroll-mt-24 space-y-3 rounded-xl border border-amber-200 bg-amber-50/60 p-4"
+        >
+          <h2 className="font-display text-lg font-semibold text-amber-950">
+            House assignment
+          </h2>
+          <p className="text-sm text-amber-950/80">
+            {unassigned.length === 0
+              ? "All active students have a house membership for this year."
+              : `${unassigned.length} student(s) have no house yet — import CSV or assign via API.`}
+          </p>
+          {unassigned.length > 0 ? (
+            <ul className="max-h-40 space-y-1 overflow-y-auto text-sm text-amber-950">
+              {unassigned.slice(0, 40).map((s) => (
+                <li key={s.admissionId}>
+                  {s.fullName}
+                  {s.admissionNumber ? ` · ${s.admissionNumber}` : ""}
+                  {s.className
+                    ? ` · ${s.className}${s.sectionName ? `-${s.sectionName}` : ""}`
+                    : ""}
+                </li>
+              ))}
+              {unassigned.length > 40 ? (
+                <li className="text-xs">…and {unassigned.length - 40} more</li>
+              ) : null}
+            </ul>
+          ) : null}
+          {canEditMemberships && academicYearId ? (
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button
+                type="button"
+                className="h-9 rounded-lg border border-amber-300 bg-white px-3 text-xs font-medium text-amber-950"
+                onClick={() =>
+                  downloadCsvTemplate(
+                    "house-memberships.csv",
+                    [...HOUSE_MEMBERSHIP_CSV_HEADERS],
+                    [["A-001", "RED", "member"]],
+                  )
+                }
+              >
+                Download membership CSV
+              </button>
+              <label className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-amber-300 bg-white px-3 text-xs font-medium text-amber-950">
+                Import membership CSV
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (!file || !academicYearId) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      run(() =>
+                        importHouseMembershipsCsvAction({
+                          csvText: String(reader.result ?? ""),
+                          academicYearId,
+                        }),
+                      );
+                    };
+                    reader.readAsText(file);
+                  }}
+                />
+              </label>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      <section id="houses" className="scroll-mt-24 space-y-4">
         <h2 className="font-display text-lg font-semibold">Houses</h2>
         <ul className="divide-y divide-border rounded-xl border border-border">
           {houses.length === 0 ? (
@@ -233,7 +321,7 @@ export function HousesClubsAdminClient({
         </form>
       </section>
 
-      <section className="space-y-4">
+      <section id="clubs" className="scroll-mt-24 space-y-4">
         <h2 className="font-display text-lg font-semibold">Clubs</h2>
         <ul className="divide-y divide-border rounded-xl border border-border">
           {clubs.length === 0 ? (

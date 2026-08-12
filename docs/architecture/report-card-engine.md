@@ -2,7 +2,7 @@
 
 > **Phase:** 3 — Academic Recording Platform (enhances Phase 1 templates §35 + Phase 2 issue §46)  
 > **Created:** 2026-08-07 · **Updated:** 2026-08-07  
-> **Status:** Backend `SHIPPED`. Admin template designer UI `NOT BUILT`. PDF / digital signatures `FUTURE`.  
+> **Status:** Backend `SHIPPED`. Admin template designer UI `SHIPPED` (Wave 5, `/dashboard/report-cards`). PDF / digital signatures `FUTURE`.  
 > **Module:** `lib/report-cards/**`  
 > **Migrations:** `20260807190000` (templates) · `20260807270000` (issue) · `20260807480000` (Phase 3)  
 > **Companions:** [`report-card-template-engine.md`](report-card-template-engine.md) · [`grade-calculation-engine.md`](grade-calculation-engine.md) · MASTER §65

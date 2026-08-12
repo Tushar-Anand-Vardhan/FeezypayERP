@@ -394,6 +394,8 @@ export async function updateSubjectAction(input: {
   });
 
   revalidatePath("/onboarding", "layout");
+  revalidatePath("/dashboard/subjects");
+  revalidatePath("/dashboard/configuration");
   return { success: true, message: "Subject updated.", id: input.id };
 }
 

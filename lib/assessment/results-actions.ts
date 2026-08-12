@@ -27,6 +27,7 @@ import {
   validateBulkMarksInput,
   validateCorrectMarkInput,
   validateSingleMarkInput,
+  isMarkingWindowOpen,
 } from "@/lib/assessment/ops-validation";
 import { getAuthenticatedSchoolContext } from "@/lib/onboarding/server-context";
 
@@ -38,6 +39,38 @@ function revalidate() {
 type Supabase = Awaited<
   ReturnType<typeof import("@/lib/supabase/server").createClient>
 >;
+
+async function assertScheduleMarkingWindow(
+  supabase: Supabase,
+  scheduleId: string | null | undefined,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!scheduleId) return { ok: true };
+  const { data } = await supabase
+    .from("exam_subject_schedules")
+    .select("id, marking_opens_at, marking_closes_at")
+    .eq("id", scheduleId)
+    .is("archived_at", null)
+    .maybeSingle();
+  if (!data) {
+    return { ok: false, error: "Schedule not found." };
+  }
+  if (
+    !isMarkingWindowOpen({
+      markingOpensAt: data.marking_opens_at
+        ? String(data.marking_opens_at)
+        : null,
+      markingClosesAt: data.marking_closes_at
+        ? String(data.marking_closes_at)
+        : null,
+    })
+  ) {
+    return {
+      ok: false,
+      error: "Marking window is closed for this assessment schedule.",
+    };
+  }
+  return { ok: true };
+}
 
 async function upsertCurrentMark(
   supabase: Supabase,
@@ -232,6 +265,14 @@ export async function upsertMarkAction(
     };
   }
 
+  const windowCheck = await assertScheduleMarkingWindow(
+    supabase,
+    input.scheduleId,
+  );
+  if (!windowCheck.ok) {
+    return { success: false, error: windowCheck.error };
+  }
+
   const result = await upsertCurrentMark(supabase, {
     schoolId,
     sessionId: session.id,
@@ -355,6 +396,14 @@ export async function bulkUpsertMarksAction(
       success: false,
       error: "Mark session is locked — teachers cannot edit.",
     };
+  }
+
+  const bulkWindowCheck = await assertScheduleMarkingWindow(
+    supabase,
+    input.scheduleId,
+  );
+  if (!bulkWindowCheck.ok) {
+    return { success: false, error: bulkWindowCheck.error };
   }
 
   let saved = 0;

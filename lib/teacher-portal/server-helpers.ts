@@ -3,6 +3,13 @@ import { listActiveStudentsInSection } from "@/lib/attendance/server-helpers";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
+export type TeacherSectionOption = {
+  id: string;
+  label: string;
+  /** True when this employment is the section class teacher. */
+  isHomeClassroom: boolean;
+};
+
 export async function getActiveAcademicYearId(
   supabase: Supabase,
   schoolId: string,
@@ -53,49 +60,91 @@ export async function loadSectionRosterWithNames(
   });
 }
 
+function sectionLabelFromJoin(row: {
+  section_id?: string | null;
+  sections?: unknown;
+}): string {
+  const sec = row.sections as
+    | {
+        name?: string;
+        classes?: { name?: string } | { name?: string }[] | null;
+      }
+    | {
+        name?: string;
+        classes?: { name?: string } | { name?: string }[] | null;
+      }[]
+    | null;
+  const s = Array.isArray(sec) ? sec[0] : sec;
+  const cls = s?.classes;
+  const className = Array.isArray(cls) ? cls[0]?.name : cls?.name;
+  return [className, s?.name].filter(Boolean).join(" · ") || row.section_id || "";
+}
+
+/**
+ * Sections for attendance / students.
+ * Prefer class-teacher (home classroom) sections, then timetable assignments,
+ * then all school sections as last resort.
+ */
 export async function listTeacherSections(
   supabase: Supabase,
   schoolId: string,
   employmentId: string | null,
-): Promise<Array<{ id: string; label: string }>> {
-  // Prefer timetable assignments for this employment; fall back to all school sections.
+): Promise<TeacherSectionOption[]> {
+  const map = new Map<string, TeacherSectionOption>();
+
   if (employmentId) {
-    const { data } = await supabase
+    const { data: homeSections } = await supabase
+      .from("sections")
+      .select("id, name, classes!inner(name, school_id)")
+      .eq("class_teacher_id", employmentId)
+      .eq("classes.school_id", schoolId)
+      .is("archived_at", null)
+      .limit(50);
+
+    for (const s of homeSections ?? []) {
+      const cls = s.classes as
+        | { name?: string }
+        | { name?: string }[]
+        | null;
+      const className = Array.isArray(cls) ? cls[0]?.name : cls?.name;
+      map.set(s.id, {
+        id: s.id,
+        label: [className, s.name].filter(Boolean).join(" · ") || s.id,
+        isHomeClassroom: true,
+      });
+    }
+
+    const { data: slots } = await supabase
       .from("timetable_slots")
       .select("section_id, sections(id, name, classes(name))")
       .eq("teacher_id", employmentId)
       .not("section_id", "is", null)
       .limit(200);
 
-    const map = new Map<string, string>();
-    for (const row of data ?? []) {
+    for (const row of slots ?? []) {
       if (!row.section_id) continue;
-      const sec = row.sections as
-        | {
-            name?: string;
-            classes?: { name?: string } | { name?: string }[] | null;
-          }
-        | {
-            name?: string;
-            classes?: { name?: string } | { name?: string }[] | null;
-          }[]
-        | null;
-      const s = Array.isArray(sec) ? sec[0] : sec;
-      const cls = s?.classes;
-      const className = Array.isArray(cls) ? cls[0]?.name : cls?.name;
-      map.set(
-        row.section_id,
-        [className, s?.name].filter(Boolean).join(" · ") || row.section_id,
-      );
+      const existing = map.get(row.section_id);
+      if (existing) continue;
+      map.set(row.section_id, {
+        id: row.section_id,
+        label: sectionLabelFromJoin(row),
+        isHomeClassroom: false,
+      });
     }
+
     if (map.size > 0) {
-      return [...map.entries()].map(([id, label]) => ({ id, label }));
+      return [...map.values()].sort((a, b) => {
+        if (a.isHomeClassroom !== b.isHomeClassroom) {
+          return a.isHomeClassroom ? -1 : 1;
+        }
+        return a.label.localeCompare(b.label);
+      });
     }
   }
 
   const { data: sections } = await supabase
     .from("sections")
-    .select("id, name, classes!inner(name, school_id)")
+    .select("id, name, class_teacher_id, classes!inner(name, school_id)")
     .eq("classes.school_id", schoolId)
     .is("archived_at", null)
     .limit(100);
@@ -109,6 +158,36 @@ export async function listTeacherSections(
     return {
       id: s.id,
       label: [className, s.name].filter(Boolean).join(" · ") || s.id,
+      isHomeClassroom: Boolean(
+        employmentId && s.class_teacher_id === employmentId,
+      ),
     };
   });
+}
+
+/** Subject ids this employment teaches in a section (timetable slots). */
+export async function listTeacherSubjectsForSection(
+  supabase: Supabase,
+  employmentId: string,
+  sectionId: string,
+): Promise<Array<{ subjectId: string; name: string }>> {
+  const { data } = await supabase
+    .from("timetable_slots")
+    .select("subject_id, subjects(id, name)")
+    .eq("teacher_id", employmentId)
+    .eq("section_id", sectionId)
+    .not("subject_id", "is", null)
+    .limit(100);
+
+  const map = new Map<string, string>();
+  for (const row of data ?? []) {
+    if (!row.subject_id) continue;
+    const sub = row.subjects as
+      | { id?: string; name?: string }
+      | { id?: string; name?: string }[]
+      | null;
+    const s = Array.isArray(sub) ? sub[0] : sub;
+    map.set(row.subject_id, s?.name ?? row.subject_id);
+  }
+  return [...map.entries()].map(([subjectId, name]) => ({ subjectId, name }));
 }

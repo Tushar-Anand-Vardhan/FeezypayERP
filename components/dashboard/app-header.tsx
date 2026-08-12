@@ -46,9 +46,29 @@ const NAV_ITEMS: NavItem[] = [
     permission: "enrollment.admission.read",
   },
   {
+    label: "Parent",
+    href: "/dashboard/parent",
+    permission: "enrollment.admission.read",
+  },
+  {
+    label: "Platform",
+    href: "/dashboard/platform",
+    permission: "platform.tenant.read",
+  },
+  {
     label: "Configuration",
     href: "/dashboard/configuration",
     permission: "config.catalog.read",
+  },
+  {
+    label: "Assessments",
+    href: "/dashboard/assessments",
+    permission: "assessment.config.read",
+  },
+  {
+    label: "Report cards",
+    href: "/dashboard/report-cards",
+    permission: "document.template.edit",
   },
   {
     label: "Calendar",
@@ -61,13 +81,32 @@ const NAV_ITEMS: NavItem[] = [
     permission: "config.catalog.read",
   },
   {
+    label: "Subjects",
+    href: "/dashboard/subjects",
+    permission: "config.catalog.read",
+  },
+  {
+    label: "Grading scales",
+    href: "/dashboard/grading-scales",
+    permission: "config.catalog.read",
+  },
+  {
+    label: "Departments",
+    href: "/dashboard/departments",
+    permission: "workforce.department.read",
+  },
+  {
+    label: "Timetable",
+    href: "/dashboard/timetable",
+    permission: "timetable.grid.read",
+  },
+  {
     label: "Notifications",
     href: "/dashboard/notifications",
     permission: "communication.message.read",
   },
   { label: "Students", href: "#", locked: true, permission: "enrollment.admission.read" },
   { label: "Attendance", href: "#", locked: true, permission: "attendance.record.read" },
-  { label: "Reports", href: "#", locked: true, permission: "document.report_card.read" },
   { label: "Settings", href: "#", locked: true, permission: "tenant.school.edit" },
 ];
 

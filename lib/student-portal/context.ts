@@ -54,6 +54,42 @@ async function resolveLinkedStudentProfile(
   };
 }
 
+async function resolveParentLinkedChildren(
+  supabase: Supabase,
+  schoolId: string,
+  linkedIds: string[],
+): Promise<
+  Array<{
+    studentProfileId: string;
+    admissionId: string;
+    personId: string;
+    fullName: string | null;
+  }>
+> {
+  const out: Array<{
+    studentProfileId: string;
+    admissionId: string;
+    personId: string;
+    fullName: string | null;
+  }> = [];
+  for (const id of linkedIds) {
+    const owned = await assertStudentInSchool(supabase, schoolId, id);
+    if (!owned) continue;
+    const { data: person } = await supabase
+      .from("persons")
+      .select("full_name")
+      .eq("id", owned.personId)
+      .maybeSingle();
+    out.push({
+      studentProfileId: owned.studentProfileId,
+      admissionId: owned.admissionId,
+      personId: owned.personId,
+      fullName: person?.full_name ?? null,
+    });
+  }
+  return out;
+}
+
 function canPreviewAnyStudent(authz: AuthzContext): boolean {
   if (authz.actor.isSchoolAdmin) return true;
   if (authz.actor.systemRoles.includes("principal")) return true;
@@ -90,20 +126,44 @@ export async function resolveStudentPortalContext(input?: {
     ? await resolveLinkedStudentProfile(supabase, schoolId, actor.authUserId)
     : null;
 
+  const parentChildren =
+    String(actor.activePersona) === "parent"
+      ? await resolveParentLinkedChildren(
+          supabase,
+          schoolId,
+          actor.linkedStudentProfileIds,
+        )
+      : [];
+
   let studentProfileId: string | null = null;
   let isPreview = false;
 
   if (previewId) {
-    if (!canPreviewAnyStudent(authz) && linked?.studentProfileId !== previewId) {
+    if (String(actor.activePersona) === "parent") {
+      if (!actor.linkedStudentProfileIds.includes(previewId)) {
+        return {
+          success: false,
+          error: "Not linked to this student.",
+        };
+      }
+      studentProfileId = previewId;
+      isPreview = false;
+    } else if (
+      !canPreviewAnyStudent(authz) &&
+      linked?.studentProfileId !== previewId
+    ) {
       return {
         success: false,
         error: "Not allowed to preview this student.",
       };
+    } else {
+      studentProfileId = previewId;
+      isPreview = !linked || linked.studentProfileId !== previewId;
     }
-    studentProfileId = previewId;
-    isPreview = !linked || linked.studentProfileId !== previewId;
   } else if (linked) {
     studentProfileId = linked.studentProfileId;
+  } else if (parentChildren.length > 0) {
+    studentProfileId = parentChildren[0].studentProfileId;
   }
 
   if (!studentProfileId) {
@@ -129,7 +189,10 @@ export async function resolveStudentPortalContext(input?: {
     } else {
       return {
         success: false,
-        error: "No student profile linked to this account.",
+        error:
+          String(actor.activePersona) === "parent"
+            ? "No linked children at this school."
+            : "No student profile linked to this account.",
       };
     }
   }
@@ -142,6 +205,12 @@ export async function resolveStudentPortalContext(input?: {
     studentProfileId !== linked.studentProfileId
   ) {
     return { success: false, error: "Can only access your own student profile." };
+  }
+  if (
+    persona === "parent" &&
+    !actor.linkedStudentProfileIds.includes(studentProfileId)
+  ) {
+    return { success: false, error: "Not linked to this student." };
   }
 
   const owned = await assertStudentInSchool(supabase, schoolId, studentProfileId);

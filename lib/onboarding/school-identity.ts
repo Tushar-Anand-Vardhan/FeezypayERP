@@ -33,6 +33,7 @@ const PHONE_PATTERN = /^[\d\s+\-()]{10,15}$/;
 
 export type SchoolIdentityFormValues = {
   name: string;
+  code: string;
   addressStreet: string;
   addressCity: string;
   addressState: string;
@@ -89,6 +90,7 @@ export function trimSchoolIdentityValues(
 ): SchoolIdentityFormValues {
   return {
     name: values.name.trim(),
+    code: values.code.trim(),
     addressStreet: values.addressStreet.trim(),
     addressCity: values.addressCity.trim(),
     addressState: values.addressState.trim(),
@@ -142,6 +144,10 @@ export function validateSchoolIdentityForm(
 
   if (!trimmed.name) {
     errors.name = "School name is required.";
+  }
+  if (trimmed.code && !/^[A-Za-z0-9_-]{2,32}$/.test(trimmed.code)) {
+    errors.code =
+      "School code must be 2–32 characters (letters, numbers, _ or -).";
   }
   if (!trimmed.addressStreet) {
     errors.addressStreet = "Street address is required.";

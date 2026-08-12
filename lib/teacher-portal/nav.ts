@@ -22,6 +22,12 @@ export const TEACHER_PORTAL_NAV: TeacherPortalNavItem[] = [
     permission: "attendance.record.create",
   },
   {
+    id: "students",
+    label: "Students",
+    href: "/dashboard/teacher/students",
+    permission: "enrollment.admission.read",
+  },
+  {
     id: "marks",
     label: "Marks",
     href: "/dashboard/teacher/marks",

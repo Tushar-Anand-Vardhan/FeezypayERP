@@ -113,14 +113,25 @@ export type ExamSubjectScheduleInput = {
   examDefinitionId: string;
   subjectId: string;
   classId: string;
+  sectionId?: string | null;
   gradingType?: "marks" | "letter_grade" | "rubric";
   maxMarks?: number | null;
   passMarks?: number | null;
   isOptionalSubject?: boolean;
   componentType?: AssessmentComponentType | null;
   gradingScaleVersionId?: string | null;
+  rubricId?: string | null;
+  /** @deprecated Prefer startsAt */
   scheduledAt?: string | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  markingOpensAt?: string | null;
+  markingClosesAt?: string | null;
+  dayKind?: "half_day" | "full_day" | null;
+  periodId?: string | null;
 };
+
+export const EXAM_DAY_KINDS = ["half_day", "full_day"] as const;
 
 export const ASSESSMENT_CATEGORY_KINDS: AssessmentCategoryKind[] = [
   "theory",

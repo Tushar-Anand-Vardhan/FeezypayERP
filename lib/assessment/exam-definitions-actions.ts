@@ -45,7 +45,7 @@ export async function listExamDefinitionsAction(
     }
   | { success: false; error: string }
 > {
-  const context = await getAuthenticatedSchoolContext("assessment.config.edit");
+  const context = await getAuthenticatedSchoolContext("assessment.config.read");
   if ("error" in context) {
     return { success: false, error: context.error };
   }

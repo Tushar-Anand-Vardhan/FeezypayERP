@@ -3,6 +3,7 @@ import { AppHeader } from "@/components/dashboard/app-header";
 import { HousesClubsAdminClient } from "@/components/houses-clubs/houses-clubs-admin-client";
 import { getAppHeaderAuth } from "@/lib/authz/bootstrap";
 import { requirePermission } from "@/lib/authz/require";
+import { listStudentsWithoutHouseAction } from "@/lib/houses-clubs/house-memberships-actions";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function HousesClubsDashboardPage() {
@@ -19,6 +20,9 @@ export default async function HousesClubsDashboardPage() {
 
   const schoolId = authzCtx.schoolId;
   const headerAuth = await getAppHeaderAuth();
+  const canEditMemberships = Boolean(
+    headerAuth.authz?.permissions.includes("config.catalog.edit"),
+  );
 
   const { data: school } = await supabase
     .from("schools")
@@ -47,7 +51,7 @@ export default async function HousesClubsDashboardPage() {
       .order("display_order", { ascending: true }),
     supabase
       .from("academic_years")
-      .select("id, label")
+      .select("id, label, is_active")
       .eq("school_id", schoolId)
       .is("archived_at", null)
       .order("label", { ascending: false }),
@@ -59,6 +63,29 @@ export default async function HousesClubsDashboardPage() {
       .eq("school_id", schoolId)
       .eq("status", "active"),
   ]);
+
+  const years = (yearsRes.data ?? []).map((y) => ({
+    id: y.id,
+    label: y.label,
+    isActive: Boolean(y.is_active),
+  }));
+  const academicYearId =
+    years.find((y) => y.isActive)?.id ?? years[0]?.id ?? null;
+
+  let unassigned: Array<{
+    admissionId: string;
+    studentProfileId: string;
+    fullName: string;
+    admissionNumber: string | null;
+    className: string | null;
+    sectionName: string | null;
+  }> = [];
+  if (school?.houses_enabled && academicYearId) {
+    const listed = await listStudentsWithoutHouseAction(academicYearId);
+    if (listed.success) {
+      unassigned = listed.unassigned;
+    }
+  }
 
   const employments = (employmentsRes.data ?? []).map((row) => {
     const profileRel = row.teacher_profiles as
@@ -93,20 +120,20 @@ export default async function HousesClubsDashboardPage() {
             Houses & clubs
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-muted">
-            Catalogues, colours, logos paths, teacher in charge, and year scope.
-            Student captains and memberships are managed via membership APIs.
+            Catalogues, colours, teacher in charge, and house membership CSV
+            import. Unassigned students flash when houses are enabled.
           </p>
         </header>
         <HousesClubsAdminClient
           houses={housesRes.data ?? []}
           clubs={clubsRes.data ?? []}
           employments={employments}
-          years={(yearsRes.data ?? []).map((y) => ({
-            id: y.id,
-            label: y.label,
-          }))}
+          years={years.map((y) => ({ id: y.id, label: y.label }))}
           housesEnabled={school?.houses_enabled ?? false}
           clubsEnabled={school?.clubs_enabled ?? false}
+          canEditMemberships={canEditMemberships}
+          academicYearId={academicYearId}
+          unassigned={unassigned}
         />
       </main>
     </div>

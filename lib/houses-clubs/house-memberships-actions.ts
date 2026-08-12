@@ -249,3 +249,236 @@ export async function endHouseMembershipAction(
   revalidate();
   return { success: true, message: "House membership ended.", id: membershipId };
 }
+
+export async function importHouseMembershipsCsvAction(input: {
+  csvText: string;
+  academicYearId: string;
+}): Promise<
+  | { success: true; message: string; imported: number }
+  | { success: false; error: string; fieldErrors?: Record<string, string> }
+> {
+  const context = await getAuthenticatedSchoolContext("config.catalog.edit");
+  if ("error" in context) {
+    return { success: false, error: context.error };
+  }
+
+  const { parseHouseMembershipCsv } = await import(
+    "@/lib/houses-clubs/house-memberships-csv"
+  );
+  const parsed = parseHouseMembershipCsv(input.csvText);
+  if (!parsed.ok) {
+    return {
+      success: false,
+      error: parsed.error,
+      fieldErrors: parsed.fieldErrors,
+    };
+  }
+
+  const { supabase, schoolId } = context;
+
+  const { data: yearOk } = await supabase
+    .from("academic_years")
+    .select("id")
+    .eq("id", input.academicYearId)
+    .eq("school_id", schoolId)
+    .maybeSingle();
+  if (!yearOk) {
+    return { success: false, error: "Academic year not found." };
+  }
+
+  const { data: houses } = await supabase
+    .from("houses")
+    .select("id, code, name")
+    .eq("school_id", schoolId)
+    .is("archived_at", null);
+
+  const houseByCode = new Map(
+    (houses ?? [])
+      .filter((h) => h.code)
+      .map((h) => [String(h.code).toLowerCase(), h.id]),
+  );
+  // Also allow matching by name when code blank in CSV? Plan says house_code — keep strict.
+
+  const { data: admissions } = await supabase
+    .from("student_admissions")
+    .select("id, admission_number, student_profile_id")
+    .eq("school_id", schoolId)
+    .eq("status", "active");
+
+  const admissionByNumber = new Map(
+    (admissions ?? []).map((a) => [
+      a.admission_number.toLowerCase(),
+      a,
+    ]),
+  );
+
+  const fieldErrors: Record<string, string> = {};
+  const resolved: Array<{
+    studentProfileId: string;
+    houseId: string;
+    role: import("@/lib/houses-clubs/types").MembershipRole;
+  }> = [];
+
+  for (const row of parsed.rows) {
+    const admission = admissionByNumber.get(row.admissionNumber.toLowerCase());
+    if (!admission) {
+      fieldErrors[`row-${row.line}`] =
+        `No active admission for ${row.admissionNumber}.`;
+      continue;
+    }
+    const houseId = houseByCode.get(row.houseCode.toLowerCase());
+    if (!houseId) {
+      fieldErrors[`row-${row.line}`] = `Unknown house_code ${row.houseCode}.`;
+      continue;
+    }
+    resolved.push({
+      studentProfileId: admission.student_profile_id,
+      houseId,
+      role: row.role,
+    });
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return {
+      success: false,
+      error: "Fix CSV errors before importing (blocking validation).",
+      fieldErrors,
+    };
+  }
+
+  let imported = 0;
+  for (const row of resolved) {
+    const result = await addHouseMembershipAction({
+      houseId: row.houseId,
+      studentProfileId: row.studentProfileId,
+      academicYearId: input.academicYearId,
+      role: row.role,
+    });
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+    imported += 1;
+  }
+
+  revalidate();
+  return {
+    success: true,
+    message: `Imported ${imported} house membership(s).`,
+    imported,
+  };
+}
+
+/** Active admissions with no house membership for the year (for flash UI). */
+export async function listStudentsWithoutHouseAction(
+  academicYearId: string,
+): Promise<
+  | {
+      success: true;
+      unassigned: Array<{
+        admissionId: string;
+        studentProfileId: string;
+        fullName: string;
+        admissionNumber: string | null;
+        className: string | null;
+        sectionName: string | null;
+      }>;
+    }
+  | { success: false; error: string }
+> {
+  const context = await getAuthenticatedSchoolContext("config.catalog.read");
+  if ("error" in context) {
+    return { success: false, error: context.error };
+  }
+
+  const { supabase, schoolId } = context;
+
+  const { data: memberships } = await supabase
+    .from("house_memberships")
+    .select("student_profile_id, houses!inner(school_id)")
+    .eq("academic_year_id", academicYearId)
+    .eq("houses.school_id", schoolId)
+    .is("left_on", null);
+
+  const assigned = new Set(
+    (memberships ?? []).map((m) => m.student_profile_id),
+  );
+
+  const { data: admissions, error } = await supabase
+    .from("student_admissions")
+    .select(
+      "id, admission_number, student_profile_id, student_profiles(persons(full_name))",
+    )
+    .eq("school_id", schoolId)
+    .eq("status", "active");
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  const unassignedProfiles = (admissions ?? []).filter(
+    (a) => !assigned.has(a.student_profile_id),
+  );
+
+  const admissionIds = unassignedProfiles.map((a) => a.id);
+  const placementByAdmission = new Map<
+    string,
+    { className: string | null; sectionName: string | null }
+  >();
+
+  if (admissionIds.length > 0) {
+    const { data: placements } = await supabase
+      .from("student_academic_years")
+      .select("admission_id, classes(name), sections(name)")
+      .eq("academic_year_id", academicYearId)
+      .in("admission_id", admissionIds)
+      .eq("status", "active")
+      .is("left_on", null);
+
+    for (const p of placements ?? []) {
+      const cls = p.classes as
+        | { name?: string }
+        | { name?: string }[]
+        | null;
+      const sec = p.sections as
+        | { name?: string }
+        | { name?: string }[]
+        | null;
+      placementByAdmission.set(p.admission_id, {
+        className: Array.isArray(cls) ? cls[0]?.name ?? null : cls?.name ?? null,
+        sectionName: Array.isArray(sec)
+          ? sec[0]?.name ?? null
+          : sec?.name ?? null,
+      });
+    }
+  }
+
+  const unassigned = unassignedProfiles.map((a) => {
+    const profile = a.student_profiles as
+      | {
+          persons?:
+            | { full_name?: string }
+            | { full_name?: string }[]
+            | null;
+        }
+      | {
+          persons?:
+            | { full_name?: string }
+            | { full_name?: string }[]
+            | null;
+        }[]
+      | null;
+    const p = Array.isArray(profile) ? profile[0] : profile;
+    const person = Array.isArray(p?.persons) ? p?.persons[0] : p?.persons;
+    const placement = placementByAdmission.get(a.id);
+    return {
+      admissionId: a.id,
+      studentProfileId: a.student_profile_id,
+      fullName: person?.full_name ?? "Student",
+      admissionNumber: a.admission_number,
+      className: placement?.className ?? null,
+      sectionName: placement?.sectionName ?? null,
+    };
+  });
+
+  return { success: true, unassigned };
+}

@@ -23,6 +23,7 @@ export const PERMISSION_KEYS = [
   "workforce.employment.create",
   "workforce.employment.edit",
   "workforce.employment.archive",
+  "workforce.employment.self_end",
   "workforce.teacher.invite",
   "workforce.workspace.read",
   "workforce.department.read",
@@ -134,6 +135,9 @@ export const PERMISSION_KEYS = [
   "student_achievement.read",
   "student_achievement.record",
   "student_achievement.archive",
+  // Platform (Wave 6 super-admin)
+  "platform.tenant.read",
+  "platform.impersonate",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];

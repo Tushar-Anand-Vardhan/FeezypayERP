@@ -66,7 +66,7 @@ lib/calendar/
   events-actions.ts
 ```
 
-Admin UI: `/dashboard/calendar` (minimal).
+Admin UI: `/dashboard/calendar` — week/month grid (Wave 5) + year/term/holiday/event forms.
 
 ---
 

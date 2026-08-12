@@ -161,6 +161,20 @@ export async function resolveActor(options?: {
         permissionKeys.add(rp.permission_key as PermissionKey);
       }
     }
+
+    // Wave 6: platform operators get cross-tenant keys outside school bundles
+    const { data: platformOp } = await supabase
+      .from("platform_operators")
+      .select("can_impersonate")
+      .eq("person_id", personId)
+      .is("archived_at", null)
+      .maybeSingle();
+    if (platformOp) {
+      permissionKeys.add("platform.tenant.read");
+      if (platformOp.can_impersonate) {
+        permissionKeys.add("platform.impersonate");
+      }
+    }
   }
 
   // Invited staff: strip to identity self-edit until active

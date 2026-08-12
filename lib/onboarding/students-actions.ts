@@ -421,6 +421,21 @@ export async function saveStudentsAction(formData: FormData): Promise<Result> {
       return { success: false, error: resolved.error };
     }
 
+    const { assertNoOtherActiveAdmission } = await import(
+      "@/lib/enrollment/admission-guards"
+    );
+    const d14 = await assertNoOtherActiveAdmission(
+      supabase,
+      resolved.studentProfileId,
+      schoolId,
+    );
+    if (!d14.ok) {
+      return {
+        success: false,
+        error: `${row.fullName} (${row.admissionNumber}): ${d14.error}`,
+      };
+    }
+
     const existing = admissionByNumber.get(row.admissionNumber.toLowerCase());
     if (
       existing &&
@@ -596,6 +611,24 @@ export async function saveStudentsAction(formData: FormData): Promise<Result> {
         .maybeSingle();
       if (linkRow?.id) {
         await syncParentMembership(supabase, linkRow.id);
+      }
+
+      // Wave 6 F10: invite parent by email when present
+      if (primaryGuardian.email?.trim() && parentPersonId) {
+        try {
+          const { createInviteAction } = await import(
+            "@/lib/auth/invites-actions"
+          );
+          await createInviteAction({
+            email: primaryGuardian.email.trim(),
+            personId: parentPersonId,
+            targetPersona: "parent",
+            parentProfileId: String(parentProfileId),
+            admissionId,
+          });
+        } catch {
+          // Invite is best-effort; admission save should not fail on invite errors.
+        }
       }
     }
   }

@@ -2,12 +2,12 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-07 (Phase 3 — Student Achievement Engine)  
+> **Last updated:** 2026-08-13 (Use-case roadmap §68 + Identity Wave 6)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
-> **Branch tip at last verification:** `main` @ `b97c697` (+ Student Achievement local)  
-> **Current phase:** **Phase 3 — Student Achievement Engine SHIPPED (§67)** (E35 permanent profile from calendar activities). Observation §66 / Report Card §65 shipped.
+> **Branch tip at last verification:** `main` (local Wave 1 in progress)  
+> **Current phase:** **Use-case Wave 6 — Identity / parent / platform** (§68). Phase 3 engines through Student Achievement (§67) remain SHIPPED. Use-case Waves 1–6 shipped.
 
 ---
 
@@ -21,7 +21,8 @@
 6. [Authentication — current (school admin only)](#6-authentication--current-school-admin-only)
 7. [Authentication — future (teachers, students, parents) + RBAC](#7-authentication--future-teachers-students-parents--rbac)
 8. [Finalized schema](#8-finalized-schema)
-9. [Onboarding wizard](#9-onboarding-wizard)
+9. [Onboarding wizard](#9-onboarding-wizard
+
 10. [Identity matching & Aadhaar](#10-identity-matching--aadhaar)
 11. [Staff, students, timetable, exams](#11-staff-students-timetable-exams)
 12. [Security, RLS, indexes, cascades](#12-security-rls-indexes-cascades)
@@ -80,6 +81,7 @@
 65. [Phase 3 — Report Card Engine](#65-phase-3--report-card-engine)
 66. [Phase 3 — Student Observation Engine](#66-phase-3--student-observation-engine)
 67. [Phase 3 — Student Achievement Engine](#67-phase-3--student-achievement-engine)
+68. [Product use-case roadmap](#68-product-use-case-roadmap)
 
 ---
 
@@ -354,6 +356,12 @@ Do not reverse these without an explicit product decision and a §4 amendment.
 | D9 | Student bulk UX redesign | **Deferred** — model first (identity), UX later. |
 | D10 | Identity history | Employments / admissions / academic years are **append-oriented**; do not wipe global `persons` on school re-save. |
 | D11 | UI polish of forms | Explicitly deferred component-by-component (product preference). |
+| D12 | Universal identity naming | Product “teacher_master / student_master” = `persons` + role profiles + employment/admission. **Do not** introduce parallel `*_master` tables. |
+| D13 | Import formats | **CSV first**; `.xlsx` later via the same importer adapter (`lib/onboarding/csv.ts` pattern). |
+| D14 | Student tenancy | At most **one active admission** per student profile across schools (enforce in Wave 4+ writers). |
+| D15 | Teacher affiliation | Cannot create/invite employment while another school has an **active** employment — admin must ask teacher to leave / update profile first. |
+| D16 | Term count | Term **count** immutable after first academic-year publish; **dates** may change if no conflicting calendar events. |
+| D17 | Parent access | Parent portal F10 **SHIPPED** (Wave 6). Guardians use `/dashboard/parent` RO over linked children. |
 
 ---
 
@@ -509,6 +517,7 @@ See §55 and authentication-platform.md. Staff save wires invites.
 | `20260807480000_report_card_engine_phase3.sql` | E20 Phase 3: field assignments, new blocks, published/locked, E33 pin columns, AuthZ fill/lock |
 | `20260807490000_student_observation_engine.sql` | E34 categories, append-only observations, AI summary stub, audit + AuthZ |
 | `20260807500000_student_achievement_engine.sql` | E35 enrich achievements, AI stub, audit + AuthZ; calendar FK |
+| `20260807510000_exam_schedule_marking_window.sql` | `exam_subject_schedules.marking_opens_at` / `marking_closes_at` (Wave 1) |
 
 **Dropped legacy tables (must stay gone):** `teachers`, `teacher_subjects`, `students`, `guardians`, `student_guardians`, `student_section_enrollments` (+ `*_legacy` intermediates).
 
@@ -876,7 +885,7 @@ Keep [`deferred-identity-followups.md`](deferred-identity-followups.md) aligned 
 | F7 | Teacher marketplace / public profiles | `DEFERRED` | `teacher_profiles` |
 | F8 | Transfers & certificates | `DEFERRED` | new admission/employment rows, never overwrite |
 | F9 | Full RBAC matrix | Design + runtime evaluator `SHIPPED` (§56 / [`rbac.md`](architecture/rbac.md)); portals still open | §7.4, §21, §56 |
-| F10 | Parent portal | `NOT BUILT` | §7 |
+| F10 | Parent portal | `SHIPPED` | Wave 6 · `/dashboard/parent` · [`parent-portal.md`](architecture/parent-portal.md) |
 | F23 | Teacher Portal | `SHIPPED` (§59); admin preview + linked teacher employment | [`teacher-portal.md`](architecture/teacher-portal.md) |
 | F24 | Student Portal | `SHIPPED` (§60); RO default; admin preview via `?studentProfileId=` | [`student-portal.md`](architecture/student-portal.md) |
 | F25 | Curriculum Engine (E30) | Backend `SHIPPED` (§61); HOD/teacher portal UI later; assessment/lesson bind to versions next | [`curriculum-engine.md`](architecture/curriculum-engine.md) |
@@ -2819,12 +2828,12 @@ Config mutations should call `evaluateConfigEdit` before dangerous writes and `r
 
 ## 39. Phase 1 — Configuration Dashboard
 
-**Status:** Backend + minimal UI `SHIPPED` (2026-08-07).  
-**Owner:** Cross-cutting (read-only aggregator; does not own config rows)  
+**Status:** Backend + UI `SHIPPED` (2026-08-07). **Wave 3 config hub** `SHIPPED` (2026-08-12).  
+**Owner:** Cross-cutting (aggregator + thin edit panels; write paths stay in owning engines)  
 **Canonical doc:** [`docs/architecture/configuration-dashboard.md`](architecture/configuration-dashboard.md)  
 **Module:** `lib/config-dashboard/**`  
-**UI:** `/dashboard/configuration`  
-**Migration:** none (observes existing engines)
+**UI:** `/dashboard/configuration` (`?tab=` hub)  
+**Migration:** `schools.code` (`20260807520000_schools_code.sql`)
 
 ### 39.1 What it shows
 
@@ -2835,19 +2844,23 @@ Config mutations should call `evaluateConfigEdit` before dangerous writes and `r
 | Missing configuration | Hard gaps (no year/terms/classes/subjects when required) |
 | Dependency errors | Cross-module breakage (e.g. slots → archived subjects; published RC templates without assessment bindings) |
 | Health checks | Informational readiness notes (`backend_only` modules, feature flags) |
-| Links | Calendar, houses/clubs, onboarding steps, in-page anchors for API-only modules |
+| Links | Hub tabs + admin pages (subjects, houses, principal teachers/students, …) — **not** `/onboarding/*` after go-live |
 
 ### 39.2 Catalog modules
 
 School branding · Academic calendar · Classes & sections · Subjects · Grading scales · Houses & clubs · Departments · Timetable · Assessment · Report cards · Policies · Communications · Editing framework.
 
-### 39.3 Tests
+### 39.3 Config hub (Wave 3)
+
+Onboarding steps as tabs: Health · School identity (incl. school code) · Terms (date edit; count lock) · Structure checklist · outbound links for subjects / houses / staff / students / timetable / exams / grading / departments. Term guards in `lib/calendar/term-edit-guards.ts`.
+
+### 39.4 Tests
 
 `npx tsx scripts/smoke-config-dashboard-validation.ts`
 
-### 39.4 Placement rule
+### 39.5 Placement rule
 
-Write paths stay in owning engines (`lib/calendar`, `lib/subjects`, …). The dashboard only aggregates and links.
+Write paths stay in owning engines (`lib/calendar`, `lib/subjects`, `lib/config/school-branding*`, …). The hub aggregates, links, and hosts thin panels that call those actions.
 
 ---
 
@@ -3403,12 +3416,12 @@ Never writes OLTP facts. Scoped by `employment_id` + year. Companion to §51 stu
 
 ## 53. Phase 2 — Principal Dashboard
 
-**Status:** Backend aggregator + minimal UI `SHIPPED` (2026-08-07). Principal persona login `FUTURE`.  
-**Canonical doc:** [`docs/architecture/principal-dashboard.md`](architecture/principal-dashboard.md)  
-**Module:** `lib/principal-dashboard/**`  
-**UI:** `/dashboard/principal`  
-**Migration:** none (read-only over existing engines)  
-**Workflows:** WF-PRI-01 (primary) · WF-PRI-02/05/07/08/09 · WF-VP-01
+**Status:** Backend aggregator + minimal UI `SHIPPED` (2026-08-07). **Wave 2 ops shell** `SHIPPED` (2026-08-12): Teachers / Students / Promote under `/dashboard/principal/*`. Principal persona login still `FUTURE`.  
+**Canonical doc:** [`docs/architecture/principal-dashboard.md`](architecture/principal-dashboard.md) · ops writers in `lib/principal-ops/**`  
+**Module:** `lib/principal-dashboard/**` · `lib/principal-portal/**` · `lib/principal-ops/**`  
+**UI:** `/dashboard/principal` (+ `/teachers`, `/students`, `/promote`)  
+**Migration:** none (read-only panels; Wave 2 writes reuse employment / admission / placement tables)  
+**Workflows:** WF-PRI-01 (overview) · WF-PRI-10 (promote) · teacher/student school ops
 
 ### 53.1 Panels (all data-driven)
 
@@ -3427,15 +3440,29 @@ Never writes OLTP facts. Scoped by `employment_id` + year. Companion to §51 stu
 
 ### 53.2 API
 
-`getPrincipalDashboardAction` · `buildPrincipalDashboard`
+`getPrincipalDashboardAction` · `buildPrincipalDashboard`  
+Wave 2: `listPrincipalTeachersAction` · `endTeacherEmploymentAction` · `setEmploymentSubjectsAction` · `setSectionClassTeacherAction` · `listPrincipalStudentsAction` · `withdrawStudentAction` · `listPromotionCandidatesAction` · `applyPromotionBatchAction`
 
 ### 53.3 Tests
 
-`npx tsx scripts/smoke-principal-dashboard-validation.ts`
+`npx tsx scripts/smoke-principal-dashboard-validation.ts`  
+`npx tsx scripts/smoke-principal-portal-validation.ts`  
+`npx tsc --noEmit`
 
 ### 53.4 Placement rule
 
-Never writes OLTP. Empty panels when no rows. Teacher attendance is not staff presence until E12 staff attendance ships.
+Overview panels never write OLTP. Wave 2 mutations live in `lib/principal-ops/**` and call membership sync + owning tables (employment / admission / `student_academic_years`). Empty panels when no rows. Teacher attendance is not staff presence until E12 staff attendance ships.
+
+### 53.5 Wave 2 notes
+
+- Teachers: end employment (`left_on` + status ended), subjects with timetable overwrite force, class-teacher assign with overwrite force
+- Students: withdraw/expel → admission `withdrawn`, placements closed, membership synced
+- Promote: batch promote/repeat/graduate against published `promotion_rules` (guidance; principal decision authoritative)
+
+### 53.6 Wave 4 notes
+
+- `/dashboard/principal/enroll` — multi-select + CSV section placement; roll strategies via `lib/enrollment/**`
+- D14/D15 affiliation guards applied on student/staff writers (see §68.7)
 
 ---
 
@@ -3612,11 +3639,11 @@ Domains emit facts only (`emitDomainEvent`). Never import providers or `enqueueD
 
 ## 59. Phase 2.9 — Teacher Portal
 
-**Status:** Portal UI `SHIPPED` (2026-08-07). Thin clients over Phase 2 engines; no parallel OLTP.  
+**Status:** Portal UI `SHIPPED` (2026-08-07); **Wave 1 daily ops** extended 2026-08-12 (Students tab, marks CSV + marking window, coordinator Events write, home-classroom attendance). Thin clients over Phase 2 engines; no parallel OLTP.  
 **Canonical doc:** [`docs/architecture/teacher-portal.md`](architecture/teacher-portal.md)  
 **Modules:** `lib/teacher-portal/` · `components/teacher-portal/` · `app/dashboard/teacher/**`  
 **Entry gate:** `workforce.workspace.read`  
-**Workflows:** WF-TCH-01, WF-TCH-03, WF-TCH-04, WF-TCH-05 (+ reads for events/announcements/resources/dept/profile)
+**Workflows:** WF-TCH-01 (attendance), WF-TCH-03 (remarks via Students/Behaviour), WF-TCH-05 (marks + CSV), events coordinator write (E17/E35) · see §68 Wave 1
 
 ### 59.1 Routes
 
@@ -3624,10 +3651,11 @@ Domains emit facts only (`emitDomainEvent`). Never import providers or `enqueueD
 |-------|--------------|------------|
 | `/dashboard/teacher` | teacher-workspace | `workforce.workspace.read` |
 | `/attendance` | attendance | `attendance.record.create` |
-| `/marks` | assessment | `assessment.results.enter` |
+| `/students` · `/students/[studentProfileId]` | student roster + assessment + behaviour + events | `enrollment.admission.read` |
+| `/marks` | assessment (+ CSV / marking window) | `assessment.results.enter` |
 | `/homework` · `/homework/[id]` | homework | `homework.read` / assign |
 | `/behaviour` | behaviour | `conduct.incident.record` |
-| `/events` | events | `engagement.event.read` |
+| `/events` | events (coordinator write) | `engagement.event.read` (+ `create` to write) |
 | `/announcements` | communications + departments | `communication.message.read` |
 | `/resources` · `/department` | departments | `workforce.department.read` |
 | `/profile` | identity / employment | `identity.person.read` |
@@ -3637,6 +3665,8 @@ Domains emit facts only (`emitDomainEvent`). Never import providers or `enqueueD
 - Layout + pages use `requirePermission` / `<Can>` — never `role === 'teacher'`.
 - Engine `assertEmploymentOwned` remains authoritative for writes.
 - Admin preview via `?employment=` when actor has school-wide keys.
+- Teacher bundle includes `engagement.event.create` + `assessment.results.publish` for Wave 1.
+- Events participant writes are UI-gated on `event_staff_assignments` (coordinator).
 
 ### 59.3 Tests
 
@@ -3646,6 +3676,12 @@ Domains emit facts only (`emitDomainEvent`). Never import providers or `enqueueD
 ### 59.4 Placement rule
 
 Portal must not insert attendance/marks/homework outside owning `lib/*` engines. Homepage stays the aggregator (§43); feature pages are binders only.
+
+### 59.5 Wave 1 notes
+
+- Section pickers prefer `sections.class_teacher_id` (“Home classroom”), then timetable slots.
+- `exam_subject_schedules.marking_opens_at` / `marking_closes_at` guard mark entry (null = open until session lock).
+- Marks CSV: `lib/assessment/marks-csv.ts` (admission_number / profile id / name).
 
 ---
 
@@ -3902,4 +3938,83 @@ Teacher achievement UI, live AI summarization, DigiLocker certificates.
 
 ---
 
-*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§67 through Student Achievement. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + portals + Curriculum + Assessment Framework + Recording + Grade Calculation + Report Card + Student Observation + Student Achievement shipped.*
+## 68. Product use-case roadmap
+
+**Status:** Living product plan (2026-08-12). Maps school admin / teacher / principal / student-parent / super-admin use cases onto shipped engines.  
+**Companion:** CreatePlan `use_case_roadmap` · WF-* in [`docs/operations/daily-workflows.md`](operations/daily-workflows.md)
+
+### 68.1 Persona mapping
+
+| Use-case term | Product mapping |
+|---------------|-----------------|
+| Teacher / class teacher / subject teacher | `teacher` AuthZ bundle + employment + timetable / section scope |
+| HOD | `hod` bundle + department membership / `is_hod` |
+| Principal = school admin | Principal / school_admin permissions (school-wide) |
+| Student = parent (RO) | Student Portal SHIPPED; Parent F10 SHIPPED (Wave 6) |
+| Super admin | RBAC design only — platform console Wave 6 |
+
+### 68.2 Identity mapping
+
+Use-case “master” rows = global `persons` + `teacher_profiles` / `student_profiles` + school links (`teacher_employments` / `student_admissions`). Aadhaar = hash/last4 match ([`lib/identity/aadhaar.ts`](../lib/identity/aadhaar.ts)), not UIDAI live verify until contracted.
+
+### 68.3 Delivery waves
+
+| Wave | Focus | Primary modules / WF |
+|------|-------|----------------------|
+| **0** | Docs + locked rules (this §) | MASTER §4 D12–D17 |
+| **1** | Teacher daily: Students tab, marks CSV + marking window, coordinator Events write, home-classroom attendance | §59 · WF-TCH-01, 03, 05 · `lib/teacher-portal/` · **SHIPPED 2026-08-12** |
+| **2** | Principal: teacher assignment overwrite validation, promote, expel | §53 · WF-PRI-* · `lib/principal-ops/` · **SHIPPED 2026-08-12** |
+| **3** | Config hub = onboarding steps as editable tabs + school code | §39 · `lib/config-dashboard/hub-tabs.ts` · **SHIPPED 2026-08-12** |
+| **4** | Enrollment / roll sort-random / house CSV / affiliation messaging | `lib/enrollment/**` · `lib/workforce/employment-guards.ts` · **SHIPPED 2026-08-12** |
+| **5** | Dated exam schedules, report-card designer UI, Google-like calendar, rubrics | `lib/assessment/**` · `lib/report-cards/**` · calendar grid · **SHIPPED 2026-08-13** |
+| **6** | Career profile, self join/leave, Parent F10, super-admin (xlsx/UIDAI deferred) | `lib/workforce/career-actions.ts` · `/dashboard/parent` · `/dashboard/platform` · **SHIPPED 2026-08-13** |
+
+### 68.4 Wave 1 ship notes
+
+- `/dashboard/teacher/students` — scoped roster + student sheet (marks in open window, remarks, event participation)
+- Marks CSV upload + `exam_subject_schedules.marking_opens_at` / `marking_closes_at` guard (session lock still applies)
+- Events coordinator write gated on `event_staff_assignments` + `engagement.event.create`
+- Attendance prefers `sections.class_teacher_id` (“Home classroom”)
+
+### 68.5 Wave 2 ship notes
+
+- Principal portal shell: Overview / Teachers / Students / Promote
+- Teachers: end employment, subjects with timetable force-overwrite, class-teacher force-overwrite
+- Students: withdraw/expel → admission `withdrawn` + membership sync
+- Promote batch: promote / repeat / graduate (WF-PRI-10); `promotion_rules` shown as guidance
+
+### 68.6 Wave 3 ship notes
+
+- Config hub at `/dashboard/configuration?tab=*` — Health + school identity + terms + structure checklist; outbound admin links for remaining onboarding steps
+- `schools.code` + branding edit (onboarding + hub); catalog hrefs avoid `/onboarding/*` after go-live
+- Term count lock + date vs calendar-event conflict checks (`term-edit-guards` → `terms-actions`)
+- Structure completeness checklist (subjects offered, class teachers, students placed)
+- Subject rename on `/dashboard/subjects`; houses/clubs deep-links `#houses` / `#clubs`
+
+### 68.7 Wave 4 ship notes
+
+- `/dashboard/principal/enroll` — multi-select + CSV section placement; roll strategies (sequential / first|last name sort / random)
+- House membership CSV (`admission_number`, `house_code`, `role`) + unassigned flash on `/dashboard/houses-clubs`
+- D14: global one-active-admission guard + unique index; wired into `saveStudentsAction`
+- D15: cross-school active/invited employment guard + messaging on staff create + invite; global unique active employment index
+- Smoke: `scripts/smoke-enrollment-wave4-validation.ts`
+
+### 68.8 Wave 5 ship notes
+
+- `/dashboard/assessments` — dated subject schedules (start/end, marking window, section, period, half/full day) + rubric builder (`assessment_rubrics` / criteria)
+- `/dashboard/report-cards` — template designer (create/publish/retire/clone, blocks, class/section scopes)
+- Calendar week/month grid on `/dashboard/calendar` (holidays / events / competitions)
+- Config hub + catalog hrefs point at assessments / report-cards
+- Smoke: `scripts/smoke-assessment-wave5-validation.ts`
+
+### 68.9 Wave 6 ship notes
+
+- First-login career fields on `/activate/profile` + teacher Profile career editor / experience history / self-leave (`workforce.employment.self_end`)
+- Parent F10 RO portal `/dashboard/parent/**` (linked children via `resolveStudentPortalContext`); guardian email → `createInviteAction(parent)` on student save
+- Platform console `/dashboard/platform` (`platform_operators` + audit + optional impersonate)
+- Deferred: `.xlsx` importer, UIDAI live Aadhaar verify
+- Smoke: `scripts/smoke-wave6-identity-validation.ts`
+
+---
+
+*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§68 through use-case roadmap. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + portals + Curriculum + Assessment Framework + Recording + Grade Calculation + Report Card + Student Observation + Student Achievement shipped; **Use-case Waves 0–6 shipped 2026-08-12/13**. Remaining: production gates, Fee, xlsx/UIDAI if contracted.*

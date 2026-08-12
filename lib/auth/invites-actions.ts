@@ -71,6 +71,31 @@ export async function createInviteAction(input: {
     return { success: false, error: "You must be signed in." };
   }
 
+  if (
+    input.employmentId &&
+    (input.targetPersona === "teacher" || input.targetPersona === "hod")
+  ) {
+    const { data: employment } = await supabase
+      .from("teacher_employments")
+      .select("teacher_profile_id")
+      .eq("id", input.employmentId)
+      .eq("school_id", schoolId)
+      .maybeSingle();
+    if (employment?.teacher_profile_id) {
+      const { assertNoOtherActiveEmployment } = await import(
+        "@/lib/workforce/employment-guards"
+      );
+      const d15 = await assertNoOtherActiveEmployment(
+        supabase,
+        employment.teacher_profile_id,
+        schoolId,
+      );
+      if (!d15.ok) {
+        return { success: false, error: d15.error };
+      }
+    }
+  }
+
   const { data: invite, error: insertError } = await supabase
     .from("auth_invites")
     .insert({
