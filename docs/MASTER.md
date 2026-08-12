@@ -2,12 +2,12 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-13 (Use-case roadmap §68 + Identity Wave 6)  
+> **Last updated:** 2026-08-13 (Post–Wave 6 schema/code cleanup)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
-> **Branch tip at last verification:** `main` (local Wave 1 in progress)  
-> **Current phase:** **Use-case Wave 6 — Identity / parent / platform** (§68). Phase 3 engines through Student Achievement (§67) remain SHIPPED. Use-case Waves 1–6 shipped.
+> **Branch tip at last verification:** `main`  
+> **Current phase:** **Use-case Waves 0–6 shipped** (§68). Phase 3 engines through Student Achievement (§67) remain SHIPPED. Cleanup migration `20260807560000_cleanup_unused_stubs.sql`.
 
 ---
 
@@ -582,13 +582,11 @@ persons
 | `subjects` | school | E07 master: category, group, language, elective, board, credits, weekly_periods, lab, assessment_rules, display_order, archive |
 | `subject_groups` | school | E07 grouping catalog |
 | `subject_dependencies` | subject | prerequisite / corequisite / recommended (archive to unlink) |
-| `subject_textbooks` | subject | FUTURE multi-textbook rows |
 | `class_subjects` | class↔subject | elective flag per class offer map |
 | `houses`, `clubs` | school | E07 catalog; colour, logo_path, description, year scope, TIC employment |
 | `house_memberships` | house | member/captain/vice_captain ↔ student; dated; syncs `admission.house_id` |
 | `club_memberships` | club | member/captain/vice_captain; year-scoped; dated |
-| `house_point_ledger` | house | FUTURE points (schema-ready) |
-| `club_event_links` | club | FUTURE event/competition links to E17 |
+| `club_event_links` | club | Club ↔ calendar event (E17) |
 | `departments` | school | E05 org unit; code, archive, `created_by`/`updated_by`; never stores teachers |
 | `department_memberships` | department | head / coordinator / member ↔ `teacher_employments` |
 | `department_subjects` | department | Org links to E07 `subjects` |
@@ -599,12 +597,10 @@ persons
 | `period_definitions` | year | E10 bell periods; break/lock/archive |
 | `timetable_grids` | year | primary / alternate / exam / special |
 | `timetable_cycle_days` | grid | cycle day labels + weekday mapping |
-| `timetable_slots` | section×grid | subject + teacher employment; room stub; locks |
+| `timetable_slots` | section×grid | subject + teacher employment; optional `room_id` |
 | `teacher_availability` | employment×year | free/busy blocks |
 | `section_availability` | section×year | free/busy blocks |
-| `rooms` | school | FUTURE room catalog |
-| `timetable_substitutions` | slot×date | FUTURE substitute overlays |
-| `teacher_subject_assignments` | section | schedule planning map |
+| `rooms` | school | FUTURE room catalog (FK target for slots) |
 | `exam_definitions` | year | type/category FKs, weightage, max/pass marks, grading, publish/lock, archive |
 | `exam_subject_schedules` | exam | optional subject, component type, pass marks, archive |
 | `assessment_exam_types` | school | exam-type catalog + defaults |
@@ -2509,7 +2505,7 @@ Department mutations go through `lib/departments/*-actions.ts`. Do not insert Pe
 
 ### 31.2 Future (schema stubs only)
 
-`house_point_ledger`, `club_event_links` (competitions / inter-house / club events → E17 later). Flags `points_tracking_enabled`, `events_enabled`.
+`house` / `club` catalog + `house_memberships` / `club_memberships` / `club_event_links` (E17). Flags `points_tracking_enabled`, `events_enabled`. (House points ledger dropped until competitions ship.)
 
 ### 31.3 Compatibility
 
@@ -2550,7 +2546,7 @@ House/club relationship mutations go through `lib/houses-clubs/*`. Do not store 
 
 ### 32.2 Future (stubs)
 
-`textbook_isbn`, `textbook_title`, `ai_lesson_plan_enabled`, `chapter_map` on subjects; `subject_textbooks` table for multi-book catalog.
+`textbook_isbn`, `textbook_title`, `ai_lesson_plan_enabled`, `chapter_map` on subjects (multi-book catalog deferred; `subject_textbooks` stub removed).
 
 ### 32.3 Compatibility
 
@@ -2590,7 +2586,7 @@ Rich subject mutations go through `lib/subjects/*-actions.ts`. Onboarding bulk s
 
 ### 33.2 Future (stubs)
 
-`rooms`, `timetable_slots.room_id`, `timetable_substitutions`.
+`rooms`, `timetable_slots.room_id` (substitutions / redundant `teacher_subject_assignments` stubs removed — slots + `employment_subjects` are SoT).
 
 ### 33.3 Conflict kinds blocked on save
 
@@ -3010,7 +3006,7 @@ New student facts land in the **owning engine** table first; the profile module 
 
 ### 43.2 API
 
-`getTeacherWorkspaceAction` · `listTeacherWorkspaceEmploymentsAction` · `resolveTeacherWorkspaceContextAction`
+`buildTeacherWorkspace` · `listActiveEmployments` · `resolveEmploymentForAuthUser` (pages call helpers directly)
 
 ### 43.3 Tests
 
@@ -4014,6 +4010,13 @@ Use-case “master” rows = global `persons` + `teacher_profiles` / `student_pr
 - Platform console `/dashboard/platform` (`platform_operators` + audit + optional impersonate)
 - Deferred: `.xlsx` importer, UIDAI live Aadhaar verify
 - Smoke: `scripts/smoke-wave6-identity-validation.ts`
+
+### 68.10 Post–Wave cleanup (2026-08-13)
+
+Dropped unused DB stubs/cutover maps via `20260807560000_cleanup_unused_stubs.sql`:
+`house_point_ledger`, `subject_textbooks`, `timetable_substitutions`, `teacher_subject_assignments`, `student_id_map`, `teacher_id_map`, and RPC `list_memberships_for_uid`.
+
+Removed orphan app code: `chip-list`, config club-membership re-export, unused workspace/config dashboard action wrappers, one-shot `inject-authz-permissions.py`.
 
 ---
 

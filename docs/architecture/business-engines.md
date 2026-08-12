@@ -1845,7 +1845,7 @@ Not every C(28,2) pair is listed — only pairs with shared surface area, confli
 | **E04↔E27** | `photo_path` | Path vs bytes | None | `media.uploaded` | E27 owns bytes; E04 owns path field |
 | **E05↔E06** | Both “school links” | Different domains | None | — | Keep separate |
 | **E05↔E07** | Subjects on employment | Catalog vs eligibility | None | — | Subjects catalog E07; eligibility E05 |
-| **E05↔E10** | `employment_subjects` vs `teacher_subject_assignments` vs slots | **Duplicated “who teaches what”** | Soft | `timetable.published` | **Eligibility = E05**; **schedule map/slots = E10**; deprecate redundant assignment table if slots suffice |
+| **E05↔E10** | `employment_subjects` vs slots | Resolved 2026-08-13: dropped unused `teacher_subject_assignments`; **eligibility = E05**; **schedule = E10 slots** | Soft | `timetable.published` | — |
 | **E06↔E09** | Placement uses class/section; promotion | Who runs promotion? | Soft | `promotion.requested` / `placement.created` | **E09 owns rules**; **E06 owns resulting placements** |
 | **E06↔E14** | Student health visibility | Access vs ownership | None | — | E14 owns data; E06 provides enrollment context for AuthZ |
 

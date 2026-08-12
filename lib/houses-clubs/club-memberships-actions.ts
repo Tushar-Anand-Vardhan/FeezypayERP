@@ -241,25 +241,3 @@ export async function endClubMembershipAction(
   revalidate();
   return { success: true, message: "Club membership ended.", id: membershipId };
 }
-
-/** @deprecated Prefer addClubMembershipAction — kept for config re-exports. */
-export async function joinClubAction(input: {
-  clubId: string;
-  studentProfileId: string;
-  joinedOn?: string;
-}): Promise<HouseClubActionResult> {
-  return addClubMembershipAction({
-    clubId: input.clubId,
-    studentProfileId: input.studentProfileId,
-    joinedOn: input.joinedOn,
-    role: "member",
-  });
-}
-
-/** @deprecated Prefer endClubMembershipAction */
-export async function leaveClubAction(
-  membershipId: string,
-  leftOn?: string,
-): Promise<HouseClubActionResult> {
-  return endClubMembershipAction(membershipId, leftOn);
-}

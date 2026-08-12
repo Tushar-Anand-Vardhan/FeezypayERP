@@ -99,7 +99,7 @@
 | M4 | Performance | Unbounded `list*` queries (no pagination); N+1 loops in class-subjects replace, block reorder, membership role ends. |
 | M5 | Performance | RLS correlated `profiles` subquery on every policy — fine small-scale; needs membership helper / JWT claim at scale. |
 | M6 | Validation | Year create: label-only; FUTURE policy kinds accept loose JSON; automation/campaign validators thin (intentional). |
-| M7 | Stubs | Writable stub tables with thin indexes (`house_point_ledger`, textbooks, substitutions, automations/campaigns). |
+| M7 | Stubs | Slimmed 2026-08-13: dropped unused `house_point_ledger` / textbooks / substitutions / `teacher_subject_assignments`; keep automations/campaigns / rooms. |
 | M8 | Terms | `archived_at` added but DELETE still allowed; exclusion may still apply to archived rows. |
 | M9 | Atomicity | Wipe-replace paths lack DB transactions → mid-failure empty state. |
 

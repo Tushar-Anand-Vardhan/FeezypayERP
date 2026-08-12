@@ -509,12 +509,7 @@ export async function buildConfigurationDashboard(
           });
           completion = "missing";
         } else {
-          completion = "backend_only";
-          healthChecks.push({
-            code: "departments.backend",
-            severity: "info",
-            message: "Department admin UI not built; backend APIs available.",
-          });
+          completion = "complete";
         }
         break;
       }
@@ -563,12 +558,7 @@ export async function buildConfigurationDashboard(
           });
           completion = "missing";
         } else {
-          completion = "backend_only";
-          healthChecks.push({
-            code: "assessment.backend",
-            severity: "info",
-            message: "Assessment config UI not built; marks entry deferred.",
-          });
+          completion = "complete";
         }
         break;
       }

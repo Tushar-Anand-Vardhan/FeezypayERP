@@ -9,14 +9,15 @@
 
 ## 1. Scope
 
-| Supported | Future (schema stubs) |
-|-----------|------------------------|
-| Houses / clubs catalog | House points ledger writes |
-| Membership (dated) | Club events / competitions |
-| Captain / vice captain | Inter-house activities |
-| Teacher in charge (employment FK) | Full logo upload UI |
+| Supported | Future |
+|-----------|--------|
+| Houses / clubs catalog | House points (reintroduce when competitions ship) |
+| Membership (dated) | Inter-house activities |
+| Captain / vice captain | Full logo upload UI |
+| Teacher in charge (employment FK) | |
 | Colours, logo path, description | |
 | Academic year scope (null = school-wide) | |
+| Club ↔ event links (`club_event_links`) | |
 
 **Hard rule:** Houses/clubs own **relationships**, not Person rows. TIC → `teacher_employments`. Memberships → `student_profiles` via admissions.
 
@@ -35,7 +36,9 @@ Migration: `supabase/migrations/20260807150000_house_club_engine.sql`
 - Enrich `houses` / `clubs`
 - `house_memberships` (+ backfill from `student_admissions.house_id`)
 - Enrich `club_memberships` with `role`, `academic_year_id`
-- Stub tables: `house_point_ledger`, `club_event_links`
+- `club_event_links` (wired by E17 activity writers)
+
+Cleanup (`20260807560000_cleanup_unused_stubs.sql`): dropped unused `house_point_ledger` stub.
 
 Legacy: membership writes sync `student_admissions.house_id`.
 
@@ -55,8 +58,7 @@ lib/houses-clubs/
   club-memberships-actions.ts
 ```
 
-Onboarding catalog sync remains in `lib/config/houses-actions` / `clubs-actions`.  
-`lib/config/club-memberships-actions` re-exports engine memberships.
+Onboarding catalog sync remains in `lib/config/houses-actions` / `clubs-actions`.
 
 UI: `/dashboard/houses-clubs`
 

@@ -36,11 +36,10 @@
 | `timetable_grids` | primary / alternate / exam / special |
 | `timetable_cycle_days` | Day labels + weekday mapping |
 | `period_definitions` enrich | name, is_break, is_locked, archive |
-| `timetable_slots` enrich | grid_id, cycle_day_id, room_id, locks, archive |
+| `timetable_slots` | Section × period × cycle day; optional `room_id`, locks, archive |
 | `teacher_availability` | free/busy blocks |
 | `section_availability` | free/busy blocks |
-| `rooms` | FUTURE room catalog |
-| `timetable_substitutions` | FUTURE substitute overlays |
+| `rooms` | FUTURE room catalog (optional slot FK) |
 
 ---
 

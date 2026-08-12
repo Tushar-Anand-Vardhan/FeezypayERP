@@ -9,7 +9,6 @@ export {
   updateReportCardRemarksAction,
   fillReportCardFieldsAction,
   issueReportCardAction,
-  publishReportCardAction,
   lockReportCardAction,
   revokeReportCardAction,
 } from "@/lib/report-cards/issue-actions";

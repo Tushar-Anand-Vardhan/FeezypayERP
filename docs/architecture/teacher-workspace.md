@@ -2,7 +2,7 @@
 
 > **Phase:** 2 — Operations  
 > **Created:** 2026-08-07  
-> **Status:** Backend aggregator `SHIPPED` · Minimal UI `SHIPPED` · Teacher login still `NOT BUILT` (F11)  
+> **Status:** Backend aggregator `SHIPPED` · Minimal UI `SHIPPED` · Teacher Portal F09 `SHIPPED`  
 > **Module:** `lib/teacher-workspace/**`  
 > **UI:** `/dashboard/teacher` (homepage surface for teachers; admin preview via employment picker)  
 > **Migration:** `supabase/migrations/20260807240000_teacher_workspace.sql` (homework SCHEMA-READY only)  
@@ -42,11 +42,7 @@ The **Teacher Workspace** is the teacher **homepage**: a single aggregated view 
 
 ## 3. API
 
-| Action | Role |
-|--------|------|
-| `resolveTeacherWorkspaceContextAction` | Employment for current auth user, or list school employments for admin picker |
-| `getTeacherWorkspaceAction({ employmentId?, asOfDate? })` | Full workspace aggregate |
-| `listTeacherWorkspaceEmploymentsAction` | Active employments for picker |
+Pages call `buildTeacherWorkspace` / `listActiveEmployments` / `resolveEmploymentForAuthUser` from `lib/teacher-workspace/` directly (no unused action wrappers).
 
 ---
 

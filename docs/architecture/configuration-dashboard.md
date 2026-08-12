@@ -38,8 +38,7 @@ Term guards: `lib/calendar/term-edit-guards.ts` (wired into `terms-actions`).
 
 ## Backend
 
-- `buildConfigurationDashboard(supabase, schoolId)` — row counts + heuristics (`lib/config-dashboard/health.ts`)
-- `getConfigurationDashboardAction()` — authenticated wrapper
+- `buildConfigurationDashboard(supabase, schoolId)` — row counts + heuristics (`lib/config-dashboard/health.ts`); called from `/dashboard/configuration` page
 
 No new tables beyond optional `schools.code` (Wave 3 migration). Health remains read-only against existing config engines.
 

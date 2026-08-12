@@ -36,7 +36,7 @@ Onboarding still uses `lib/config/subjects-actions` sync (name/code/type only). 
 | `subject_groups` | Named groups (Sciences, Languages…) |
 | `subjects.*` enrich | category, group, language, elective, board, credits, periods, lab, assessment_rules, display_order, textbook/AI/chapter stubs |
 | `subject_dependencies` | Directed dependency graph |
-| `subject_textbooks` | Future multi-textbook rows |
+| `subjects.textbook_*` | ISBN / title columns on subject (multi-book catalog deferred) |
 
 ---
 

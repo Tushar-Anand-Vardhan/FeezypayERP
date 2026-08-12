@@ -714,7 +714,7 @@
 
 **Dependencies:** School feature flags; E05 for TIC; E27 for logo bytes.
 
-**Future extensions:** Points competitions (`house_point_ledger`).
+**Future extensions:** Points competitions (reintroduce ledger when product ships).
 
 ---
 

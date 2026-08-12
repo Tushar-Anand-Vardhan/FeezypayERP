@@ -595,13 +595,6 @@ export async function issueReportCardAction(
   };
 }
 
-/** @deprecated Alias — prefer publish semantics (status=published). */
-export async function publishReportCardAction(
-  input: IssueReportCardInput,
-): Promise<ReportCardOpsActionResult> {
-  return issueReportCardAction(input);
-}
-
 export async function fillReportCardFieldsAction(
   input: FillReportCardFieldsInput,
 ): Promise<ReportCardOpsActionResult> {

@@ -71,8 +71,9 @@ lib/config/
   clubs.ts / clubs-actions.ts
   grading-scales.ts / grading-scales-actions.ts
   school-branding.ts / school-branding-actions.ts
-  club-memberships.ts / club-memberships-actions.ts
 ```
+
+Membership writes live under `lib/houses-clubs/*-memberships-actions.ts`.
 
 ---
 
