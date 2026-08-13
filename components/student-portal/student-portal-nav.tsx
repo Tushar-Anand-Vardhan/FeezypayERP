@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Can } from "@/lib/authz/can";
-import type { AuthzBootstrap } from "@/lib/authz/bootstrap";
+import type { AuthzBootstrap } from "@/lib/authz/bootstrap-shared";
 import { STUDENT_PORTAL_NAV } from "@/lib/student-portal/nav";
 
 type Props = {

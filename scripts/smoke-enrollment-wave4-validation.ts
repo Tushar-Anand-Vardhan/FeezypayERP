@@ -11,7 +11,7 @@ import {
   isRollStrategy,
   ROLL_STRATEGIES,
 } from "../lib/enrollment/roll-assignment";
-import { ENROLLMENT_CSV_HEADERS } from "../lib/enrollment/placement-actions";
+import { ENROLLMENT_CSV_HEADERS } from "../lib/enrollment/csv";
 import {
   HOUSE_MEMBERSHIP_CSV_HEADERS,
   parseHouseMembershipCsv,

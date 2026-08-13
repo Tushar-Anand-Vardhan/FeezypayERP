@@ -1,21 +1,15 @@
 import { getAuthBootstrapAction } from "@/lib/auth/session-context";
-import type { AuthMembership, AuthPersona } from "@/lib/auth/types";
 import { resolveActor } from "@/lib/authz/resolve-actor";
-import type { PermissionKey } from "@/lib/authz/catalog";
+import type {
+  AppHeaderAuthProps,
+  AuthzBootstrap,
+} from "@/lib/authz/bootstrap-shared";
 
-export type AuthzBootstrap = {
-  schoolId: string;
-  persona: string;
-  permissions: PermissionKey[];
-  isSchoolAdmin: boolean;
-};
-
-export type AppHeaderAuthProps = {
-  memberships: AuthMembership[];
-  activeSchoolId: string | null;
-  activePersona: AuthPersona | null;
-  authz: AuthzBootstrap | null;
-};
+export type {
+  AppHeaderAuthProps,
+  AuthzBootstrap,
+} from "@/lib/authz/bootstrap-shared";
+export { canInBootstrap } from "@/lib/authz/bootstrap-shared";
 
 export async function getAuthzBootstrap(): Promise<
   { success: true; data: AuthzBootstrap } | { success: false; error: string }
@@ -52,11 +46,4 @@ export async function getAppHeaderAuth(): Promise<AppHeaderAuthProps> {
       : null,
     authz: authzBoot.success ? authzBoot.data : null,
   };
-}
-
-export function canInBootstrap(
-  bootstrap: AuthzBootstrap | null | undefined,
-  key: PermissionKey,
-): boolean {
-  return Boolean(bootstrap?.permissions.includes(key));
 }

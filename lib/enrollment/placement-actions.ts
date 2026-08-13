@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { ENROLLMENT_CSV_HEADERS } from "@/lib/enrollment/csv";
 import {
   assignRollNumbers,
   isRollStrategy,
@@ -22,12 +23,6 @@ function revalidate() {
   revalidatePath("/dashboard/teacher");
   revalidatePath("/onboarding", "layout");
 }
-
-export const ENROLLMENT_CSV_HEADERS = [
-  "admission_number",
-  "class_name",
-  "section_name",
-] as const;
 
 export async function listEnrollmentPoolAction(academicYearId: string): Promise<
   | {

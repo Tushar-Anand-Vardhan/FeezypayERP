@@ -18,6 +18,10 @@ export {
   getAppHeaderAuth,
   canInBootstrap,
 } from "@/lib/authz/bootstrap";
+export type {
+  AuthzBootstrap,
+  AppHeaderAuthProps,
+} from "@/lib/authz/bootstrap-shared";
 export { Can } from "@/lib/authz/can";
 export {
   listPermissionCatalogAction,

@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { downloadCsvTemplate } from "@/lib/onboarding/csv";
+import { ENROLLMENT_CSV_HEADERS } from "@/lib/enrollment/csv";
 import {
-  ENROLLMENT_CSV_HEADERS,
   assignSectionRollNumbersAction,
   importEnrollmentCsvAction,
   placeStudentsInSectionAction,

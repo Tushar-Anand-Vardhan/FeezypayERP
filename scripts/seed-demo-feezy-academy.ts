@@ -356,6 +356,10 @@ async function main() {
         .eq("id", employmentId);
     }
 
+    if (!employmentId) {
+      throw new Error(`employment id missing for ${t.email}`);
+    }
+
     // Link a couple of subjects
     const subjectNames =
       t.email.includes("math")

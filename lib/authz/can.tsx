@@ -2,8 +2,10 @@
 
 import type { ReactNode } from "react";
 import type { PermissionKey } from "@/lib/authz/catalog";
-import type { AuthzBootstrap } from "@/lib/authz/bootstrap";
-import { canInBootstrap } from "@/lib/authz/bootstrap";
+import {
+  canInBootstrap,
+  type AuthzBootstrap,
+} from "@/lib/authz/bootstrap-shared";
 
 type CanProps = {
   permission: PermissionKey | PermissionKey[];

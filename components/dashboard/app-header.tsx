@@ -7,7 +7,7 @@ import { BrandMark } from "@/components/brand/brand-mark";
 import { SchoolContextSwitcher } from "@/components/auth/school-context-switcher";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { Can } from "@/lib/authz/can";
-import type { AuthzBootstrap } from "@/lib/authz/bootstrap";
+import type { AuthzBootstrap } from "@/lib/authz/bootstrap-shared";
 import type { PermissionKey } from "@/lib/authz/catalog";
 import { createClient } from "@/lib/supabase/client";
 import type { AuthMembership, AuthPersona } from "@/lib/auth/types";
