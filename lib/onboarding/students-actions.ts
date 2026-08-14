@@ -175,7 +175,8 @@ export async function getStudentsStepDataAction(): Promise<StudentsStepData> {
       "admission_number, student_profiles(id, persons(full_name, date_of_birth, gender, email, aadhaar_last4), student_parent_links(relationship, parent_profiles(persons(full_name, phone, email)))), student_academic_years(status, left_on, class_id, section_id)",
     )
     .eq("school_id", schoolId)
-    .eq("status", "active");
+    .eq("status", "active")
+    .order("admission_number");
 
   const sectionNameById = new Map(sections.map((row) => [row.id, row.name]));
 

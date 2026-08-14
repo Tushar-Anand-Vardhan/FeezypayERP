@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { FormField } from "@/components/form/form-field";
+import { OnboardingPager } from "@/components/onboarding/onboarding-pager";
 import { WizardActions } from "@/components/onboarding/wizard-actions";
 import { useOnboardingStepReady } from "@/components/onboarding/onboarding-progress";
 import { downloadCsvTemplate, parseCsv } from "@/lib/onboarding/csv";
@@ -19,6 +20,8 @@ import {
   type StudentFieldErrors,
   type StudentFormRow,
 } from "@/lib/onboarding/students";
+
+const STUDENT_PAGE_SIZE = 10;
 
 export function StudentsForm() {
   const router = useRouter();
@@ -42,6 +45,7 @@ export function StudentsForm() {
   const [loadingAction, setLoadingAction] = useState<"save" | "next" | null>(
     null,
   );
+  const [page, setPage] = useState(1);
   useOnboardingStepReady(!initialLoading);
 
   const classNames = useMemo(
@@ -65,6 +69,15 @@ export function StudentsForm() {
       })),
     [classSections],
   );
+
+  const pageCount = Math.max(1, Math.ceil(students.length / STUDENT_PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pagedStudents = useMemo(() => {
+    const start = (currentPage - 1) * STUDENT_PAGE_SIZE;
+    return students
+      .map((student, index) => ({ student, index }))
+      .slice(start, start + STUDENT_PAGE_SIZE);
+  }, [students, currentPage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -119,10 +132,14 @@ export function StudentsForm() {
     setStudents((current) => [...current, draft]);
     setDraft(emptyStudent());
     setFieldErrors({});
+    setPage(Math.ceil((students.length + 1) / STUDENT_PAGE_SIZE));
   }
 
   function removeStudent(index: number) {
     setStudents((current) => current.filter((_, rowIndex) => rowIndex !== index));
+    const nextLength = students.length - 1;
+    const nextPageCount = Math.max(1, Math.ceil(nextLength / STUDENT_PAGE_SIZE));
+    setPage((current) => Math.min(current, nextPageCount));
   }
 
   async function handleCsvUpload(file: File | null) {
@@ -156,6 +173,7 @@ export function StudentsForm() {
 
     setStudents(merged);
     setSuccessMessage(`Imported ${rows.length} student(s) from CSV.`);
+    setPage(1);
   }
 
   async function performSave(intent: "save" | "next") {
@@ -212,7 +230,7 @@ export function StudentsForm() {
 
   if (initialLoading) {
     return (
-      <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
         <p className="text-sm text-muted">Loading students…</p>
       </main>
     );
@@ -220,7 +238,7 @@ export function StudentsForm() {
 
   if (loadError) {
     return (
-      <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
         <p className="text-sm text-feezy-coral">{loadError}</p>
       </main>
     );
@@ -228,7 +246,7 @@ export function StudentsForm() {
 
   if (blocked) {
     return (
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
         <div className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <h1 className="text-2xl font-semibold tracking-tight">Students</h1>
           <p className="text-sm text-muted">Complete Classes and Sections first.</p>
@@ -246,7 +264,7 @@ export function StudentsForm() {
   const guardian = draft.guardians[0];
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
       <div className="space-y-8">
         <div className="space-y-2">
           <h1 className="font-display text-3xl font-semibold tracking-tight">
@@ -540,34 +558,89 @@ export function StudentsForm() {
             {students.length === 0 ? (
               <p className="text-sm text-muted">No students added yet.</p>
             ) : (
-              <ul className="space-y-2">
-                {students.map((student, index) => (
-                  <li
-                    key={`${student.admissionNumber}-${index}`}
-                    className="flex items-start justify-between gap-3 rounded-2xl border border-border p-4"
-                  >
-                    <div>
-                      <p className="font-medium">{student.fullName}</p>
-                      <p className="text-sm text-muted">
-                        {student.admissionNumber} · {student.className}-
-                        {student.sectionName}
-                      </p>
-                      {student.guardians[0]?.fullName ? (
-                        <p className="mt-1 text-xs text-muted">
-                          Guardian: {student.guardians[0].fullName}
-                        </p>
-                      ) : null}
-                    </div>
-                    <button
-                      type="button"
-                      className="rounded-lg border border-border px-3 py-1.5 text-sm"
-                      onClick={() => removeStudent(index)}
-                    >
-                      Remove
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <div className="overflow-x-auto rounded-2xl border border-border">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="border-b border-border bg-surface-strong text-xs uppercase tracking-wide text-muted">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">Name</th>
+                      <th className="px-3 py-2 font-medium">Admission no.</th>
+                      <th className="px-3 py-2 font-medium">Class</th>
+                      <th className="px-3 py-2 font-medium">Section</th>
+                      <th className="px-3 py-2 font-medium">DOB</th>
+                      <th className="px-3 py-2 font-medium">Guardian</th>
+                      <th className="px-3 py-2 font-medium">
+                        <span className="sr-only">Actions</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pagedStudents.map(({ student, index }) => (
+                      <tr
+                        key={`${student.admissionNumber}-${index}`}
+                        className="border-b border-border last:border-b-0"
+                      >
+                        <td className="px-3 py-2.5 font-medium">
+                          {student.fullName}
+                          {fieldErrors[`student-${index}-fullName`] ? (
+                            <p className="mt-1 text-xs font-normal text-feezy-coral">
+                              {fieldErrors[`student-${index}-fullName`]}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2.5 text-muted">
+                          {student.admissionNumber || "—"}
+                          {fieldErrors[`student-${index}-admissionNumber`] ? (
+                            <p className="mt-1 text-xs text-feezy-coral">
+                              {fieldErrors[`student-${index}-admissionNumber`]}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2.5 text-muted">
+                          {student.className || "—"}
+                        </td>
+                        <td className="px-3 py-2.5 text-muted">
+                          {student.sectionName || "—"}
+                          {fieldErrors[`student-${index}-section`] ? (
+                            <p className="mt-1 text-xs text-feezy-coral">
+                              {fieldErrors[`student-${index}-section`]}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2.5 text-muted">
+                          {student.dateOfBirth || "—"}
+                        </td>
+                        <td className="px-3 py-2.5 text-muted">
+                          {student.guardians[0]?.fullName || "—"}
+                          {fieldErrors[`student-${index}-guardian`] ? (
+                            <p className="mt-1 text-xs text-feezy-coral">
+                              {fieldErrors[`student-${index}-guardian`]}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2.5 text-right">
+                          <button
+                            type="button"
+                            className="rounded-lg border border-border px-3 py-1.5 text-sm"
+                            onClick={() => removeStudent(index)}
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="border-t border-border px-3 py-3">
+                  <OnboardingPager
+                    page={currentPage}
+                    pageCount={pageCount}
+                    total={students.length}
+                    pageSize={STUDENT_PAGE_SIZE}
+                    onPageChange={setPage}
+                    noun="students"
+                  />
+                </div>
+              </div>
             )}
           </section>
 
