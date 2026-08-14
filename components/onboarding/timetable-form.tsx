@@ -31,6 +31,9 @@ export function TimetableForm() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState(false);
+  const [blockedReason, setBlockedReason] = useState<
+    "prerequisites" | "sections" | "staff" | null
+  >(null);
   const [periodCount, setPeriodCount] = useState(6);
   const [periods, setPeriods] = useState<PeriodFormRow[]>(defaultPeriods(6));
   const [sections, setSections] = useState<SectionRow[]>([]);
@@ -66,6 +69,7 @@ export function TimetableForm() {
 
       if (result.blocked) {
         setBlocked(true);
+        setBlockedReason(result.reason);
         setInitialLoading(false);
         return;
       }
@@ -260,18 +264,36 @@ export function TimetableForm() {
   }
 
   if (blocked) {
+    const blockedCopy =
+      blockedReason === "sections"
+        ? {
+            message: "Add at least one section before configuring the timetable.",
+            href: "/onboarding/sections",
+            label: "Go to Sections",
+          }
+        : blockedReason === "staff"
+          ? {
+              message: "Add at least one staff member before configuring the timetable.",
+              href: "/onboarding/staff",
+              label: "Go to Staff",
+            }
+          : {
+              message:
+                "Finish classes and earlier setup before configuring the timetable.",
+              href: "/onboarding/classes",
+              label: "Go to Classes",
+            };
+
     return (
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
         <div className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <h1 className="text-2xl font-semibold tracking-tight">Timetable</h1>
-          <p className="text-sm text-muted">
-            Complete Sections and Staff before configuring the timetable.
-          </p>
+          <p className="text-sm text-muted">{blockedCopy.message}</p>
           <Link
-            href="/onboarding/staff"
+            href={blockedCopy.href}
             className="inline-flex text-sm font-medium underline-offset-4 hover:underline"
           >
-            Go to Staff
+            {blockedCopy.label}
           </Link>
         </div>
       </main>

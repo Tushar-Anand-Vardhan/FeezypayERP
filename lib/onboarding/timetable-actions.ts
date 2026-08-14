@@ -30,7 +30,7 @@ export type TimetableStepData =
       slots: TimetableSlotFormRow[];
       timetableSkipped: boolean;
     }
-  | { success: true; blocked: true }
+  | { success: true; blocked: true; reason: "prerequisites" | "sections" | "staff" }
   | { success: false; error: string };
 
 export async function getTimetableStepDataAction(): Promise<TimetableStepData> {
@@ -45,7 +45,7 @@ export async function getTimetableStepDataAction(): Promise<TimetableStepData> {
     if ("error" in classesResult) {
       return { success: false, error: classesResult.error };
     }
-    return { success: true, blocked: true };
+    return { success: true, blocked: true, reason: "prerequisites" };
   }
 
   const { data: school } = await supabase
@@ -81,8 +81,11 @@ export async function getTimetableStepDataAction(): Promise<TimetableStepData> {
         .order("period_number"),
     ]);
 
-  if (!sections || sections.length === 0 || !teachers || teachers.length === 0) {
-    return { success: true, blocked: true };
+  if (!sections || sections.length === 0) {
+    return { success: true, blocked: true, reason: "sections" };
+  }
+  if (!teachers || teachers.length === 0) {
+    return { success: true, blocked: true, reason: "staff" };
   }
 
   const classNameById = new Map(

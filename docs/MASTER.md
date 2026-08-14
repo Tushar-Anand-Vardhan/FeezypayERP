@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-13 (Post–Wave 6 schema/code cleanup)  
+> **Last updated:** 2026-08-14 (Onboarding students pagination; timetable blocked-reason copy)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
