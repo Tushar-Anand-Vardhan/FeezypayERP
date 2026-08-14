@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, KeyboardEvent, useEffect, useId, useState } from "react";
 import { FormField, formControlClassName } from "@/components/form/form-field";
 import { WizardActions } from "@/components/onboarding/wizard-actions";
+import { useOnboardingStepReady } from "@/components/onboarding/onboarding-progress";
 import {
   getSectionsStepDataAction,
   saveSectionsAction,
@@ -61,6 +62,7 @@ export function SectionsForm() {
   const [loadingAction, setLoadingAction] = useState<"save" | "next" | null>(
     null,
   );
+  useOnboardingStepReady(!initialLoading);
   const [sectionModal, setSectionModal] = useState<SectionModalState>(null);
   const [modalName, setModalName] = useState("");
   const [modalCapacity, setModalCapacity] = useState("");
@@ -312,6 +314,7 @@ export function SectionsForm() {
     if (saved) {
       router.push("/dashboard");
       router.refresh();
+      return;
     }
     setLoadingAction(null);
   }
@@ -321,6 +324,7 @@ export function SectionsForm() {
     const saved = await performSave("next");
     if (saved) {
       router.push("/onboarding/subjects");
+      return;
     }
     setLoadingAction(null);
   }

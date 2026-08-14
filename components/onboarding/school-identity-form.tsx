@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FormField, FormSelect } from "@/components/form/form-field";
 import { WizardActions } from "@/components/onboarding/wizard-actions";
+import { useOnboardingStepReady } from "@/components/onboarding/onboarding-progress";
 import { validateEmail } from "@/lib/auth/validation";
 import {
   BOARD_OPTIONS,
@@ -62,6 +63,7 @@ export function SchoolIdentityForm() {
   );
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  useOnboardingStepReady(!initialLoading);
 
   useEffect(() => {
     let cancelled = false;
@@ -244,6 +246,7 @@ export function SchoolIdentityForm() {
     if (saved) {
       router.push("/dashboard");
       router.refresh();
+      return;
     }
     setLoadingAction(null);
   }
@@ -253,6 +256,7 @@ export function SchoolIdentityForm() {
     const saved = await performSave();
     if (saved) {
       router.push("/onboarding/terms");
+      return;
     }
     setLoadingAction(null);
   }

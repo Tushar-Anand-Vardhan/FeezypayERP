@@ -6,6 +6,7 @@ import { AuthField } from "@/components/auth/auth-field";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { completeProfileAction } from "@/lib/auth/profile-completion-actions";
+import { createClient } from "@/lib/supabase/client";
 
 export default function ActivateProfilePage() {
   const router = useRouter();
@@ -102,6 +103,20 @@ export default function ActivateProfilePage() {
         ) : null}
         <SubmitButton type="submit" loading={pending} fullWidth>
           Continue
+        </SubmitButton>
+        <SubmitButton
+          type="button"
+          variant="ghost"
+          fullWidth
+          disabled={pending}
+          onClick={async () => {
+            const supabase = createClient();
+            await supabase.auth.signOut();
+            router.replace("/login");
+            router.refresh();
+          }}
+        >
+          Sign out
         </SubmitButton>
       </form>
     </AuthShell>

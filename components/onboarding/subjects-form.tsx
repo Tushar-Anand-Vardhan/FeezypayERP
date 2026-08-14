@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { FormField } from "@/components/form/form-field";
 import { WizardActions } from "@/components/onboarding/wizard-actions";
+import { useOnboardingStepReady } from "@/components/onboarding/onboarding-progress";
 import {
   getSubjectsStepDataAction,
   saveSubjectsStepAction,
@@ -263,6 +264,7 @@ export function SubjectsForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<"save" | "next" | null>(null);
+  useOnboardingStepReady(!initialLoading);
 
   const showAdvanced = subjects.length > 0 && classes.length > 0;
 
@@ -501,6 +503,7 @@ export function SubjectsForm() {
     const saved = await performSave("save");
     if (saved) {
       router.push("/dashboard");
+      return;
     }
     setLoadingAction(null);
   }
@@ -510,6 +513,7 @@ export function SubjectsForm() {
     const saved = await performSave("next");
     if (saved) {
       router.push("/onboarding/houses-clubs");
+      return;
     }
     setLoadingAction(null);
   }

@@ -95,7 +95,7 @@ export async function getAuthBootstrapAction(): Promise<
 
   const isSchoolAdmin = memberships.some((m) => m.persona === "school_admin");
   const needsProfileCompletion = Boolean(
-    person && person.profile_completed_at == null,
+    person && person.profile_completed_at == null && !isSchoolAdmin,
   );
 
   return {

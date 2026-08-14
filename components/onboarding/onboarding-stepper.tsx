@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useOnboardingProgress } from "@/components/onboarding/onboarding-progress";
 import { ONBOARDING_STEPS } from "@/lib/onboarding/steps";
 
 export function OnboardingStepper() {
   const pathname = usePathname();
+  const { start } = useOnboardingProgress();
 
   return (
     <nav
@@ -26,6 +28,9 @@ export function OnboardingStepper() {
               <Link
                 href={step.href}
                 aria-current={isActive ? "step" : undefined}
+                onClick={() => {
+                  if (!isActive) start();
+                }}
                 className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
                   isActive
                     ? "bg-feezy-indigo text-white"

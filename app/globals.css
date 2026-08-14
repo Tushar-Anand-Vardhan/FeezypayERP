@@ -90,3 +90,24 @@ body {
 .feezy-modal-panel {
   animation: feezy-modal-in 0.22s ease-out both;
 }
+
+@keyframes feezy-progress-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+.feezy-progress-indeterminate {
+  height: 100%;
+  width: 32%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--feezy-magenta),
+    var(--feezy-indigo)
+  );
+  animation: feezy-progress-indeterminate 1.05s ease-in-out infinite;
+}

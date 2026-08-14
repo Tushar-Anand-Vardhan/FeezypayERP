@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { FormField } from "@/components/form/form-field";
 import { WizardActions } from "@/components/onboarding/wizard-actions";
+import { useOnboardingStepReady } from "@/components/onboarding/onboarding-progress";
 import {
   getHousesClubsStepDataAction,
   saveHousesClubsAction,
@@ -29,6 +30,7 @@ export function HousesClubsForm() {
   const [loadingAction, setLoadingAction] = useState<"save" | "next" | null>(
     null,
   );
+  useOnboardingStepReady(!initialLoading);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,14 +100,20 @@ export function HousesClubsForm() {
   async function handleSaveAndExit() {
     setLoadingAction("save");
     const saved = await performSave("save");
-    if (saved) router.push("/dashboard");
+    if (saved) {
+      router.push("/dashboard");
+      return;
+    }
     setLoadingAction(null);
   }
 
   async function handleContinue() {
     setLoadingAction("next");
     const saved = await performSave("next");
-    if (saved) router.push("/onboarding/staff");
+    if (saved) {
+      router.push("/onboarding/staff");
+      return;
+    }
     setLoadingAction(null);
   }
 

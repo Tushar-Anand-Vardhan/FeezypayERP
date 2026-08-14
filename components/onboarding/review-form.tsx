@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SubmitButton } from "@/components/auth/submit-button";
 import {
+  useOnboardingProgress,
+  useOnboardingStepReady,
+} from "@/components/onboarding/onboarding-progress";
+import {
   completeOnboardingAction,
   getReviewStepDataAction,
 } from "@/lib/onboarding/exams-review-actions";
@@ -29,6 +33,8 @@ export function ReviewForm() {
   const [timetableConfigured, setTimetableConfigured] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { start } = useOnboardingProgress();
+  useOnboardingStepReady(!initialLoading);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,6 +66,7 @@ export function ReviewForm() {
   async function handleConfirm() {
     setFormError(null);
     setLoading(true);
+    start();
     const result = await completeOnboardingAction();
     if (!result.success) {
       setFormError(result.error);
@@ -67,7 +74,6 @@ export function ReviewForm() {
       return;
     }
     router.push("/dashboard");
-    setLoading(false);
   }
 
   if (initialLoading) {
@@ -163,6 +169,7 @@ export function ReviewForm() {
           <Link
             href="/onboarding/exams"
             className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-semibold"
+            onClick={() => start()}
           >
             Back
           </Link>

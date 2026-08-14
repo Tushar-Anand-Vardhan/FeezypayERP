@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FormField, FormSelect, formControlClassName } from "@/components/form/form-field";
 import { WizardActions } from "@/components/onboarding/wizard-actions";
+import { useOnboardingStepReady } from "@/components/onboarding/onboarding-progress";
 import { getTermsStepDataAction, saveTermsAction } from "@/app/onboarding/actions";
 import { MONTH_OPTIONS } from "@/lib/onboarding/school-identity";
 import {
@@ -66,6 +67,7 @@ export function TermsForm() {
   const [loadingAction, setLoadingAction] = useState<"save" | "next" | null>(
     null,
   );
+  useOnboardingStepReady(!initialLoading);
 
   useEffect(() => {
     let cancelled = false;
@@ -189,6 +191,7 @@ export function TermsForm() {
     if (saved) {
       router.push("/dashboard");
       router.refresh();
+      return;
     }
     setLoadingAction(null);
   }
@@ -198,6 +201,7 @@ export function TermsForm() {
     const saved = await performSave();
     if (saved) {
       router.push("/onboarding/classes");
+      return;
     }
     setLoadingAction(null);
   }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { FormField } from "@/components/form/form-field";
 import { WizardActions } from "@/components/onboarding/wizard-actions";
+import { useOnboardingStepReady } from "@/components/onboarding/onboarding-progress";
 import { downloadCsvTemplate, parseCsv } from "@/lib/onboarding/csv";
 import {
   getStaffStepDataAction,
@@ -51,6 +52,7 @@ export function StaffForm() {
   const [loadingAction, setLoadingAction] = useState<"save" | "next" | null>(
     null,
   );
+  useOnboardingStepReady(!initialLoading);
 
   const subjectNames = useMemo(
     () => subjects.map((subject) => subject.name),
@@ -205,14 +207,20 @@ export function StaffForm() {
   async function handleSaveAndExit() {
     setLoadingAction("save");
     const saved = await performSave("save");
-    if (saved) router.push("/dashboard");
+    if (saved) {
+      router.push("/dashboard");
+      return;
+    }
     setLoadingAction(null);
   }
 
   async function handleContinue() {
     setLoadingAction("next");
     const saved = await performSave("next");
-    if (saved) router.push("/onboarding/students");
+    if (saved) {
+      router.push("/onboarding/students");
+      return;
+    }
     setLoadingAction(null);
   }
 

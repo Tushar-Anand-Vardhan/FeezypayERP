@@ -160,8 +160,12 @@ export async function fetchAuthGateState(supabase: SupabaseClient): Promise<{
 
   const isSchoolAdmin = profile?.role === "school_admin";
   const personBound = Boolean(person?.id);
+  // School admins go to onboarding/dashboard — career wizard is for invited staff.
   const needsProfileCompletion = Boolean(
-    personBound && person && person.profile_completed_at == null,
+    personBound &&
+      person &&
+      person.profile_completed_at == null &&
+      !isSchoolAdmin,
   );
 
   return {

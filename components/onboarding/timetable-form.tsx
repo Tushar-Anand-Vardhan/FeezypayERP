@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { FormField } from "@/components/form/form-field";
 import { WizardActions } from "@/components/onboarding/wizard-actions";
+import { useOnboardingStepReady } from "@/components/onboarding/onboarding-progress";
 import {
   getTimetableStepDataAction,
   saveTimetableAction,
@@ -47,6 +48,7 @@ export function TimetableForm() {
   const [loadingAction, setLoadingAction] = useState<"save" | "next" | null>(
     null,
   );
+  useOnboardingStepReady(!initialLoading);
 
   useEffect(() => {
     let cancelled = false;
@@ -214,21 +216,30 @@ export function TimetableForm() {
   async function handleSaveAndExit() {
     setLoadingAction("save");
     const saved = await performSave({ soft: true });
-    if (saved) router.push("/dashboard");
+    if (saved) {
+      router.push("/dashboard");
+      return;
+    }
     setLoadingAction(null);
   }
 
   async function handleContinue() {
     setLoadingAction("next");
     const saved = await performSave();
-    if (saved) router.push("/onboarding/exams");
+    if (saved) {
+      router.push("/onboarding/exams");
+      return;
+    }
     setLoadingAction(null);
   }
 
   async function handleSkip() {
     setLoadingAction("next");
     const saved = await performSave({ skip: true });
-    if (saved) router.push("/onboarding/exams");
+    if (saved) {
+      router.push("/onboarding/exams");
+      return;
+    }
     setLoadingAction(null);
   }
 

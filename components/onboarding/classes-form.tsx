@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
 import { FormField } from "@/components/form/form-field";
 import { WizardActions } from "@/components/onboarding/wizard-actions";
+import { useOnboardingStepReady } from "@/components/onboarding/onboarding-progress";
 import {
   getClassesStepDataAction,
   saveClassesAction,
@@ -35,6 +36,7 @@ export function ClassesForm() {
   const [loadingAction, setLoadingAction] = useState<"save" | "next" | null>(
     null,
   );
+  useOnboardingStepReady(!initialLoading);
 
   useEffect(() => {
     let cancelled = false;
@@ -216,6 +218,7 @@ export function ClassesForm() {
     if (saved) {
       router.push("/dashboard");
       router.refresh();
+      return;
     }
     setLoadingAction(null);
   }
@@ -225,6 +228,7 @@ export function ClassesForm() {
     const saved = await performSave("next");
     if (saved) {
       router.push("/onboarding/sections");
+      return;
     }
     setLoadingAction(null);
   }
