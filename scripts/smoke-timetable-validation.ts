@@ -318,11 +318,40 @@ const template = buildTimetableCsvTemplateRows({
   sampleTeacher: "Priya Sharma",
 });
 assert.equal(template[0]?.[3], "Class teacher");
+assert.equal(template[0]?.[4], "07:40");
+assert.equal(template[0]?.[6], "yes");
 assert.equal(
-  template.find((row) => row[2] === "Mon" && row[3] === "Period 1")?.[4],
+  template.find((row) => row[2] === "Mon" && row[3] === "Period 1")?.[7],
   "Mathematics",
 );
+assert.equal(template.find((row) => row[3] === "Lunch")?.[6], "no");
 assert.equal(template.length, 24);
+
+const customTemplate = buildTimetableCsvTemplateRows({
+  className: "8",
+  sectionName: "B",
+  periods: [
+    {
+      periodNumber: 0,
+      name: "Zero",
+      startTime: "07:30",
+      endTime: "07:50",
+      educational: true,
+    },
+    {
+      periodNumber: 1,
+      name: "Assembly",
+      startTime: "07:50",
+      endTime: "08:10",
+      educational: false,
+    },
+  ],
+});
+assert.equal(customTemplate[0]?.[3], "Zero");
+assert.equal(customTemplate[0]?.[4], "07:30");
+assert.equal(customTemplate[6]?.[3], "Assembly");
+assert.equal(customTemplate[6]?.[6], "no");
+assert.equal(customTemplate.length, 12);
 console.log("OK");
 
 console.log("\nAll timetable validation checks passed.");

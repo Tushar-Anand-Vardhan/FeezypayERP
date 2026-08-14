@@ -1,6 +1,7 @@
 import { parseCsv } from "@/lib/onboarding/csv";
 import {
   WEEKDAYS,
+  periodDisplayLabel,
   periodCsvToken,
   resolvePeriodFromCsv,
   type PeriodFormRow,
@@ -12,6 +13,18 @@ export const TIMETABLE_CSV_HEADERS = [
   "section",
   "day",
   "period",
+  "subject",
+  "teacher",
+] as const;
+
+export const TIMETABLE_CSV_TEMPLATE_HEADERS = [
+  "class",
+  "section",
+  "day",
+  "period",
+  "start",
+  "end",
+  "educational",
   "subject",
   "teacher",
 ] as const;
@@ -67,16 +80,15 @@ export function buildTimetableCsvTemplateRows(input: {
   sampleSubject?: string;
   sampleTeacher?: string;
 }): string[][] {
-  const assignable = input.periods;
   const samplePeriodNumber = (
     input.periods.find(
       (period) => period.educational && /^period\s*\d+/i.test(period.name),
     ) ?? input.periods.find((period) => period.educational)
   )?.periodNumber;
   const rows: string[][] = [];
-  for (const day of WEEKDAYS) {
-    for (const period of assignable) {
-      const token = periodCsvToken(period, input.periods);
+  for (const period of input.periods) {
+    const periodName = periodCsvToken(period, input.periods) || periodDisplayLabel(period);
+    for (const day of WEEKDAYS) {
       const isSample =
         day.value === 1 &&
         period.educational &&
@@ -85,7 +97,10 @@ export function buildTimetableCsvTemplateRows(input: {
         input.className,
         input.sectionName,
         day.label,
-        token,
+        periodName,
+        period.startTime,
+        period.endTime,
+        period.educational ? "yes" : "no",
         isSample ? (input.sampleSubject ?? "") : "",
         isSample ? (input.sampleTeacher ?? "") : "",
       ]);

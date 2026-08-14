@@ -23,7 +23,7 @@ import {
   type TimetableSlotFormRow,
 } from "@/lib/onboarding/timetable";
 import {
-  TIMETABLE_CSV_HEADERS,
+  TIMETABLE_CSV_TEMPLATE_HEADERS,
   applyTimetableCsv,
   buildTimetableCsvTemplateRows,
 } from "@/lib/onboarding/timetable-csv";
@@ -235,7 +235,7 @@ export function TimetableForm() {
     );
     downloadCsvTemplate(
       `timetable-${safeName}-template.csv`,
-      [...TIMETABLE_CSV_HEADERS],
+      [...TIMETABLE_CSV_TEMPLATE_HEADERS],
       buildTimetableCsvTemplateRows({
         className: activeSection.className,
         sectionName: activeSection.name,
@@ -533,9 +533,10 @@ export function TimetableForm() {
                         CSV for {activeSection.className}-{activeSection.name}
                       </h2>
                       <p className="mt-1 text-xs text-muted">
-                        Name periods as they appear in the day structure.
-                        Educational periods can have a subject and teacher;
-                        breaks may leave both blank. Invalid rows block the import.
+                        The sample lists every period you added (name, start, end,
+                        educational) for this class-section. Fill subject and
+                        teacher; leave them blank on breaks. Invalid rows block
+                        the import.
                       </p>
                     </div>
                     <button
