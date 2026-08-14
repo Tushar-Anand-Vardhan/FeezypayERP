@@ -182,7 +182,8 @@ export async function getStaffStepDataAction(): Promise<StaffStepData> {
           "id, employee_code, designation, is_hod, department_id, teacher_profiles(person_id, persons(full_name, phone, email, aadhaar_last4)), employment_subjects(subject_id, subjects(name))",
         )
         .eq("school_id", schoolId)
-        .eq("status", "active"),
+        .in("status", ["active", "invited"])
+        .order("created_at", { ascending: true }),
     ]);
 
   if ((subjects ?? []).length === 0) {
@@ -323,7 +324,7 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
       .from("teacher_employments")
       .select("id", { count: "exact", head: true })
       .eq("school_id", schoolId)
-      .eq("status", "active");
+      .in("status", ["active", "invited"]);
     if ((count ?? 0) > 0) {
       return {
         success: false,
@@ -366,9 +367,9 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
   // Soft-end employments removed from the list; upsert the rest in place.
   const { data: existingEmployments } = await supabase
     .from("teacher_employments")
-    .select("id, teacher_profile_id")
+    .select("id, teacher_profile_id, status")
     .eq("school_id", schoolId)
-    .eq("status", "active");
+    .in("status", ["active", "invited"]);
 
   const keepEmploymentIds = new Set<string>();
   const invitesToSend: Array<{
@@ -405,7 +406,7 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
             : null,
           is_hod: row.isHod,
           school_persona: schoolPersona,
-          status: "active",
+          status: existing?.status === "invited" ? "invited" : "active",
           left_on: null,
           updated_at: new Date().toISOString(),
         })

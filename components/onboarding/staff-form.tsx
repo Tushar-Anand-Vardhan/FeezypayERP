@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { FormField } from "@/components/form/form-field";
+import { OnboardingPager } from "@/components/onboarding/onboarding-pager";
 import { WizardActions } from "@/components/onboarding/wizard-actions";
 import { useOnboardingStepReady } from "@/components/onboarding/onboarding-progress";
 import { downloadCsvTemplate, parseCsv } from "@/lib/onboarding/csv";
@@ -32,6 +33,8 @@ const EMPTY_TEACHER: StaffFormRow = {
   isHod: false,
 };
 
+const TEACHER_PAGE_SIZE = 10;
+
 export function StaffForm() {
   const router = useRouter();
   const [initialLoading, setInitialLoading] = useState(true);
@@ -52,12 +55,22 @@ export function StaffForm() {
   const [loadingAction, setLoadingAction] = useState<"save" | "next" | null>(
     null,
   );
+  const [page, setPage] = useState(1);
   useOnboardingStepReady(!initialLoading);
 
   const subjectNames = useMemo(
     () => subjects.map((subject) => subject.name),
     [subjects],
   );
+
+  const pageCount = Math.max(1, Math.ceil(teachers.length / TEACHER_PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pagedTeachers = useMemo(() => {
+    const start = (currentPage - 1) * TEACHER_PAGE_SIZE;
+    return teachers
+      .map((teacher, index) => ({ teacher, index }))
+      .slice(start, start + TEACHER_PAGE_SIZE);
+  }, [teachers, currentPage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -124,10 +137,14 @@ export function StaffForm() {
     setTeachers((current) => [...current, { ...draft }]);
     setDraft(EMPTY_TEACHER);
     setFieldErrors({});
+    setPage(Math.ceil((teachers.length + 1) / TEACHER_PAGE_SIZE));
   }
 
   function removeTeacher(index: number) {
     setTeachers((current) => current.filter((_, rowIndex) => rowIndex !== index));
+    const nextLength = teachers.length - 1;
+    const nextPageCount = Math.max(1, Math.ceil(nextLength / TEACHER_PAGE_SIZE));
+    setPage((current) => Math.min(current, nextPageCount));
   }
 
   function toggleDraftSubject(name: string, checked: boolean) {
@@ -170,6 +187,7 @@ export function StaffForm() {
     setTeachers(merged);
     setCsvErrors([]);
     setSuccessMessage(`Imported ${rows.length} teacher(s) from CSV.`);
+    setPage(1);
   }
 
   async function performSave(intent: "save" | "next") {
@@ -226,7 +244,7 @@ export function StaffForm() {
 
   if (initialLoading) {
     return (
-      <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
         <p className="text-sm text-muted">Loading staff…</p>
       </main>
     );
@@ -234,7 +252,7 @@ export function StaffForm() {
 
   if (loadError) {
     return (
-      <main className="mx-auto flex w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
         <p className="text-sm text-feezy-coral">{loadError}</p>
       </main>
     );
@@ -242,7 +260,7 @@ export function StaffForm() {
 
   if (blocked) {
     return (
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
         <div className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <h1 className="text-2xl font-semibold tracking-tight">Staff</h1>
           <p className="text-sm text-muted">Complete Subjects first.</p>
@@ -258,7 +276,7 @@ export function StaffForm() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
       <div className="space-y-8">
         <div className="space-y-2">
           <h1 className="font-display text-3xl font-semibold tracking-tight">
@@ -471,44 +489,86 @@ export function StaffForm() {
             {teachers.length === 0 ? (
               <p className="text-sm text-muted">No teachers added yet.</p>
             ) : (
-              <ul className="space-y-2">
-                {teachers.map((teacher, index) => (
-                  <li
-                    key={`${teacher.fullName}-${index}`}
-                    className="flex items-start justify-between gap-3 rounded-2xl border border-border p-4"
-                  >
-                    <div>
-                      <p className="font-medium">{teacher.fullName}</p>
-                      <p className="text-sm text-muted">
-                        {[teacher.email, teacher.departmentName, teacher.designation]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </p>
-                      {teacher.subjectNames.length > 0 ? (
-                        <p className="mt-1 text-xs text-muted">
-                          {teacher.subjectNames.join(", ")}
-                        </p>
-                      ) : null}
-                      {fieldErrors[`staff-${index}-email`] ||
-                      fieldErrors[`staff-${index}-subjects`] ||
-                      fieldErrors[`staff-${index}-fullName`] ? (
-                        <p className="mt-1 text-sm text-feezy-coral">
-                          {fieldErrors[`staff-${index}-email`] ||
-                            fieldErrors[`staff-${index}-subjects`] ||
-                            fieldErrors[`staff-${index}-fullName`]}
-                        </p>
-                      ) : null}
-                    </div>
-                    <button
-                      type="button"
-                      className="rounded-lg border border-border px-3 py-1.5 text-sm"
-                      onClick={() => removeTeacher(index)}
-                    >
-                      Remove
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <div className="overflow-x-auto rounded-2xl border border-border">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="border-b border-border bg-surface-strong text-xs uppercase tracking-wide text-muted">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">Name</th>
+                      <th className="px-3 py-2 font-medium">Email</th>
+                      <th className="px-3 py-2 font-medium">Designation</th>
+                      <th className="px-3 py-2 font-medium">Department</th>
+                      <th className="px-3 py-2 font-medium">Subjects</th>
+                      <th className="px-3 py-2 font-medium">HOD</th>
+                      <th className="px-3 py-2 font-medium">
+                        <span className="sr-only">Actions</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pagedTeachers.map(({ teacher, index }) => (
+                      <tr
+                        key={`${teacher.email || teacher.fullName}-${index}`}
+                        className="border-b border-border last:border-b-0"
+                      >
+                        <td className="px-3 py-2.5 font-medium">
+                          {teacher.fullName}
+                          {fieldErrors[`staff-${index}-fullName`] ? (
+                            <p className="mt-1 text-xs font-normal text-feezy-coral">
+                              {fieldErrors[`staff-${index}-fullName`]}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2.5 text-muted">
+                          {teacher.email || "—"}
+                          {fieldErrors[`staff-${index}-email`] ? (
+                            <p className="mt-1 text-xs text-feezy-coral">
+                              {fieldErrors[`staff-${index}-email`]}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2.5 text-muted">
+                          {teacher.designation || "—"}
+                        </td>
+                        <td className="px-3 py-2.5 text-muted">
+                          {teacher.departmentName || "—"}
+                        </td>
+                        <td className="px-3 py-2.5 text-muted">
+                          {teacher.subjectNames.length > 0
+                            ? teacher.subjectNames.join(", ")
+                            : "—"}
+                          {fieldErrors[`staff-${index}-subjects`] ? (
+                            <p className="mt-1 text-xs text-feezy-coral">
+                              {fieldErrors[`staff-${index}-subjects`]}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2.5 text-muted">
+                          {teacher.isHod ? "Yes" : "—"}
+                        </td>
+                        <td className="px-3 py-2.5 text-right">
+                          <button
+                            type="button"
+                            className="rounded-lg border border-border px-3 py-1.5 text-sm"
+                            onClick={() => removeTeacher(index)}
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="border-t border-border px-3 py-3">
+                  <OnboardingPager
+                    page={currentPage}
+                    pageCount={pageCount}
+                    total={teachers.length}
+                    pageSize={TEACHER_PAGE_SIZE}
+                    onPageChange={setPage}
+                    noun="teachers"
+                  />
+                </div>
+              </div>
             )}
           </section>
 
