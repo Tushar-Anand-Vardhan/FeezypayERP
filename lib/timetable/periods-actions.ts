@@ -152,6 +152,7 @@ export async function upsertPeriodAction(
         end_time: trimmed.endTime,
         name: trimmed.name || null,
         is_break: trimmed.isBreak ?? false,
+        period_kind: trimmed.isBreak ? "break" : "teaching",
         updated_at: new Date().toISOString(),
       })
       .eq("id", trimmed.id)
@@ -175,6 +176,7 @@ export async function upsertPeriodAction(
       end_time: trimmed.endTime,
       name: trimmed.name || null,
       is_break: trimmed.isBreak ?? false,
+      period_kind: trimmed.isBreak ? "break" : "teaching",
     })
     .select("id")
     .maybeSingle();

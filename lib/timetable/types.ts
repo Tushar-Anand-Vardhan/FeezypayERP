@@ -36,6 +36,7 @@ export type PeriodInput = {
   endTime: string;
   name?: string;
   isBreak?: boolean;
+  periodKind?: "teaching" | "class_teacher" | "break";
 };
 
 export type GridInput = {

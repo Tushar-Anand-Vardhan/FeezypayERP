@@ -13,7 +13,10 @@ import {
 } from "@/lib/onboarding/timetable-actions";
 import {
   WEEKDAYS,
-  defaultPeriods,
+  createPeriodRow,
+  defaultDayStructure,
+  normalizePeriodRows,
+  periodDisplayLabel,
   validateTimetableForm,
   type PeriodFormRow,
   type TimetableFieldErrors,
@@ -40,8 +43,7 @@ export function TimetableForm() {
   const [blockedReason, setBlockedReason] = useState<
     "prerequisites" | "sections" | "staff" | null
   >(null);
-  const [periodCount, setPeriodCount] = useState(6);
-  const [periods, setPeriods] = useState<PeriodFormRow[]>(defaultPeriods(6));
+  const [periods, setPeriods] = useState<PeriodFormRow[]>(defaultDayStructure());
   const [sections, setSections] = useState<SectionRow[]>([]);
   const [subjects, setSubjects] = useState<Array<{ id: string; name: string }>>(
     [],
@@ -82,9 +84,10 @@ export function TimetableForm() {
       }
 
       const nextPeriods =
-        result.periods.length > 0 ? result.periods : defaultPeriods(6);
+        result.periods.length > 0
+          ? normalizePeriodRows(result.periods)
+          : defaultDayStructure();
       setPeriods(nextPeriods);
-      setPeriodCount(nextPeriods.length);
       setSections(result.sections);
       setSubjects(result.subjects);
       setTeachers(result.teachers);
@@ -117,19 +120,38 @@ export function TimetableForm() {
 
   const activeSection = sections.find((section) => section.id === activeSectionId);
 
-  function updatePeriodCount(count: number) {
-    const safe = Math.max(1, Math.min(12, count));
-    setPeriodCount(safe);
+  function updatePeriod(
+    index: number,
+    patch: Partial<PeriodFormRow>,
+  ) {
+    setPeriods((current) =>
+      current.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, ...patch } : row,
+      ),
+    );
+  }
+
+  function addPeriod(educational: boolean) {
+    setPeriods((current) => [...current, createPeriodRow(current, educational)]);
+  }
+
+  function removePeriod(index: number) {
+    const removed = periods[index];
+    if (!removed) return;
+    setPeriods((current) => current.filter((_, rowIndex) => rowIndex !== index));
+    setSlots((current) =>
+      current.filter((slot) => slot.periodNumber !== removed.periodNumber),
+    );
+  }
+
+  function movePeriod(index: number, direction: -1 | 1) {
     setPeriods((current) => {
-      if (current.length === safe) return current;
-      if (current.length > safe) return current.slice(0, safe);
-      return [
-        ...current,
-        ...defaultPeriods(safe).slice(current.length).map((period, index) => ({
-          ...period,
-          periodNumber: current.length + index + 1,
-        })),
-      ];
+      const next = index + direction;
+      if (next < 0 || next >= current.length) return current;
+      const copy = [...current];
+      const [row] = copy.splice(index, 1);
+      copy.splice(next, 0, row);
+      return copy;
     });
   }
 
@@ -185,7 +207,7 @@ export function TimetableForm() {
       csvText: await file.text(),
       catalog: {
         section: activeSection,
-        periodNumbers: periods.map((period) => period.periodNumber),
+        periods,
         subjects,
         teachers,
       },
@@ -217,7 +239,7 @@ export function TimetableForm() {
       buildTimetableCsvTemplateRows({
         className: activeSection.className,
         sectionName: activeSection.name,
-        periodCount: periods.length,
+        periods,
         sampleSubject: subjects[0]?.name,
         sampleTeacher: teachers[0]?.employeeCode || teachers[0]?.name,
       }),
@@ -374,65 +396,109 @@ export function TimetableForm() {
             Timetable
           </h1>
           <p className="text-sm text-muted">
-            Define periods once. Then upload a CSV for each class-section (or
-            fill the grid). Preview first, then save. You can skip this step
-            for now.
+            Build the school day with custom period names, start/end times, and
+            whether each slot is educational. Then assign a teacher (optional)
+            and subject per class-section. You can skip this step for now.
           </p>
         </div>
 
         <form className="space-y-8" onSubmit={handleSubmit} noValidate>
           <section className="space-y-4 rounded-2xl border border-border p-4 sm:p-5">
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="w-40">
-                <FormField
-                  id="period-count"
-                  label="Periods / day"
-                  type="number"
-                  value={String(periodCount)}
-                  onChange={(value) => updatePeriodCount(Number(value) || 1)}
-                />
-              </div>
+            <div className="space-y-1">
+              <h2 className="text-base font-medium">Day structure</h2>
+              <p className="text-xs text-muted">
+                Name every bell yourself (Class teacher, Period 1, Lunch, Assembly).
+                Uncheck Educational for breaks — subject stays empty, teacher is
+                optional. CSV can use the period name or 1, 2, … for educational
+                periods in order.
+              </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-3">
               {periods.map((period, index) => (
                 <div
                   key={period.periodNumber}
-                  className="grid grid-cols-2 gap-2 rounded-xl border border-border p-3"
+                  className="grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-[1fr_auto_auto_auto_auto]"
                 >
-                  <p className="col-span-2 text-sm font-medium">
-                    Period {period.periodNumber}
-                  </p>
+                  <FormField
+                    id={`period-${index}-name`}
+                    label="Period name"
+                    value={period.name}
+                    onChange={(value) => updatePeriod(index, { name: value })}
+                    error={fieldErrors[`period-${index}`]}
+                  />
                   <FormField
                     id={`period-${index}-start`}
                     label="Start"
                     type="time"
                     value={period.startTime}
                     onChange={(value) =>
-                      setPeriods((current) =>
-                        current.map((row, rowIndex) =>
-                          rowIndex === index
-                            ? { ...row, startTime: value }
-                            : row,
-                        ),
-                      )
+                      updatePeriod(index, { startTime: value })
                     }
-                    error={fieldErrors[`period-${index}`]}
                   />
                   <FormField
                     id={`period-${index}-end`}
                     label="End"
                     type="time"
                     value={period.endTime}
-                    onChange={(value) =>
-                      setPeriods((current) =>
-                        current.map((row, rowIndex) =>
-                          rowIndex === index ? { ...row, endTime: value } : row,
-                        ),
-                      )
-                    }
+                    onChange={(value) => updatePeriod(index, { endTime: value })}
                   />
+                  <label className="flex items-end gap-2 pb-2.5 text-sm">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={period.educational}
+                      onChange={(event) =>
+                        updatePeriod(index, {
+                          educational: event.target.checked,
+                        })
+                      }
+                    />
+                    Educational
+                  </label>
+                  <div className="flex items-end gap-1 pb-1">
+                    <button
+                      type="button"
+                      className="h-10 rounded-lg border border-border px-2 text-xs text-muted"
+                      onClick={() => movePeriod(index, -1)}
+                      disabled={index === 0}
+                    >
+                      Up
+                    </button>
+                    <button
+                      type="button"
+                      className="h-10 rounded-lg border border-border px-2 text-xs text-muted"
+                      onClick={() => movePeriod(index, 1)}
+                      disabled={index === periods.length - 1}
+                    >
+                      Down
+                    </button>
+                    <button
+                      type="button"
+                      className="h-10 rounded-lg border border-border px-2 text-xs text-muted"
+                      onClick={() => removePeriod(index)}
+                      disabled={periods.length <= 1}
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="rounded-lg border border-border px-3 py-2 text-sm font-medium"
+                onClick={() => addPeriod(true)}
+              >
+                Add educational period
+              </button>
+              <button
+                type="button"
+                className="rounded-lg border border-border px-3 py-2 text-sm font-medium"
+                onClick={() => addPeriod(false)}
+              >
+                Add break
+              </button>
             </div>
           </section>
 
@@ -467,9 +533,9 @@ export function TimetableForm() {
                         CSV for {activeSection.className}-{activeSection.name}
                       </h2>
                       <p className="mt-1 text-xs text-muted">
-                        One file per class-section. Invalid rows block the
-                        import. Subject names and teacher names/codes must match
-                        what you already added.
+                        Name periods as they appear in the day structure.
+                        Educational periods can have a subject and teacher;
+                        breaks may leave both blank. Invalid rows block the import.
                       </p>
                     </div>
                     <button
@@ -550,9 +616,10 @@ export function TimetableForm() {
                       {periods.map((period) => (
                         <tr key={period.periodNumber}>
                           <td className="border border-border px-2 py-2 font-medium">
-                            {period.periodNumber}
+                            {periodDisplayLabel(period)}
                             <div className="text-xs text-muted">
                               {period.startTime}-{period.endTime}
+                              {period.educational ? "" : " · break"}
                             </div>
                           </td>
                           {WEEKDAYS.map((day) => {
@@ -564,27 +631,31 @@ export function TimetableForm() {
                             return (
                               <td
                                 key={`${day.value}-${period.periodNumber}`}
-                                className="border border-border p-2 align-top"
+                                className={`border border-border p-2 align-top ${
+                                  period.educational ? "" : "bg-surface-strong/40"
+                                }`}
                               >
-                                <select
-                                  className="mb-1 w-full rounded-lg border border-border bg-surface px-1 py-1 text-xs"
-                                  value={slot.subjectId}
-                                  onChange={(event) =>
-                                    upsertSlot(
-                                      activeSection.id,
-                                      day.value,
-                                      period.periodNumber,
-                                      { subjectId: event.target.value },
-                                    )
-                                  }
-                                >
-                                  <option value="">Subject</option>
-                                  {subjects.map((subject) => (
-                                    <option key={subject.id} value={subject.id}>
-                                      {subject.name}
-                                    </option>
-                                  ))}
-                                </select>
+                                {period.educational ? (
+                                  <select
+                                    className="mb-1 w-full rounded-lg border border-border bg-surface px-1 py-1 text-xs"
+                                    value={slot.subjectId}
+                                    onChange={(event) =>
+                                      upsertSlot(
+                                        activeSection.id,
+                                        day.value,
+                                        period.periodNumber,
+                                        { subjectId: event.target.value },
+                                      )
+                                    }
+                                  >
+                                    <option value="">Subject</option>
+                                    {subjects.map((subject) => (
+                                      <option key={subject.id} value={subject.id}>
+                                        {subject.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : null}
                                 <select
                                   className="w-full rounded-lg border border-border bg-surface px-1 py-1 text-xs"
                                   value={slot.teacherId}
@@ -597,7 +668,9 @@ export function TimetableForm() {
                                     )
                                   }
                                 >
-                                  <option value="">Teacher</option>
+                                  <option value="">
+                                    {period.educational ? "Teacher" : "Teacher (optional)"}
+                                  </option>
                                   {teachers.map((teacher) => (
                                     <option key={teacher.id} value={teacher.id}>
                                       {teacher.employeeCode

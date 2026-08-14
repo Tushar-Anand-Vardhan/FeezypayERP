@@ -18,6 +18,11 @@ import {
   parseTimetableDay,
   TIMETABLE_CSV_HEADERS,
 } from "../lib/onboarding/timetable-csv";
+import {
+  defaultDayStructure,
+  resolvePeriodFromCsv,
+  type PeriodFormRow,
+} from "../lib/onboarding/timetable";
 
 function section(title: string) {
   console.log(`\n=== ${title} ===`);
@@ -31,12 +36,23 @@ console.log("OK");
 section("validatePeriodInput");
 const periodBad = validatePeriodInput({
   academicYearId: "y1",
-  periodNumber: 0,
+  periodNumber: -1,
   startTime: "10:00",
   endTime: "09:00",
 });
 assert.ok(periodBad.periodNumber);
 assert.ok(periodBad.endTime);
+assert.equal(
+  Object.keys(
+    validatePeriodInput({
+      academicYearId: "y1",
+      periodNumber: 0,
+      startTime: "07:40",
+      endTime: "08:00",
+    }),
+  ).length,
+  0,
+);
 console.log("OK");
 
 section("validatePeriodSet overlap");
@@ -192,9 +208,44 @@ assert.equal(parseTimetableDay("Monday"), 1);
 assert.equal(parseTimetableDay("sat"), 6);
 assert.equal(parseTimetableDay("Sun"), null);
 
+const dayStructure: PeriodFormRow[] = [
+  {
+    periodNumber: 0,
+    name: "Class teacher",
+    startTime: "07:40",
+    endTime: "08:00",
+    educational: true,
+  },
+  {
+    periodNumber: 1,
+    name: "Period 1",
+    startTime: "08:00",
+    endTime: "08:40",
+    educational: true,
+  },
+  {
+    periodNumber: 2,
+    name: "Lunch",
+    startTime: "08:40",
+    endTime: "09:20",
+    educational: false,
+  },
+  {
+    periodNumber: 3,
+    name: "Period 2",
+    startTime: "09:20",
+    endTime: "10:00",
+    educational: true,
+  },
+];
+assert.equal(resolvePeriodFromCsv("1", dayStructure)?.name, "Period 1");
+assert.equal(resolvePeriodFromCsv("Period 2", dayStructure)?.periodNumber, 3);
+assert.equal(resolvePeriodFromCsv("Lunch", dayStructure)?.educational, false);
+assert.equal(defaultDayStructure().some((row) => !row.educational), true);
+
 const catalog = {
   section: { id: "sec-a", name: "A", className: "6" },
-  periodNumbers: [1, 2],
+  periods: dayStructure,
   subjects: [{ id: "sub-math", name: "Mathematics" }],
   teachers: [
     { id: "emp-1", name: "Priya Sharma", employeeCode: "T001" },
@@ -237,15 +288,41 @@ if (!duplicate.ok) {
   assert.ok(duplicate.errors.some((error) => error.includes("duplicate")));
 }
 
+const lunchBlocked = applyTimetableCsv({
+  csvText: `${TIMETABLE_CSV_HEADERS.join(",")}\n6,A,Mon,Lunch,Mathematics,Priya Sharma`,
+  catalog,
+});
+assert.equal(lunchBlocked.ok, false);
+
+const lunchEmpty = applyTimetableCsv({
+  csvText: `${TIMETABLE_CSV_HEADERS.join(",")}\n6,A,Mon,Lunch,,`,
+  catalog,
+});
+assert.equal(lunchEmpty.ok, true);
+
+const lunchDuty = applyTimetableCsv({
+  csvText: `${TIMETABLE_CSV_HEADERS.join(",")}\n6,A,Mon,Lunch,,Priya Sharma`,
+  catalog,
+});
+assert.equal(lunchDuty.ok, true);
+if (lunchDuty.ok) {
+  assert.equal(lunchDuty.slots[0]?.teacherId, "emp-1");
+  assert.equal(lunchDuty.slots[0]?.subjectId, "");
+}
+
 const template = buildTimetableCsvTemplateRows({
   className: "6",
   sectionName: "A",
-  periodCount: 2,
+  periods: dayStructure,
   sampleSubject: "Mathematics",
   sampleTeacher: "Priya Sharma",
 });
-assert.equal(template[0]?.[4], "Mathematics");
-assert.equal(template.length, 12);
+assert.equal(template[0]?.[3], "Class teacher");
+assert.equal(
+  template.find((row) => row[2] === "Mon" && row[3] === "Period 1")?.[4],
+  "Mathematics",
+);
+assert.equal(template.length, 24);
 console.log("OK");
 
 console.log("\nAll timetable validation checks passed.");

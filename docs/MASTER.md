@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-14 (Onboarding timetable CSV per class-section)  
+> **Last updated:** 2026-08-14 (Custom timetable periods: name, times, educational, optional teacher)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
@@ -594,7 +594,7 @@ persons
 | `department_announcements` | department | Draft/publish; notify stub |
 | `department_resources` | department | Links/notes; media stub |
 | `department_history` | department | Append-only edit trail |
-| `period_definitions` | year | E10 bell periods; break/lock/archive |
+| `period_definitions` | year | E10 bell periods; `period_kind` teaching/class_teacher/break; `period_number >= 0`; lock/archive |
 | `timetable_grids` | year | primary / alternate / exam / special |
 | `timetable_cycle_days` | grid | cycle day labels + weekday mapping |
 | `timetable_slots` | section×grid | subject + teacher employment; optional `room_id` |
@@ -786,7 +786,8 @@ Empty Aadhaar allowed. Invalid row → entire import blocked.
 - Teachers listed from **active `teacher_employments`**.
 - `sections.class_teacher_id` and `timetable_slots.teacher_id` reference **employment IDs**.
 - Skip stores `schools.timetable_skipped = true`.
-- Per class-section CSV import (D13): headers `class,section,day,period,subject,teacher`. Sample template is generated for the selected section. Subject must match catalog name; teacher is full name or `employee_code`. Invalid row → **entire import blocked**. Upload previews into the grid; wizard Save persists all sections.
+- Day structure is custom: each bell has a **name**, start/end, and **educational** flag. Non-educational (lunch/assembly) may leave teacher empty; educational slots take optional subject + teacher. `period_number` may be **0**.
+- Per class-section CSV import (D13): headers `class,section,day,period,subject,teacher`. `period` is the **teaching** ordinal (`1` = first teaching period) or a label (`Lunch`, `0` / `CT`). Sample template is generated for the selected section. Subject must match catalog name; teacher is full name or `employee_code`. Invalid row → **entire import blocked**. Upload previews into the grid; wizard Save persists all sections.
 
 ### 11.4 Exams & review
 
@@ -1508,7 +1509,11 @@ Also: `npx tsc --noEmit` after calendar module land.
 | Day aliases Mon–Sat / 1–6 | PASS |
 | Teacher match by name or employee_code | PASS |
 | Wrong class-section / unknown subject blocked | PASS |
-| Sample template rows = weekdays × periods | PASS |
+| Sample template includes named breaks | PASS |
+| Zero period (`period_number = 0`) allowed | PASS |
+| CSV period matches custom name or number | PASS |
+| Subject on a non-educational row blocked | PASS |
+| Break teacher optional / empty allowed | PASS |
 
 ---
 
@@ -2587,7 +2592,7 @@ Rich subject mutations go through `lib/subjects/*-actions.ts`. Onboarding bulk s
 
 | Concern | Implementation |
 |---------|----------------|
-| Periods | Upsert, archive, break flag, **lock/unlock** |
+| Periods | Upsert, archive, educational vs break, custom name, **lock/unlock**; `period_number >= 0` |
 | Weekly schedule | `timetable_slots` with day_of_week + period |
 | Cycle days | `timetable_cycle_days` per grid |
 | Alternate timetables | `timetable_grids` types: primary / alternate / exam / special |

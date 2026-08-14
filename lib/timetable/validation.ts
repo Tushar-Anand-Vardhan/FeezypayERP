@@ -47,7 +47,8 @@ export function trimPeriodInput(input: PeriodInput): PeriodInput {
     startTime: normalizeTime(input.startTime),
     endTime: normalizeTime(input.endTime),
     name: input.name?.trim() ?? "",
-    isBreak: input.isBreak ?? false,
+    isBreak: input.isBreak ?? input.periodKind === "break",
+    periodKind: input.periodKind,
   };
 }
 
@@ -57,8 +58,8 @@ export function validatePeriodInput(input: PeriodInput): Record<string, string> 
   if (!trimmed.academicYearId) {
     errors.academicYearId = "Academic year is required.";
   }
-  if (!Number.isInteger(trimmed.periodNumber) || trimmed.periodNumber < 1) {
-    errors.periodNumber = "Period number must be a positive integer.";
+  if (!Number.isInteger(trimmed.periodNumber) || trimmed.periodNumber < 0) {
+    errors.periodNumber = "Period number must be 0 or a positive integer.";
   }
   if (!isTime(trimmed.startTime)) {
     errors.startTime = "Start time must be HH:MM.";
@@ -251,10 +252,10 @@ export function detectSlotConflicts(input: {
     });
   }
 
-  if (period?.isBreak) {
+  if (period?.isBreak && candidate.subjectId) {
     conflicts.push({
       kind: "break_period",
-      message: `Period ${period.periodNumber} is a break and cannot hold a class.`,
+      message: `Period ${period.periodNumber} is not educational and cannot hold a subject.`,
       slotKey,
     });
   }

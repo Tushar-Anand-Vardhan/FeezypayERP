@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { getActiveYearClassesForSchool } from "@/lib/onboarding/school-classes-server";
 import { getAuthenticatedSchoolContext } from "@/lib/onboarding/server-context";
 import {
+  normalizePeriodRows,
+  isEducationalPeriod,
   validateTimetableForm,
   type ClassTeacherAssignment,
   type PeriodFormRow,
@@ -76,7 +78,7 @@ export async function getTimetableStepDataAction(): Promise<TimetableStepData> {
         .eq("status", "active"),
       supabase
         .from("period_definitions")
-        .select("period_number, start_time, end_time")
+        .select("period_number, start_time, end_time, name, is_break, period_kind")
         .eq("academic_year_id", classesResult.academicYear.id)
         .order("period_number"),
     ]);
@@ -112,11 +114,18 @@ export async function getTimetableStepDataAction(): Promise<TimetableStepData> {
   return {
     success: true,
     blocked: false,
-    periods: (periods ?? []).map((row) => ({
-      periodNumber: row.period_number,
-      startTime: String(row.start_time).slice(0, 5),
-      endTime: String(row.end_time).slice(0, 5),
-    })),
+    periods: normalizePeriodRows(
+      (periods ?? []).map((row) => ({
+        periodNumber: row.period_number,
+        startTime: String(row.start_time).slice(0, 5),
+        endTime: String(row.end_time).slice(0, 5),
+        name: row.name ?? "",
+        educational: isEducationalPeriod({
+          kind: row.period_kind,
+          isBreak: row.is_break,
+        }),
+      })),
+    ),
     sections: sections.map((section) => ({
       id: section.id,
       name: section.name,
@@ -193,8 +202,21 @@ export async function saveTimetableAction(formData: FormData): Promise<Result> {
     return { success: false, error: "Could not read timetable data." };
   }
 
+  const sourcePeriods = normalizePeriodRows(periods);
+  const remappedPeriods = sourcePeriods.map((period, index) => ({
+    ...period,
+    periodNumber: index,
+  }));
+  const numberMap = new Map(
+    sourcePeriods.map((period, index) => [period.periodNumber, index]),
+  );
+  const remappedSlots = slots.map((slot) => ({
+    ...slot,
+    periodNumber: numberMap.get(slot.periodNumber) ?? slot.periodNumber,
+  }));
+
   const fieldErrors = validateTimetableForm({
-    periods,
+    periods: remappedPeriods,
     requireConfigured: true,
   });
   if (Object.keys(fieldErrors).length > 0) {
@@ -226,11 +248,14 @@ export async function saveTimetableAction(formData: FormData): Promise<Result> {
   const { data: insertedPeriods, error: periodError } = await supabase
     .from("period_definitions")
     .insert(
-      periods.map((period) => ({
+      remappedPeriods.map((period) => ({
         academic_year_id: academicYearId,
         period_number: period.periodNumber,
         start_time: period.startTime,
         end_time: period.endTime,
+        name: period.name || null,
+        is_break: !period.educational,
+        period_kind: period.educational ? "teaching" : "break",
       })),
     )
     .select("id, period_number");
@@ -257,16 +282,27 @@ export async function saveTimetableAction(formData: FormData): Promise<Result> {
     await supabase.from("timetable_slots").delete().in("section_id", sectionIds);
   }
 
-  const slotRows = slots
-    .filter((slot) => slot.subjectId || slot.teacherId)
-    .map((slot) => ({
-      section_id: slot.sectionId,
-      day_of_week: slot.dayOfWeek,
-      period_definition_id: periodIdByNumber.get(slot.periodNumber)!,
-      subject_id: slot.subjectId || null,
-      teacher_id: slot.teacherId || null,
-    }))
-    .filter((row) => row.period_definition_id);
+  const periodByNumber = new Map(
+    remappedPeriods.map((period) => [period.periodNumber, period]),
+  );
+
+  const slotRows = remappedSlots
+    .filter((slot) => {
+      const period = periodByNumber.get(slot.periodNumber);
+      if (!period || !periodIdByNumber.has(slot.periodNumber)) return false;
+      if (!period.educational && slot.subjectId) return false;
+      return Boolean(slot.subjectId || slot.teacherId);
+    })
+    .map((slot) => {
+      const period = periodByNumber.get(slot.periodNumber);
+      return {
+        section_id: slot.sectionId,
+        day_of_week: slot.dayOfWeek,
+        period_definition_id: periodIdByNumber.get(slot.periodNumber)!,
+        subject_id: period?.educational ? slot.subjectId || null : null,
+        teacher_id: slot.teacherId || null,
+      };
+    });
 
   if (slotRows.length > 0) {
     const { error: slotError } = await supabase

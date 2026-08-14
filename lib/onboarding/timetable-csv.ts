@@ -1,5 +1,11 @@
 import { parseCsv } from "@/lib/onboarding/csv";
-import { WEEKDAYS, type TimetableSlotFormRow } from "@/lib/onboarding/timetable";
+import {
+  WEEKDAYS,
+  periodCsvToken,
+  resolvePeriodFromCsv,
+  type PeriodFormRow,
+  type TimetableSlotFormRow,
+} from "@/lib/onboarding/timetable";
 
 export const TIMETABLE_CSV_HEADERS = [
   "class",
@@ -12,7 +18,7 @@ export const TIMETABLE_CSV_HEADERS = [
 
 export type TimetableCsvCatalog = {
   section: { id: string; name: string; className: string };
-  periodNumbers: number[];
+  periods: PeriodFormRow[];
   subjects: Array<{ id: string; name: string }>;
   teachers: Array<{ id: string; name: string; employeeCode: string }>;
 };
@@ -57,19 +63,29 @@ export function parseTimetableDay(value: string): number | null {
 export function buildTimetableCsvTemplateRows(input: {
   className: string;
   sectionName: string;
-  periodCount: number;
+  periods: PeriodFormRow[];
   sampleSubject?: string;
   sampleTeacher?: string;
 }): string[][] {
+  const assignable = input.periods;
+  const samplePeriodNumber = (
+    input.periods.find(
+      (period) => period.educational && /^period\s*\d+/i.test(period.name),
+    ) ?? input.periods.find((period) => period.educational)
+  )?.periodNumber;
   const rows: string[][] = [];
   for (const day of WEEKDAYS) {
-    for (let period = 1; period <= input.periodCount; period += 1) {
-      const isSample = day.value === 1 && period === 1;
+    for (const period of assignable) {
+      const token = periodCsvToken(period, input.periods);
+      const isSample =
+        day.value === 1 &&
+        period.educational &&
+        period.periodNumber === samplePeriodNumber;
       rows.push([
         input.className,
         input.sectionName,
         day.label,
-        String(period),
+        token,
         isSample ? (input.sampleSubject ?? "") : "",
         isSample ? (input.sampleTeacher ?? "") : "",
       ]);
@@ -98,7 +114,6 @@ export function applyTimetableCsv(input: {
     return { ok: false, errors: ["CSV has no data rows."] };
   }
 
-  const periodSet = new Set(input.catalog.periodNumbers);
   const subjectByName = new Map<string, string[]>();
   for (const subject of input.catalog.subjects) {
     const key = normalizeKey(subject.name);
@@ -126,6 +141,9 @@ export function applyTimetableCsv(input: {
   const expectedSection = normalizeKey(input.catalog.section.name);
   const errors: string[] = [];
   const byCell = new Map<string, TimetableSlotFormRow>();
+  const tokens = input.catalog.periods
+    .map((period) => periodCsvToken(period, input.catalog.periods))
+    .join(", ");
 
   parsed.rows.forEach((row, index) => {
     const line = index + 2;
@@ -157,18 +175,25 @@ export function applyTimetableCsv(input: {
       return;
     }
 
-    const periodNumber = Number(periodRaw);
-    if (!Number.isInteger(periodNumber) || !periodSet.has(periodNumber)) {
+    const period = resolvePeriodFromCsv(periodRaw, input.catalog.periods);
+    if (!period) {
       errors.push(
-        `Row ${line}: period "${periodRaw || "(blank)"}" must be one of ${input.catalog.periodNumbers.join(", ")}.`,
+        `Row ${line}: period "${periodRaw || "(blank)"}" must match a day-structure row (${tokens}).`,
       );
       return;
     }
 
-    const cellKey = `${dayOfWeek}-${periodNumber}`;
+    if (!period.educational && subjectName) {
+      errors.push(
+        `Row ${line}: "${period.name}" is not educational. Leave subject blank; teacher is optional.`,
+      );
+      return;
+    }
+
+    const cellKey = `${dayOfWeek}-${period.periodNumber}`;
     if (byCell.has(cellKey)) {
       errors.push(
-        `Row ${line}: duplicate slot for ${dayRaw} period ${periodNumber}.`,
+        `Row ${line}: duplicate slot for ${dayRaw} period ${periodRaw}.`,
       );
       return;
     }
@@ -214,7 +239,7 @@ export function applyTimetableCsv(input: {
     byCell.set(cellKey, {
       sectionId: input.catalog.section.id,
       dayOfWeek,
-      periodNumber,
+      periodNumber: period.periodNumber,
       subjectId,
       teacherId,
     });
