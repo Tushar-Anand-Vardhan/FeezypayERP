@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-14 (Onboarding students pagination; timetable blocked-reason copy)  
+> **Last updated:** 2026-08-14 (Onboarding timetable CSV per class-section)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
@@ -786,6 +786,7 @@ Empty Aadhaar allowed. Invalid row → entire import blocked.
 - Teachers listed from **active `teacher_employments`**.
 - `sections.class_teacher_id` and `timetable_slots.teacher_id` reference **employment IDs**.
 - Skip stores `schools.timetable_skipped = true`.
+- Per class-section CSV import (D13): headers `class,section,day,period,subject,teacher`. Sample template is generated for the selected section. Subject must match catalog name; teacher is full name or `employee_code`. Invalid row → **entire import blocked**. Upload previews into the grid; wizard Save persists all sections.
 
 ### 11.4 Exams & review
 
@@ -1497,6 +1498,18 @@ Also: `npx tsc --noEmit` after calendar module land.
 | `npx tsc --noEmit` (achievements modules) | PASS |
 | `supabase db push` | PENDING (user request) |
 
+### 15.49 Onboarding timetable CSV
+
+**Date:** 2026-08-14 · `npx tsx scripts/smoke-timetable-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| Headers `class,section,day,period,subject,teacher` | PASS |
+| Day aliases Mon–Sat / 1–6 | PASS |
+| Teacher match by name or employee_code | PASS |
+| Wrong class-section / unknown subject blocked | PASS |
+| Sample template rows = weekdays × periods | PASS |
+
 ---
 
 ## 16. Key file index
@@ -1512,7 +1525,7 @@ Also: `npx tsc --noEmit` after calendar module land.
 ### Onboarding
 
 - `lib/onboarding/steps.ts`, `progress.ts`, `server-context.ts`, `csv.ts`
-- `lib/onboarding/*-actions.ts`, `staff.ts`, `students.ts`, `timetable.ts`, `exams.ts`
+- `lib/onboarding/*-actions.ts`, `staff.ts`, `students.ts`, `timetable.ts`, `timetable-csv.ts`, `exams.ts`
 - `components/onboarding/**`
 - `app/onboarding/**`
 

@@ -12,6 +12,12 @@ import {
   validatePeriodSet,
   validateSlotInput,
 } from "../lib/timetable/validation";
+import {
+  applyTimetableCsv,
+  buildTimetableCsvTemplateRows,
+  parseTimetableDay,
+  TIMETABLE_CSV_HEADERS,
+} from "../lib/onboarding/timetable-csv";
 
 function section(title: string) {
   console.log(`\n=== ${title} ===`);
@@ -179,6 +185,67 @@ const batch = detectBatchSlotConflicts({
   ],
 });
 assert.ok(batch.some((c) => c.kind === "teacher_double_booked"));
+console.log("OK");
+
+section("onboarding timetable CSV");
+assert.equal(parseTimetableDay("Monday"), 1);
+assert.equal(parseTimetableDay("sat"), 6);
+assert.equal(parseTimetableDay("Sun"), null);
+
+const catalog = {
+  section: { id: "sec-a", name: "A", className: "6" },
+  periodNumbers: [1, 2],
+  subjects: [{ id: "sub-math", name: "Mathematics" }],
+  teachers: [
+    { id: "emp-1", name: "Priya Sharma", employeeCode: "T001" },
+    { id: "emp-2", name: "Raj Gupta", employeeCode: "T002" },
+  ],
+};
+
+const good = applyTimetableCsv({
+  csvText: `${TIMETABLE_CSV_HEADERS.join(",")}\n6,A,Mon,1,Mathematics,Priya Sharma\n6,A,Tue,1,Mathematics,T002`,
+  catalog,
+});
+assert.equal(good.ok, true);
+if (good.ok) {
+  assert.equal(good.filledCount, 2);
+  assert.equal(good.slots[0].teacherId, "emp-1");
+  assert.equal(good.slots[1].teacherId, "emp-2");
+}
+
+const blocked = applyTimetableCsv({
+  csvText: `${TIMETABLE_CSV_HEADERS.join(",")}\n6,B,Mon,1,Mathematics,Priya Sharma`,
+  catalog,
+});
+assert.equal(blocked.ok, false);
+if (!blocked.ok) {
+  assert.ok(blocked.errors[0]?.includes("section"));
+}
+
+const unknown = applyTimetableCsv({
+  csvText: `${TIMETABLE_CSV_HEADERS.join(",")}\n6,A,Mon,1,French,Priya Sharma`,
+  catalog,
+});
+assert.equal(unknown.ok, false);
+
+const duplicate = applyTimetableCsv({
+  csvText: `${TIMETABLE_CSV_HEADERS.join(",")}\n6,A,Mon,1,Mathematics,Priya Sharma\n6,A,Monday,1,Mathematics,T002`,
+  catalog,
+});
+assert.equal(duplicate.ok, false);
+if (!duplicate.ok) {
+  assert.ok(duplicate.errors.some((error) => error.includes("duplicate")));
+}
+
+const template = buildTimetableCsvTemplateRows({
+  className: "6",
+  sectionName: "A",
+  periodCount: 2,
+  sampleSubject: "Mathematics",
+  sampleTeacher: "Priya Sharma",
+});
+assert.equal(template[0]?.[4], "Mathematics");
+assert.equal(template.length, 12);
 console.log("OK");
 
 console.log("\nAll timetable validation checks passed.");

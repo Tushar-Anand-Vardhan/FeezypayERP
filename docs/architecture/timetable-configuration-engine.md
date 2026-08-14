@@ -58,6 +58,8 @@ lib/timetable/
 
 Onboarding wipe-rewrite (`saveTimetableAction`) still works; prefer engine APIs for ongoing edits.
 
+Onboarding UI accepts a **per class-section CSV** (`lib/onboarding/timetable-csv.ts`): preview into the grid, then save. Headers: `class,section,day,period,subject,teacher`.
+
 ---
 
 ## 4. Tests

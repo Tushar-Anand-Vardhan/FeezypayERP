@@ -26,7 +26,7 @@ export type TimetableStepData =
         classTeacherId: string;
       }>;
       subjects: Array<{ id: string; name: string }>;
-      teachers: Array<{ id: string; name: string }>;
+      teachers: Array<{ id: string; name: string; employeeCode: string }>;
       slots: TimetableSlotFormRow[];
       timetableSkipped: boolean;
     }
@@ -70,7 +70,7 @@ export async function getTimetableStepDataAction(): Promise<TimetableStepData> {
       supabase
         .from("teacher_employments")
         .select(
-          "id, teacher_profiles(persons(full_name))",
+          "id, employee_code, teacher_profiles(persons(full_name))",
         )
         .eq("school_id", schoolId)
         .eq("status", "active"),
@@ -145,6 +145,7 @@ export async function getTimetableStepDataAction(): Promise<TimetableStepData> {
       return {
         id: row.id,
         name: person?.full_name ?? "Teacher",
+        employeeCode: row.employee_code ?? "",
       };
     }),
     slots: (slots ?? []).map((slot) => ({
