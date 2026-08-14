@@ -40,7 +40,7 @@
 | `assessment_exam_types` | Admin exam-type catalog + default weightage/max/pass |
 | `assessment_categories` | Category kinds catalog |
 | `assessment_policies` | School-wide or year-scoped publish/lock defaults + future flags |
-| `exam_definitions` enrich | type/category FKs, pass_marks, scale version, subject group, publishing/lock, archive |
+| `exam_definitions` enrich | optional `class_id`, type/category FKs, pass_marks, scale version, subject group, publishing/lock, archive |
 | `assessment_components` | Theory/practical/internal/project components on a definition |
 | `exam_subject_schedules` enrich | pass_marks, optional subject, component_type, schedule time, archive |
 
@@ -63,7 +63,9 @@ lib/assessment/
   schedules-actions.ts
 ```
 
-Onboarding exams step soft-archives then inserts (compatible with revoked DELETE). Prefer engine APIs for ongoing admin configuration.
+Onboarding exams step writes **per-class** definitions (`exam_definitions.class_id`), then soft-archives and reinserts (compatible with revoked DELETE). Null `class_id` remains school-wide. Prefer engine APIs for ongoing admin configuration.
+
+`npx tsx scripts/smoke-exams-validation.ts` covers onboarding row uniqueness per class.
 
 ---
 

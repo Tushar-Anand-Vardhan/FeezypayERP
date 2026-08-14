@@ -14,6 +14,7 @@ export const GRADING_TYPES = [
 ] as const;
 
 export type ExamFormRow = {
+  classId: string;
   name: string;
   category: (typeof EXAM_CATEGORIES)[number]["value"];
   termId: string;
@@ -24,29 +25,46 @@ export type ExamFormRow = {
 
 export type ExamFieldErrors = Record<string, string>;
 
-export function emptyExam(): ExamFormRow {
+export function emptyExam(overrides: Partial<ExamFormRow> = {}): ExamFormRow {
   return {
+    classId: "",
     name: "",
     category: "unit_test",
     termId: "",
     weightagePercent: "",
     maxMarks: "100",
     gradingType: "marks",
+    ...overrides,
   };
 }
 
 export function trimExamRows(rows: ExamFormRow[]): ExamFormRow[] {
   return rows.map((row) => ({
     ...row,
+    classId: row.classId.trim(),
     name: row.name.trim(),
     weightagePercent: row.weightagePercent.trim(),
     maxMarks: row.maxMarks.trim(),
   }));
 }
 
+export function copyExamsToClass(
+  rows: ExamFormRow[],
+  sourceClassId: string,
+  targetClassId: string,
+): ExamFormRow[] {
+  const copies = rows
+    .filter((row) => row.classId === sourceClassId)
+    .map((row) => ({ ...row, classId: targetClassId }));
+  return [
+    ...rows.filter((row) => row.classId !== targetClassId),
+    ...copies,
+  ];
+}
+
 export function validateExamRows(
   rows: ExamFormRow[],
-  options: { requireAtLeastOne?: boolean } = {},
+  options: { requireAtLeastOne?: boolean; classIds?: Set<string> } = {},
 ): ExamFieldErrors {
   const errors: ExamFieldErrors = {};
   const trimmed = trimExamRows(rows);
@@ -58,12 +76,18 @@ export function validateExamRows(
 
   const seen = new Map<string, number>();
   trimmed.forEach((row, index) => {
+    if (!row.classId) {
+      errors[`exam-${index}-classId`] = "Select a class.";
+    } else if (options.classIds && !options.classIds.has(row.classId)) {
+      errors[`exam-${index}-classId`] = "Class is not in this academic year.";
+    }
     if (!row.name) {
       errors[`exam-${index}-name`] = "Exam name is required.";
     } else {
-      const key = row.name.toLowerCase();
+      const key = `${row.classId}::${row.name.toLowerCase()}`;
       if (seen.has(key)) {
-        errors[`exam-${index}-name`] = "Duplicate exam name.";
+        errors[`exam-${index}-name`] =
+          "Duplicate exam name for this class.";
       } else {
         seen.set(key, index);
       }

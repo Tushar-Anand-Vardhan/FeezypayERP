@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   assertCategoryOwned,
+  assertClassInYear,
   assertExamDefinitionOwned,
   assertExamTypeOwned,
   assertGradingScaleVersionOwned,
@@ -33,7 +34,7 @@ function revalidate() {
 }
 
 const EXAM_SELECT =
-  "id, academic_year_id, term_id, name, category, exam_type_id, assessment_category_id, weightage_percent, max_marks, pass_marks, grading_type, grading_scale_version_id, subject_group_id, includes_optional_subjects, description, publishing_status, publish_at, published_at, locked_at, publish_rules, lock_rules, moderation_enabled, ai_evaluation_enabled, archived_at";
+  "id, academic_year_id, class_id, term_id, name, category, exam_type_id, assessment_category_id, weightage_percent, max_marks, pass_marks, grading_type, grading_scale_version_id, subject_group_id, includes_optional_subjects, description, publishing_status, publish_at, published_at, locked_at, publish_rules, lock_rules, moderation_enabled, ai_evaluation_enabled, archived_at";
 
 export async function listExamDefinitionsAction(
   academicYearId: string,
@@ -102,6 +103,12 @@ export async function upsertExamDefinitionAction(
     }
   }
 
+  if (input.classId) {
+    if (!(await assertClassInYear(supabase, academicYearId, input.classId))) {
+      return { success: false, error: "Class not found in this year." };
+    }
+  }
+
   if (input.examTypeId) {
     if (!(await assertExamTypeOwned(supabase, schoolId, input.examTypeId))) {
       return { success: false, error: "Exam type not found." };
@@ -158,6 +165,7 @@ export async function upsertExamDefinitionAction(
 
   const payload = {
     academic_year_id: academicYearId,
+    class_id: input.classId || null,
     term_id: input.termId || null,
     name: input.name.trim(),
     category: input.category ?? "other",

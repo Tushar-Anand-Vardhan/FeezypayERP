@@ -74,6 +74,8 @@ export type AssessmentPolicyInput = {
 export type ExamDefinitionInput = {
   id?: string;
   academicYearId: string;
+  /** Null = school-wide. Onboarding writes a class id. */
+  classId?: string | null;
   termId?: string | null;
   name: string;
   /** Legacy onboarding category string */

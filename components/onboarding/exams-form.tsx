@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { FormField } from "@/components/form/form-field";
 import { WizardActions } from "@/components/onboarding/wizard-actions";
 import { useOnboardingStepReady } from "@/components/onboarding/onboarding-progress";
@@ -13,6 +13,7 @@ import {
 import {
   EXAM_CATEGORIES,
   GRADING_TYPES,
+  copyExamsToClass,
   emptyExam,
   validateExamRows,
   type ExamFieldErrors,
@@ -24,8 +25,16 @@ export function ExamsForm() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState(false);
+  const [blockedReason, setBlockedReason] = useState<
+    "prerequisites" | "terms" | "classes" | null
+  >(null);
   const [terms, setTerms] = useState<Array<{ id: string; name: string }>>([]);
+  const [classes, setClasses] = useState<Array<{ id: string; name: string }>>(
+    [],
+  );
   const [exams, setExams] = useState<ExamFormRow[]>([]);
+  const [activeClassId, setActiveClassId] = useState("");
+  const [copyFromClassId, setCopyFromClassId] = useState("");
   const [fieldErrors, setFieldErrors] = useState<ExamFieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -50,16 +59,15 @@ export function ExamsForm() {
 
       if (result.blocked) {
         setBlocked(true);
+        setBlockedReason(result.reason);
         setInitialLoading(false);
         return;
       }
 
       setTerms(result.terms);
-      setExams(
-        result.exams.length > 0
-          ? result.exams
-          : [{ ...emptyExam(), termId: result.terms[0]?.id ?? "" }],
-      );
+      setClasses(result.classes);
+      setExams(result.exams);
+      setActiveClassId(result.classes[0]?.id ?? "");
       setInitialLoading(false);
     }
 
@@ -69,15 +77,57 @@ export function ExamsForm() {
     };
   }, []);
 
+  const examCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const exam of exams) {
+      counts.set(exam.classId, (counts.get(exam.classId) ?? 0) + 1);
+    }
+    return counts;
+  }, [exams]);
+
+  const classExamRows = useMemo(
+    () =>
+      exams
+        .map((exam, index) => ({ exam, index }))
+        .filter(({ exam }) => exam.classId === activeClassId),
+    [exams, activeClassId],
+  );
+
+  const activeClass = classes.find((row) => row.id === activeClassId);
+  const copySources = classes.filter(
+    (row) => row.id !== activeClassId && (examCounts.get(row.id) ?? 0) > 0,
+  );
+
+  function updateExam(index: number, patch: Partial<ExamFormRow>) {
+    setExams((current) =>
+      current.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, ...patch } : row,
+      ),
+    );
+  }
+
   async function performSave(intent: "save" | "next") {
     setFormError(null);
     setSuccessMessage(null);
 
     const errors = validateExamRows(exams, {
       requireAtLeastOne: intent === "next",
+      classIds: new Set(classes.map((row) => row.id)),
     });
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
+      const firstInvalid = exams.findIndex((_, index) =>
+        Boolean(
+          errors[`exam-${index}-classId`] ||
+            errors[`exam-${index}-name`] ||
+            errors[`exam-${index}-termId`] ||
+            errors[`exam-${index}-weightagePercent`] ||
+            errors[`exam-${index}-maxMarks`],
+        ),
+      );
+      if (firstInvalid >= 0) {
+        setActiveClassId(exams[firstInvalid]?.classId ?? activeClassId);
+      }
       return false;
     }
     setFieldErrors({});
@@ -138,16 +188,36 @@ export function ExamsForm() {
   }
 
   if (blocked) {
+    const blockedCopy =
+      blockedReason === "classes"
+        ? {
+            message: "Add at least one class before configuring exams.",
+            href: "/onboarding/classes",
+            label: "Go to Classes",
+          }
+        : blockedReason === "prerequisites"
+          ? {
+              message:
+                "Finish school identity and earlier setup before configuring exams.",
+              href: "/onboarding/school-identity",
+              label: "Go to School Identity",
+            }
+          : {
+              message: "Complete Term structure first.",
+              href: "/onboarding/terms",
+              label: "Go to Terms",
+            };
+
     return (
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
         <div className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <h1 className="text-2xl font-semibold tracking-tight">Exams</h1>
-          <p className="text-sm text-muted">Complete Term structure first.</p>
+          <p className="text-sm text-muted">{blockedCopy.message}</p>
           <Link
-            href="/onboarding/terms"
+            href={blockedCopy.href}
             className="inline-flex text-sm font-medium underline-offset-4 hover:underline"
           >
-            Go to Terms
+            {blockedCopy.label}
           </Link>
         </div>
       </main>
@@ -162,20 +232,97 @@ export function ExamsForm() {
             Exam configuration
           </h1>
           <p className="text-sm text-muted">
-            Define exams per term with weightage and max marks. Scheduling can
-            come later.
+            Each class can have its own exam pattern. Switch class, then add
+            unit tests, midterms, or boards for that class only. Names must be
+            unique within the class. You do not have to set exams for every
+            class.
           </p>
         </div>
 
         <form className="space-y-8" onSubmit={handleSubmit} noValidate>
+          <div className="flex flex-wrap gap-2">
+            {classes.map((row) => (
+              <button
+                key={row.id}
+                type="button"
+                onClick={() => {
+                  setActiveClassId(row.id);
+                  setCopyFromClassId("");
+                }}
+                className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+                  activeClassId === row.id
+                    ? "bg-feezy-indigo text-white"
+                    : "border border-border text-muted"
+                }`}
+              >
+                {row.name}
+                {(examCounts.get(row.id) ?? 0) > 0
+                  ? ` · ${examCounts.get(row.id)}`
+                  : ""}
+              </button>
+            ))}
+          </div>
+
           <section className="space-y-4">
-            {exams.map((exam, index) => (
+            {activeClass ? (
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-medium">
+                    {activeClass.name} exams
+                  </h2>
+                  <p className="text-xs text-muted">
+                    {classExamRows.length === 0
+                      ? "No exams yet for this class."
+                      : `${classExamRows.length} exam${classExamRows.length === 1 ? "" : "s"} for this class.`}
+                  </p>
+                </div>
+                {copySources.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      className="h-10 rounded-xl border border-border bg-surface px-3 text-sm"
+                      value={copyFromClassId}
+                      onChange={(event) =>
+                        setCopyFromClassId(event.target.value)
+                      }
+                      aria-label="Copy exams from another class"
+                    >
+                      <option value="">Copy from class…</option>
+                      {copySources.map((row) => (
+                        <option key={row.id} value={row.id}>
+                          {row.name} ({examCounts.get(row.id)})
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-border px-3 py-2 text-sm font-medium disabled:opacity-50"
+                      disabled={!copyFromClassId}
+                      onClick={() => {
+                        if (!copyFromClassId || !activeClassId) return;
+                        setExams((current) =>
+                          copyExamsToClass(
+                            current,
+                            copyFromClassId,
+                            activeClassId,
+                          ),
+                        );
+                        setCopyFromClassId("");
+                      }}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {classExamRows.map(({ exam, index }, localIndex) => (
               <div
                 key={`exam-${index}`}
                 className="space-y-4 rounded-2xl border border-border p-4 sm:p-5"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-base font-medium">Exam {index + 1}</h2>
+                  <h2 className="text-base font-medium">Exam {localIndex + 1}</h2>
                   <button
                     type="button"
                     className="rounded-lg border border-border px-3 py-1.5 text-sm"
@@ -194,13 +341,7 @@ export function ExamsForm() {
                     id={`exam-${index}-name`}
                     label="Name"
                     value={exam.name}
-                    onChange={(value) =>
-                      setExams((current) =>
-                        current.map((row, rowIndex) =>
-                          rowIndex === index ? { ...row, name: value } : row,
-                        ),
-                      )
-                    }
+                    onChange={(value) => updateExam(index, { name: value })}
                     error={fieldErrors[`exam-${index}-name`]}
                     required
                   />
@@ -216,17 +357,10 @@ export function ExamsForm() {
                       className="h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm"
                       value={exam.category}
                       onChange={(event) =>
-                        setExams((current) =>
-                          current.map((row, rowIndex) =>
-                            rowIndex === index
-                              ? {
-                                  ...row,
-                                  category: event.target
-                                    .value as ExamFormRow["category"],
-                                }
-                              : row,
-                          ),
-                        )
+                        updateExam(index, {
+                          category: event.target
+                            .value as ExamFormRow["category"],
+                        })
                       }
                     >
                       {EXAM_CATEGORIES.map((category) => (
@@ -248,13 +382,7 @@ export function ExamsForm() {
                       className="h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm"
                       value={exam.termId}
                       onChange={(event) =>
-                        setExams((current) =>
-                          current.map((row, rowIndex) =>
-                            rowIndex === index
-                              ? { ...row, termId: event.target.value }
-                              : row,
-                          ),
-                        )
+                        updateExam(index, { termId: event.target.value })
                       }
                     >
                       <option value="">Select term</option>
@@ -275,13 +403,7 @@ export function ExamsForm() {
                     label="Weightage %"
                     value={exam.weightagePercent}
                     onChange={(value) =>
-                      setExams((current) =>
-                        current.map((row, rowIndex) =>
-                          rowIndex === index
-                            ? { ...row, weightagePercent: value }
-                            : row,
-                        ),
-                      )
+                      updateExam(index, { weightagePercent: value })
                     }
                     error={fieldErrors[`exam-${index}-weightagePercent`]}
                   />
@@ -290,11 +412,7 @@ export function ExamsForm() {
                     label="Max marks"
                     value={exam.maxMarks}
                     onChange={(value) =>
-                      setExams((current) =>
-                        current.map((row, rowIndex) =>
-                          rowIndex === index ? { ...row, maxMarks: value } : row,
-                        ),
-                      )
+                      updateExam(index, { maxMarks: value })
                     }
                     error={fieldErrors[`exam-${index}-maxMarks`]}
                   />
@@ -310,17 +428,10 @@ export function ExamsForm() {
                       className="h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm"
                       value={exam.gradingType}
                       onChange={(event) =>
-                        setExams((current) =>
-                          current.map((row, rowIndex) =>
-                            rowIndex === index
-                              ? {
-                                  ...row,
-                                  gradingType: event.target
-                                    .value as ExamFormRow["gradingType"],
-                                }
-                              : row,
-                          ),
-                        )
+                        updateExam(index, {
+                          gradingType: event.target
+                            .value as ExamFormRow["gradingType"],
+                        })
                       }
                     >
                       {GRADING_TYPES.map((type) => (
@@ -340,11 +451,14 @@ export function ExamsForm() {
               onClick={() =>
                 setExams((current) => [
                   ...current,
-                  { ...emptyExam(), termId: terms[0]?.id ?? "" },
+                  emptyExam({
+                    classId: activeClassId,
+                    termId: terms[0]?.id ?? "",
+                  }),
                 ])
               }
             >
-              Add exam
+              Add exam{activeClass ? ` for ${activeClass.name}` : ""}
             </button>
           </section>
 

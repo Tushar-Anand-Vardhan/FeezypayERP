@@ -1,8 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getActiveAcademicYearForSchool } from "@/lib/onboarding/academic-year-server";
 import { getOnboardingProgress } from "@/lib/onboarding/progress";
+import {
+  getActiveYearClassesForSchool,
+  verifyOwnedClassIds,
+} from "@/lib/onboarding/school-classes-server";
 import { getAuthenticatedSchoolContext } from "@/lib/onboarding/server-context";
 import {
   trimExamRows,
@@ -19,9 +22,14 @@ export type ExamsStepData =
       success: true;
       blocked: false;
       terms: Array<{ id: string; name: string }>;
+      classes: Array<{ id: string; name: string }>;
       exams: ExamFormRow[];
     }
-  | { success: true; blocked: true }
+  | {
+      success: true;
+      blocked: true;
+      reason: "prerequisites" | "terms" | "classes";
+    }
   | { success: false; error: string };
 
 export type ReviewStepData =
@@ -50,51 +58,49 @@ export async function getExamsStepDataAction(): Promise<ExamsStepData> {
   }
 
   const { supabase, schoolId } = context;
-  const { data: school } = await supabase
-    .from("schools")
-    .select("academic_year_start_month")
-    .eq("id", schoolId)
-    .maybeSingle();
-
-  if (!school?.academic_year_start_month) {
-    return { success: true, blocked: true };
+  const classesResult = await getActiveYearClassesForSchool(supabase, schoolId);
+  if ("error" in classesResult) {
+    return { success: false, error: classesResult.error };
   }
-
-  const yearResult = await getActiveAcademicYearForSchool(
-    supabase,
-    schoolId,
-    school.academic_year_start_month,
-    { createIfMissing: false },
-  );
-  if ("error" in yearResult || "missing" in yearResult) {
-    return { success: true, blocked: true };
+  if ("blocked" in classesResult) {
+    if (classesResult.reason === "no_classes") {
+      return { success: true, blocked: true, reason: "classes" };
+    }
+    return { success: true, blocked: true, reason: "prerequisites" };
   }
 
   const [{ data: terms }, { data: exams }] = await Promise.all([
     supabase
       .from("terms")
       .select("id, name")
-      .eq("academic_year_id", yearResult.academicYear.id)
+      .eq("academic_year_id", classesResult.academicYear.id)
       .order("start_month"),
     supabase
       .from("exam_definitions")
       .select(
-        "name, category, term_id, weightage_percent, max_marks, grading_type",
+        "class_id, name, category, term_id, weightage_percent, max_marks, grading_type",
       )
-      .eq("academic_year_id", yearResult.academicYear.id)
+      .eq("academic_year_id", classesResult.academicYear.id)
       .is("archived_at", null)
       .order("name"),
   ]);
 
   if (!terms || terms.length === 0) {
-    return { success: true, blocked: true };
+    return { success: true, blocked: true, reason: "terms" };
   }
+
+  const fallbackClassId = classesResult.classes[0]?.id ?? "";
 
   return {
     success: true,
     blocked: false,
     terms,
+    classes: classesResult.classes.map((row) => ({
+      id: row.id,
+      name: row.name,
+    })),
     exams: (exams ?? []).map((exam) => ({
+      classId: exam.class_id ?? fallbackClassId,
       name: exam.name,
       category: exam.category as ExamFormRow["category"],
       termId: exam.term_id ?? "",
@@ -128,8 +134,24 @@ export async function saveExamsAction(formData: FormData): Promise<Result> {
     return { success: false, error: "Could not read exam data." };
   }
 
+  const classesResult = await getActiveYearClassesForSchool(supabase, schoolId);
+  if ("error" in classesResult) {
+    return { success: false, error: classesResult.error };
+  }
+  if ("blocked" in classesResult) {
+    return {
+      success: false,
+      error:
+        classesResult.reason === "no_classes"
+          ? "Add at least one class before configuring exams."
+          : "Complete School Identity and Terms first.",
+    };
+  }
+
+  const classIds = new Set(classesResult.classes.map((row) => row.id));
   const fieldErrors = validateExamRows(rows, {
     requireAtLeastOne: intent === "next",
+    classIds,
   });
   if (Object.keys(fieldErrors).length > 0) {
     return {
@@ -139,36 +161,21 @@ export async function saveExamsAction(formData: FormData): Promise<Result> {
     };
   }
 
-  const { data: school } = await supabase
-    .from("schools")
-    .select("academic_year_start_month")
-    .eq("id", schoolId)
-    .maybeSingle();
-
-  if (!school?.academic_year_start_month) {
-    return { success: false, error: "Complete School Identity first." };
-  }
-
-  const yearResult = await getActiveAcademicYearForSchool(
-    supabase,
-    schoolId,
-    school.academic_year_start_month,
-    { createIfMissing: false },
-  );
-  if ("error" in yearResult || "missing" in yearResult) {
-    return {
-      success: false,
-      error: "error" in yearResult ? yearResult.error : "Academic year missing.",
-    };
-  }
-
   const trimmed = trimExamRows(rows);
+  const owned = await verifyOwnedClassIds(
+    supabase,
+    classesResult.academicYear.id,
+    [...new Set(trimmed.map((row) => row.classId))],
+  );
+  if ("error" in owned) {
+    return { success: false, error: owned.error };
+  }
 
   if (intent === "save" && trimmed.length === 0) {
     const { count } = await supabase
       .from("exam_definitions")
       .select("id", { count: "exact", head: true })
-      .eq("academic_year_id", yearResult.academicYear.id)
+      .eq("academic_year_id", classesResult.academicYear.id)
       .is("archived_at", null);
     if ((count ?? 0) > 0) {
       return {
@@ -186,7 +193,7 @@ export async function saveExamsAction(formData: FormData): Promise<Result> {
       archived_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq("academic_year_id", yearResult.academicYear.id)
+    .eq("academic_year_id", classesResult.academicYear.id)
     .is("archived_at", null);
   if (archiveError) {
     return { success: false, error: archiveError.message };
@@ -195,7 +202,8 @@ export async function saveExamsAction(formData: FormData): Promise<Result> {
   if (trimmed.length > 0) {
     const { error } = await supabase.from("exam_definitions").insert(
       trimmed.map((row) => ({
-        academic_year_id: yearResult.academicYear.id,
+        academic_year_id: classesResult.academicYear.id,
+        class_id: row.classId,
         term_id: row.termId || null,
         name: row.name,
         category: row.category,

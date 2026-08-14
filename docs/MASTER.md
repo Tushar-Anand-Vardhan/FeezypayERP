@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-14 (Custom timetable periods: name, times, educational, optional teacher)  
+> **Last updated:** 2026-08-14 (Per-class exam definitions in onboarding)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
@@ -518,6 +518,8 @@ See §55 and authentication-platform.md. Staff save wires invites.
 | `20260807490000_student_observation_engine.sql` | E34 categories, append-only observations, AI summary stub, audit + AuthZ |
 | `20260807500000_student_achievement_engine.sql` | E35 enrich achievements, AI stub, audit + AuthZ; calendar FK |
 | `20260807510000_exam_schedule_marking_window.sql` | `exam_subject_schedules.marking_opens_at` / `marking_closes_at` (Wave 1) |
+| `20260814090000_period_kind_and_zero.sql` | `period_kind` teaching/class_teacher/break; `period_number >= 0` |
+| `20260814100000_exam_definitions_class_id.sql` | `exam_definitions.class_id` — per-class exam patterns; unique name per class |
 
 **Dropped legacy tables (must stay gone):** `teachers`, `teacher_subjects`, `students`, `guardians`, `student_guardians`, `student_section_enrollments` (+ `*_legacy` intermediates).
 
@@ -601,7 +603,7 @@ persons
 | `teacher_availability` | employment×year | free/busy blocks |
 | `section_availability` | section×year | free/busy blocks |
 | `rooms` | school | FUTURE room catalog (FK target for slots) |
-| `exam_definitions` | year | type/category FKs, weightage, max/pass marks, grading, publish/lock, archive |
+| `exam_definitions` | year | optional `class_id`; type/category FKs, weightage, max/pass marks, grading, publish/lock, archive |
 | `exam_subject_schedules` | exam | optional subject, component type, pass marks, archive |
 | `assessment_exam_types` | school | exam-type catalog + defaults |
 | `assessment_categories` | school | category kinds catalog |
@@ -688,7 +690,7 @@ Defined in `lib/onboarding/steps.ts`. Routed by `app/onboarding/[step]/page.tsx`
 | 7 | `staff` | `StaffForm` | `staff-actions.ts` | Yes (blocks wipe if existing) | ≥1 teacher | No |
 | 8 | `students` | `StudentsForm` | `students-actions.ts` | Yes (blocks wipe if existing) | ≥1 student | No |
 | 9 | `timetable` | `TimetableForm` | `timetable-actions.ts` | — | periods/slots or skip | **Yes** (`timetable_skipped`) |
-| 10 | `exams` | `ExamsForm` | `exams-review-actions.ts` | Yes (blocks wipe if existing) | ≥1 exam | No |
+| 10 | `exams` | `ExamsForm` | `exams-review-actions.ts` | Yes (blocks wipe if existing) | ≥1 exam (any class; not every class) | No |
 | 11 | `review` | `ReviewForm` | `exams-review-actions.ts` | — | completeness gates then complete | Confirm |
 
 ### 9.2 Wizard chrome
@@ -791,7 +793,9 @@ Empty Aadhaar allowed. Invalid row → entire import blocked.
 
 ### 11.4 Exams & review
 
-- `exam_definitions` per academic year (E11 config; soft-archive on onboarding rewrite).
+- `exam_definitions` per academic year **and class** (`class_id` FK). Each class has its own exam list (names unique per class). School-wide rows (`class_id` null) remain valid for legacy / teacher-created assessments.
+- Onboarding UI: class chips, edit that class only, optional copy-from another class. Continue still requires ≥1 exam overall; a class may have none.
+- Soft-archive on onboarding rewrite (E11; DELETE revoked).
 - Assessment Configuration Engine: `lib/assessment/**` — types, categories, policies, components, publish/lock. **No marks entry.**
 - Review shows progress counts (employments/admissions, not legacy tables).
 
@@ -1515,6 +1519,19 @@ Also: `npx tsc --noEmit` after calendar module land.
 | Subject on a non-educational row blocked | PASS |
 | Break teacher optional / empty allowed | PASS |
 
+### 15.50 Onboarding per-class exams
+
+**Date:** 2026-08-14 · `npx tsx scripts/smoke-exams-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| Same exam name allowed on different classes | PASS |
+| Duplicate name blocked within a class | PASS |
+| Missing class / name / term flagged | PASS |
+| Unknown class id rejected | PASS |
+| Continue requires ≥1 exam overall | PASS |
+| Copy-from class replaces the target class list | PASS |
+
 ---
 
 ## 16. Key file index
@@ -1531,6 +1548,7 @@ Also: `npx tsc --noEmit` after calendar module land.
 
 - `lib/onboarding/steps.ts`, `progress.ts`, `server-context.ts`, `csv.ts`
 - `lib/onboarding/*-actions.ts`, `staff.ts`, `students.ts`, `timetable.ts`, `timetable-csv.ts`, `exams.ts`
+- `scripts/smoke-exams-validation.ts`
 - `components/onboarding/**`
 - `app/onboarding/**`
 
@@ -2653,7 +2671,7 @@ No `exam_results`, marks entry UI, moderation workflow, or AI evaluation behavio
 
 ### 34.3 Compatibility
 
-Onboarding `saveExamsAction` soft-archives then inserts (DELETE revoked). Prefer `lib/assessment/*-actions.ts` for ongoing admin config.
+Onboarding `saveExamsAction` soft-archives then inserts per-class definitions (`class_id` required in the wizard; DELETE revoked). Prefer `lib/assessment/*-actions.ts` for ongoing admin config. `class_id` null remains school-wide.
 
 ### 34.4 Tests
 

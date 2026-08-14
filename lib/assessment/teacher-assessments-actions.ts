@@ -94,6 +94,7 @@ export async function createTeacherAssessmentAction(
     .from("exam_definitions")
     .insert({
       academic_year_id: input.academicYearId,
+      class_id: input.classId,
       term_id: input.termId ?? null,
       name: input.name.trim(),
       category: legacyCategory,

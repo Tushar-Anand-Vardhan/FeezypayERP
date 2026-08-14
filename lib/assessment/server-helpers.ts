@@ -140,6 +140,20 @@ export async function assertClassInSchool(
   return Boolean(data);
 }
 
+export async function assertClassInYear(
+  supabase: Supabase,
+  academicYearId: string,
+  classId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("classes")
+    .select("id")
+    .eq("id", classId)
+    .eq("academic_year_id", academicYearId)
+    .maybeSingle();
+  return Boolean(data);
+}
+
 export async function assertSubjectGroupOwned(
   supabase: Supabase,
   schoolId: string,
