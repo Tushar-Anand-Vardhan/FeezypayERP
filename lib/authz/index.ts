@@ -17,6 +17,7 @@ export {
   getAuthzBootstrap,
   getAppHeaderAuth,
   canInBootstrap,
+  canAnyInBootstrap,
 } from "@/lib/authz/bootstrap";
 export type {
   AuthzBootstrap,

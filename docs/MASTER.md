@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-14 (Per-class exam definitions in onboarding)  
+> **Last updated:** 2026-08-14 (Collapsible grouped dashboard sidebar)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
@@ -848,6 +848,8 @@ Staff list and student list plans used index scans on `teacher_employments_activ
 
 ## 13. Dashboard & routing
 
+Dashboard chrome is a **left sidebar** (`AppShell` + `lib/dashboard/nav.ts`), not a top wrap of every link. Groups collapse independently; the rail itself collapses on desktop and becomes a drawer on small screens. Each link still requires its permission key — empty groups are hidden. Onboarding keeps a slim top bar with no app nav.
+
 | Route | Behavior |
 |-------|----------|
 | `/` | Session → `/dashboard`; else marketing |
@@ -1532,6 +1534,17 @@ Also: `npx tsc --noEmit` after calendar module land.
 | Continue requires ≥1 exam overall | PASS |
 | Copy-from class replaces the target class list | PASS |
 
+### 15.51 Dashboard grouped sidebar
+
+**Date:** 2026-08-14 · `npx tsx scripts/smoke-dashboard-nav-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| All previous top-nav labels present in grouped catalog | PASS |
+| Unique item ids | PASS |
+| `/dashboard` is not a prefix of other dashboard routes | PASS |
+| Groups with no permitted items are hidden | PASS |
+
 ---
 
 ## 16. Key file index
@@ -1543,6 +1556,8 @@ Also: `npx tsc --noEmit` after calendar module land.
 - `middleware.ts`
 - `app/(auth)/**`, `app/auth/{confirm,callback}/route.ts`
 - `app/page.tsx`, `app/dashboard/page.tsx`
+- `app/dashboard/layout.tsx` · `components/dashboard/app-shell.tsx` · `app-sidebar.tsx` · `app-header.tsx`
+- `lib/dashboard/nav.ts` · `scripts/smoke-dashboard-nav-validation.ts`
 
 ### Onboarding
 

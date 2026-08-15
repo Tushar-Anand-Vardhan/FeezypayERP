@@ -9,7 +9,7 @@ export type {
   AppHeaderAuthProps,
   AuthzBootstrap,
 } from "@/lib/authz/bootstrap-shared";
-export { canInBootstrap } from "@/lib/authz/bootstrap-shared";
+export { canInBootstrap, canAnyInBootstrap } from "@/lib/authz/bootstrap-shared";
 
 export async function getAuthzBootstrap(): Promise<
   { success: true; data: AuthzBootstrap } | { success: false; error: string }

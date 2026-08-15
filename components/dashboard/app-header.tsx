@@ -1,122 +1,32 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { SchoolContextSwitcher } from "@/components/auth/school-context-switcher";
 import { SubmitButton } from "@/components/auth/submit-button";
-import { Can } from "@/lib/authz/can";
-import type { AuthzBootstrap } from "@/lib/authz/bootstrap-shared";
-import type { PermissionKey } from "@/lib/authz/catalog";
 import { createClient } from "@/lib/supabase/client";
+import type { AuthzBootstrap } from "@/lib/authz/bootstrap-shared";
 import type { AuthMembership, AuthPersona } from "@/lib/auth/types";
 
-type NavItem = {
-  label: string;
-  href: string;
-  locked?: boolean;
-  permission?: PermissionKey;
-};
-
-type AppHeaderProps = {
+export type AppHeaderProps = {
   schoolName?: string | null;
   onboardingComplete?: boolean;
   memberships?: AuthMembership[];
   activeSchoolId?: string | null;
   activePersona?: AuthPersona | null;
   authz?: AuthzBootstrap | null;
+  showBrand?: boolean;
+  onOpenMobileNav?: () => void;
 };
-
-const NAV_ITEMS: NavItem[] = [
-  { label: "Overview", href: "/dashboard", permission: "tenant.school.read" },
-  {
-    label: "Principal",
-    href: "/dashboard/principal",
-    permission: "analytics.dashboard.read",
-  },
-  {
-    label: "Teacher",
-    href: "/dashboard/teacher",
-    permission: "workforce.workspace.read",
-  },
-  {
-    label: "Student",
-    href: "/dashboard/student",
-    permission: "enrollment.admission.read",
-  },
-  {
-    label: "Parent",
-    href: "/dashboard/parent",
-    permission: "enrollment.admission.read",
-  },
-  {
-    label: "Platform",
-    href: "/dashboard/platform",
-    permission: "platform.tenant.read",
-  },
-  {
-    label: "Configuration",
-    href: "/dashboard/configuration",
-    permission: "config.catalog.read",
-  },
-  {
-    label: "Assessments",
-    href: "/dashboard/assessments",
-    permission: "assessment.config.read",
-  },
-  {
-    label: "Report cards",
-    href: "/dashboard/report-cards",
-    permission: "document.template.edit",
-  },
-  {
-    label: "Calendar",
-    href: "/dashboard/calendar",
-    permission: "calendar.year.read",
-  },
-  {
-    label: "Houses & clubs",
-    href: "/dashboard/houses-clubs",
-    permission: "config.catalog.read",
-  },
-  {
-    label: "Subjects",
-    href: "/dashboard/subjects",
-    permission: "config.catalog.read",
-  },
-  {
-    label: "Grading scales",
-    href: "/dashboard/grading-scales",
-    permission: "config.catalog.read",
-  },
-  {
-    label: "Departments",
-    href: "/dashboard/departments",
-    permission: "workforce.department.read",
-  },
-  {
-    label: "Timetable",
-    href: "/dashboard/timetable",
-    permission: "timetable.grid.read",
-  },
-  {
-    label: "Notifications",
-    href: "/dashboard/notifications",
-    permission: "communication.message.read",
-  },
-  { label: "Students", href: "#", locked: true, permission: "enrollment.admission.read" },
-  { label: "Attendance", href: "#", locked: true, permission: "attendance.record.read" },
-  { label: "Settings", href: "#", locked: true, permission: "tenant.school.edit" },
-];
 
 export function AppHeader({
   schoolName,
-  onboardingComplete = false,
   memberships = [],
   activeSchoolId = null,
   activePersona = null,
-  authz = null,
+  showBrand = true,
+  onOpenMobileNav,
 }: AppHeaderProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -130,68 +40,59 @@ export function AppHeader({
   }
 
   return (
-    <header className="border-b border-border bg-surface">
-      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3.5 sm:px-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <BrandMark size="sm" showWordmark />
-            {schoolName ? (
-              <span className="hidden truncate text-sm text-muted sm:inline">
-                {schoolName}
-              </span>
-            ) : null}
-            <SchoolContextSwitcher
-              memberships={memberships}
-              activeSchoolId={activeSchoolId}
-              activePersona={activePersona}
-            />
-          </div>
-          <SubmitButton
-            type="button"
-            fullWidth={false}
-            variant="ghost"
-            loading={loading}
-            onClick={handleLogout}
-          >
-            Log out
-          </SubmitButton>
+    <header className="sticky top-0 z-30 border-b border-border bg-surface">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          {onOpenMobileNav ? (
+            <button
+              type="button"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted lg:hidden"
+              aria-label="Open navigation"
+              onClick={onOpenMobileNav}
+            >
+              <MenuIcon />
+            </button>
+          ) : null}
+          {showBrand ? <BrandMark size="sm" showWordmark /> : null}
+          {schoolName ? (
+            <span className="hidden truncate text-sm text-muted sm:inline">
+              {schoolName}
+            </span>
+          ) : null}
+          <SchoolContextSwitcher
+            memberships={memberships}
+            activeSchoolId={activeSchoolId}
+            activePersona={activePersona}
+          />
         </div>
-
-        <nav aria-label="Main" className="flex flex-wrap items-center gap-1">
-          {NAV_ITEMS.map((item) => {
-            const locked = Boolean(item.locked) && !onboardingComplete;
-            const inner = locked ? (
-              <span
-                title="Available after onboarding is complete"
-                className="cursor-not-allowed rounded-lg px-3 py-1.5 text-sm font-medium text-muted/50"
-              >
-                {item.label}
-              </span>
-            ) : (
-              <Link
-                href={item.href}
-                className="rounded-lg px-3 py-1.5 text-sm font-medium text-muted transition hover:bg-surface-strong hover:text-foreground"
-              >
-                {item.label}
-              </Link>
-            );
-
-            if (!item.permission || !authz) {
-              return <span key={item.label}>{inner}</span>;
-            }
-
-            return (
-              <Can
-                key={item.label}
-                permission={item.permission}
-                bootstrap={authz}
-              >
-                {inner}
-              </Can>
-            );
-          })}
-        </nav>
+        <SubmitButton
+          type="button"
+          fullWidth={false}
+          variant="ghost"
+          loading={loading}
+          onClick={handleLogout}
+        >
+          Log out
+        </SubmitButton>
       </div>
     </header>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <path
+        d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

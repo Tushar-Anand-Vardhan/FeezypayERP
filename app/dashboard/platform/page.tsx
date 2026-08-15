@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation";
-import { AppHeader } from "@/components/dashboard/app-header";
 import { PlatformConsoleClient } from "@/components/platform/platform-console-client";
-import { getAppHeaderAuth } from "@/lib/authz/bootstrap";
 import {
   isPlatformOperatorAction,
   listPlatformSchoolsAction,
@@ -20,20 +18,10 @@ export default async function PlatformConsolePage() {
     redirect("/dashboard");
   }
 
-  const headerAuth = await getAppHeaderAuth();
   const listed = await listPlatformSchoolsAction();
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-background">
-      <AppHeader
-        schoolName="Platform"
-        onboardingComplete
-        memberships={headerAuth.memberships}
-        activeSchoolId={headerAuth.activeSchoolId}
-        activePersona={headerAuth.activePersona}
-        authz={headerAuth.authz}
-      />
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6">
         <header>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-feezy-indigo">
             Platform
@@ -55,6 +43,5 @@ export default async function PlatformConsolePage() {
           <p className="text-sm text-red-700">{listed.error}</p>
         )}
       </main>
-    </div>
   );
 }

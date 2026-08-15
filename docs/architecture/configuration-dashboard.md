@@ -44,7 +44,7 @@ No new tables beyond optional `schools.code` (Wave 3 migration). Health remains 
 
 ## UI
 
-`/dashboard/configuration` — `ConfigHubClient` with `?tab=` navigation. Nav: **Configuration** in `AppHeader`.
+`/dashboard/configuration` — `ConfigHubClient` with `?tab=` navigation. Nav: **Configuration** in the dashboard sidebar (Configuration group).
 
 ## Placement
 

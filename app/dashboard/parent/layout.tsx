@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { AppHeader } from "@/components/dashboard/app-header";
 import { ParentPortalNav } from "@/components/parent-portal/parent-portal-nav";
 import { ParentChildPicker } from "@/components/parent-portal/child-picker";
 import { getAppHeaderAuth } from "@/lib/authz/bootstrap";
@@ -25,11 +24,6 @@ export default async function ParentPortalLayout({
   }
 
   const headerAuth = await getAppHeaderAuth();
-  const { data: school } = await supabase
-    .from("schools")
-    .select("name, onboarding_status")
-    .eq("id", authzCtx.schoolId)
-    .maybeSingle();
 
   const childrenList: Array<{ studentProfileId: string; fullName: string }> =
     [];
@@ -52,31 +46,21 @@ export default async function ParentPortalLayout({
   }
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-background">
-      <AppHeader
-        schoolName={school?.name ?? null}
-        onboardingComplete={school?.onboarding_status === "completed"}
-        memberships={headerAuth.memberships}
-        activeSchoolId={headerAuth.activeSchoolId}
-        activePersona={headerAuth.activePersona}
-        authz={headerAuth.authz}
-      />
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
+      <Suspense fallback={null}>
+        <ParentPortalNav authz={headerAuth.authz} />
+      </Suspense>
+      {childrenList.length > 0 ? (
         <Suspense fallback={null}>
-          <ParentPortalNav authz={headerAuth.authz} />
+          <ParentChildPicker childrenList={childrenList} />
         </Suspense>
-        {childrenList.length > 0 ? (
-          <Suspense fallback={null}>
-            <ParentChildPicker childrenList={childrenList} />
-          </Suspense>
-        ) : (
-          <p className="text-sm text-muted">
-            No linked children. Ask the school to invite you as a parent on an
-            admission.
-          </p>
-        )}
-        {children}
-      </main>
-    </div>
+      ) : (
+        <p className="text-sm text-muted">
+          No linked children. Ask the school to invite you as a parent on an
+          admission.
+        </p>
+      )}
+      {children}
+    </main>
   );
 }

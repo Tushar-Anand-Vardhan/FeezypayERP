@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AppHeader } from "@/components/dashboard/app-header";
 import { getAppHeaderAuth } from "@/lib/authz/bootstrap";
 import { getOnboardingProgress } from "@/lib/onboarding/progress";
 import { DEFAULT_ONBOARDING_PATH } from "@/lib/onboarding/steps";
@@ -19,17 +18,11 @@ export default async function DashboardPage() {
   const email =
     typeof data.claims.email === "string" ? data.claims.email : "your account";
 
-  let schoolName: string | null = null;
   let onboardingComplete = false;
   let onboardingResumeHref: string = DEFAULT_ONBOARDING_PATH;
 
   const headerAuth = await getAppHeaderAuth();
-  const {
-    memberships,
-    activeSchoolId,
-    activePersona,
-    authz,
-  } = headerAuth;
+  const { activeSchoolId, authz } = headerAuth;
 
   const schoolIdForName =
     activeSchoolId ??
@@ -50,7 +43,6 @@ export default async function DashboardPage() {
       .eq("id", schoolIdForName)
       .maybeSingle();
 
-    schoolName = school?.name ?? null;
     onboardingComplete = school?.onboarding_status === "completed";
 
     if (!onboardingComplete && authz?.isSchoolAdmin) {
@@ -62,16 +54,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-background">
-      <AppHeader
-        schoolName={schoolName}
-        onboardingComplete={onboardingComplete}
-        memberships={memberships}
-        activeSchoolId={activeSchoolId}
-        activePersona={activePersona}
-        authz={authz}
-      />
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6">
         {!onboardingComplete ? (
           <section className="rounded-2xl border border-feezy-magenta/20 bg-feezy-magenta/5 px-6 py-5 sm:px-8">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-feezy-magenta">
@@ -110,6 +93,5 @@ export default async function DashboardPage() {
           </p>
         </section>
       </main>
-    </div>
   );
 }

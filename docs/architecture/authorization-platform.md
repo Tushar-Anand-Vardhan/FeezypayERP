@@ -63,6 +63,7 @@ SQL: `has_permission(uid, school_id, key)` mirrors app evaluator for optional RL
 | `can.tsx` | `<Can>` client helper |
 | `actions.ts` | Custom role grant/revoke |
 | `bootstrap.ts` | UI permission list payload |
+| Dashboard nav | `lib/dashboard/nav.ts` + `AppSidebar` — hide links/groups the bootstrap cannot use |
 
 ---
 

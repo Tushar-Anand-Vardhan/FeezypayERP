@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { AppHeader } from "@/components/dashboard/app-header";
 import { TimetableAdminClient } from "@/components/timetable/timetable-admin-client";
 import { getAppHeaderAuth } from "@/lib/authz/bootstrap";
 import { requirePermission } from "@/lib/authz/require";
@@ -29,12 +28,6 @@ export default async function TimetableDashboardPage({
     headerAuth.authz?.permissions.includes("timetable.grid.edit"),
   );
   const params = await searchParams;
-
-  const { data: school } = await supabase
-    .from("schools")
-    .select("name, onboarding_status")
-    .eq("id", schoolId)
-    .maybeSingle();
 
   const { data: yearsRaw } = await supabase
     .from("academic_years")
@@ -93,16 +86,7 @@ export default async function TimetableDashboardPage({
   }
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-background">
-      <AppHeader
-        schoolName={school?.name ?? null}
-        onboardingComplete={school?.onboarding_status === "completed"}
-        memberships={headerAuth.memberships}
-        activeSchoolId={headerAuth.activeSchoolId}
-        activePersona={headerAuth.activePersona}
-        authz={headerAuth.authz}
-      />
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6">
         <header>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-feezy-indigo">
             Configuration
@@ -123,6 +107,5 @@ export default async function TimetableDashboardPage({
           canEdit={canEdit}
         />
       </main>
-    </div>
   );
 }

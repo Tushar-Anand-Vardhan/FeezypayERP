@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { AppHeader } from "@/components/dashboard/app-header";
 import { DepartmentsAdminClient } from "@/components/departments/departments-admin-client";
 import { getAppHeaderAuth } from "@/lib/authz/bootstrap";
 import { requirePermission } from "@/lib/authz/require";
@@ -23,12 +22,6 @@ export default async function DepartmentsDashboardPage() {
     headerAuth.authz?.permissions.includes("workforce.department.edit"),
   );
 
-  const { data: school } = await supabase
-    .from("schools")
-    .select("name, onboarding_status")
-    .eq("id", schoolId)
-    .maybeSingle();
-
   const { data: departments } = await supabase
     .from("departments")
     .select(
@@ -39,16 +32,7 @@ export default async function DepartmentsDashboardPage() {
     .order("name", { ascending: true });
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-background">
-      <AppHeader
-        schoolName={school?.name ?? null}
-        onboardingComplete={school?.onboarding_status === "completed"}
-        memberships={headerAuth.memberships}
-        activeSchoolId={headerAuth.activeSchoolId}
-        activePersona={headerAuth.activePersona}
-        authz={headerAuth.authz}
-      />
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6">
         <header>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-feezy-indigo">
             Workforce
@@ -66,6 +50,5 @@ export default async function DepartmentsDashboardPage() {
           canEdit={canEdit}
         />
       </main>
-    </div>
   );
 }

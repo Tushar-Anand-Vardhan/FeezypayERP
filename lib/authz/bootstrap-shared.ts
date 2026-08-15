@@ -22,3 +22,11 @@ export function canInBootstrap(
 ): boolean {
   return Boolean(bootstrap?.permissions.includes(key));
 }
+
+export function canAnyInBootstrap(
+  bootstrap: AuthzBootstrap | null | undefined,
+  key: PermissionKey | PermissionKey[],
+): boolean {
+  const keys = Array.isArray(key) ? key : [key];
+  return keys.some((item) => canInBootstrap(bootstrap, item));
+}
