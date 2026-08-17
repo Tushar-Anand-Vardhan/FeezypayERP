@@ -6,34 +6,36 @@ import {
 
 type UpsertResult = { ok: true; id: string } | { ok: false; error: string };
 
+export type MembershipUpsertRow = {
+  person_id: string;
+  school_id: string;
+  membership_kind: string;
+  status: string;
+  effective_from?: string;
+  effective_to?: string | null;
+  school_persona: string;
+  capability_class: string;
+  source_type: string;
+  source_id: string;
+};
+
+function toMembershipInsert(row: MembershipUpsertRow) {
+  return {
+    ...row,
+    effective_from: row.effective_from ?? new Date().toISOString().slice(0, 10),
+    effective_to: row.effective_to ?? null,
+    archived_at: null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
 async function upsertMembership(
   supabase: SupabaseClient,
-  row: {
-    person_id: string;
-    school_id: string;
-    membership_kind: string;
-    status: string;
-    effective_from?: string;
-    effective_to?: string | null;
-    school_persona: string;
-    capability_class: string;
-    source_type: string;
-    source_id: string;
-  },
+  row: MembershipUpsertRow,
 ): Promise<UpsertResult> {
   const { data, error } = await supabase
     .from("school_memberships")
-    .upsert(
-      {
-        ...row,
-        effective_from:
-          row.effective_from ?? new Date().toISOString().slice(0, 10),
-        effective_to: row.effective_to ?? null,
-        archived_at: null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "source_type,source_id" },
-    )
+    .upsert(toMembershipInsert(row), { onConflict: "source_type,source_id" })
     .select("id")
     .maybeSingle();
 
@@ -44,6 +46,103 @@ async function upsertMembership(
     return { ok: false, error: "Membership upsert returned no id." };
   }
   return { ok: true, id: data.id };
+}
+
+/** Bulk membership write — skips per-row SELECT. */
+export async function upsertMemberships(
+  supabase: SupabaseClient,
+  rows: MembershipUpsertRow[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (rows.length === 0) {
+    return { ok: true };
+  }
+  const chunkSize = 100;
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const slice = rows.slice(i, i + chunkSize).map(toMembershipInsert);
+    const { error } = await supabase
+      .from("school_memberships")
+      .upsert(slice, { onConflict: "source_type,source_id" });
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+  }
+  return { ok: true };
+}
+
+export function staffMembershipPayload(input: {
+  personId: string;
+  schoolId: string;
+  employmentId: string;
+  status: string;
+  joinedOn?: string | null;
+  leftOn?: string | null;
+  schoolPersona?: string | null;
+  isHod?: boolean | null;
+  employmentType?: string | null;
+}): MembershipUpsertRow {
+  const mapped = staffPersonaFromEmployment({
+    schoolPersona: input.schoolPersona,
+    isHod: input.isHod,
+    employmentType: input.employmentType,
+    status: input.status,
+  });
+  return {
+    person_id: input.personId,
+    school_id: input.schoolId,
+    membership_kind: mapped.kind,
+    status: mapped.status,
+    effective_from: input.joinedOn ?? undefined,
+    effective_to: input.leftOn ?? null,
+    school_persona: mapped.persona,
+    capability_class: "teacher",
+    source_type: "employment",
+    source_id: input.employmentId,
+  };
+}
+
+export function studentMembershipPayload(input: {
+  personId: string;
+  schoolId: string;
+  admissionId: string;
+  status: string;
+  admittedOn?: string | null;
+  exitedOn?: string | null;
+}): MembershipUpsertRow {
+  const mapped = studentPersonaFromAdmission(input.status);
+  return {
+    person_id: input.personId,
+    school_id: input.schoolId,
+    membership_kind: mapped.kind,
+    status: mapped.membershipStatus,
+    effective_from: input.admittedOn ?? undefined,
+    effective_to: input.exitedOn ?? null,
+    school_persona: mapped.persona,
+    capability_class: "student",
+    source_type: "admission",
+    source_id: input.admissionId,
+  };
+}
+
+export function parentMembershipPayload(input: {
+  personId: string;
+  schoolId: string;
+  parentLinkId: string;
+  admissionStatus: string;
+  admittedOn?: string | null;
+}): MembershipUpsertRow {
+  const status =
+    input.admissionStatus === "withdrawn" ? "ended" : ("active" as const);
+  return {
+    person_id: input.personId,
+    school_id: input.schoolId,
+    membership_kind: "parent",
+    status,
+    effective_from: input.admittedOn ?? undefined,
+    school_persona: "parent",
+    capability_class: "parent",
+    source_type: "parent_link",
+    source_id: input.parentLinkId,
+  };
 }
 
 export async function syncAdminMembership(

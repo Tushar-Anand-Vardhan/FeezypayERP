@@ -15,6 +15,7 @@ import {
 import {
   STUDENT_CSV_HEADERS,
   emptyStudent,
+  studentListsEquivalent,
   studentRowFromCsv,
   validateStudentRows,
   type StudentFieldErrors,
@@ -37,6 +38,7 @@ export function StudentsForm() {
     }>
   >([]);
   const [students, setStudents] = useState<StudentFormRow[]>([]);
+  const [savedBaseline, setSavedBaseline] = useState<StudentFormRow[]>([]);
   const [draft, setDraft] = useState<StudentFormRow>(emptyStudent());
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<StudentFieldErrors>({});
@@ -100,15 +102,15 @@ export function StudentsForm() {
       }
 
       setClassSections(result.classSections);
-      setStudents(
-        result.students.map((student) => ({
-          ...student,
-          guardians:
-            student.guardians.length > 0
-              ? student.guardians
-              : emptyStudent().guardians,
-        })),
-      );
+      const loaded = result.students.map((student) => ({
+        ...student,
+        guardians:
+          student.guardians.length > 0
+            ? student.guardians
+            : emptyStudent().guardians,
+      }));
+      setStudents(loaded);
+      setSavedBaseline(loaded);
       setInitialLoading(false);
     }
 
@@ -206,6 +208,11 @@ export function StudentsForm() {
     }
     setFieldErrors({});
 
+    if (studentListsEquivalent(students, savedBaseline)) {
+      setSuccessMessage("Students unchanged — nothing to save.");
+      return true;
+    }
+
     const formData = new FormData();
     formData.set("students", JSON.stringify(students));
     formData.set("intent", intent);
@@ -218,6 +225,7 @@ export function StudentsForm() {
     }
 
     setSuccessMessage(result.message);
+    setSavedBaseline(students);
     return true;
   }
 

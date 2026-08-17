@@ -1,8 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { createInvitesForSchoolBulk } from "@/lib/auth/create-invite";
 import { hashAadhaar } from "@/lib/identity/aadhaar";
+import {
+  staffMembershipPayload,
+  upsertMemberships,
+} from "@/lib/membership/sync";
 import { getActiveYearClassesForSchool } from "@/lib/onboarding/school-classes-server";
+import {
+  mapPool,
+  ONBOARDING_ROW_CONCURRENCY,
+} from "@/lib/onboarding/parallel";
 import { getAuthenticatedSchoolContext } from "@/lib/onboarding/server-context";
 import {
   clearMaskedStaffAadhaar,
@@ -12,7 +21,10 @@ import {
   validateStaffRows,
   type StaffFormRow,
 } from "@/lib/onboarding/staff";
-import { syncStaffMembership } from "@/lib/membership/sync";
+import {
+  D15_ACTIVE_EMPLOYMENT_MESSAGE,
+  findProfilesWithOtherActiveEmployment,
+} from "@/lib/workforce/employment-guards";
 
 type Result =
   | { success: true; message: string }
@@ -202,76 +214,9 @@ export async function getStaffStepDataAction(): Promise<StaffStepData> {
     blocked: false,
     subjects: subjects ?? [],
     departments: departments ?? [],
-    teachers: (employments ?? []).map((employment) => {
-      const profile = employment.teacher_profiles as
-        | {
-            persons:
-              | {
-                  full_name: string;
-                  phone: string | null;
-                  email: string | null;
-                  aadhaar_last4: string | null;
-                }
-              | {
-                  full_name: string;
-                  phone: string | null;
-                  email: string | null;
-                  aadhaar_last4: string | null;
-                }[]
-              | null;
-          }
-        | {
-            persons:
-              | {
-                  full_name: string;
-                  phone: string | null;
-                  email: string | null;
-                  aadhaar_last4: string | null;
-                }
-              | {
-                  full_name: string;
-                  phone: string | null;
-                  email: string | null;
-                  aadhaar_last4: string | null;
-                }[]
-              | null;
-          }[]
-        | null;
-
-      const resolvedProfile = Array.isArray(profile) ? profile[0] : profile;
-      const personRaw = resolvedProfile?.persons;
-      const person = Array.isArray(personRaw) ? personRaw[0] : personRaw;
-
-      const subjectLinks = Array.isArray(employment.employment_subjects)
-        ? employment.employment_subjects
-        : [];
-
-      return {
-        id: employment.id,
-        fullName: person?.full_name ?? "",
-        phone: person?.phone ?? "",
-        email: person?.email ?? "",
-        aadhaar: person?.aadhaar_last4 ? `********${person.aadhaar_last4}` : "",
-        employeeCode: employment.employee_code ?? "",
-        designation: employment.designation ?? "",
-        departmentName: employment.department_id
-          ? (departmentById.get(employment.department_id) ?? "")
-          : "",
-        subjectNames: subjectLinks
-          .map((link) => {
-            const subject = link.subjects as
-              | { name: string }
-              | { name: string }[]
-              | null;
-            if (Array.isArray(subject)) {
-              return subject[0]?.name ?? "";
-            }
-            return subject?.name ?? "";
-          })
-          .filter(Boolean),
-        isHod: employment.is_hod,
-      };
-    }),
+    teachers: (employments ?? []).map((employment) =>
+      mapEmploymentToStaffRow(employment, departmentById),
+    ),
   };
 }
 
@@ -333,13 +278,30 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
     }
   }
 
-  // Skip rewrite when the form matches what is already stored.
-  const existingSnapshot = await getStaffStepDataAction();
-  if (
-    existingSnapshot.success &&
-    !existingSnapshot.blocked &&
-    staffListsEquivalent(trimmed, existingSnapshot.teachers)
-  ) {
+  const [{ data: existingDepartments }, { data: existingEmployments }] =
+    await Promise.all([
+      supabase.from("departments").select("id, name").eq("school_id", schoolId),
+      supabase
+        .from("teacher_employments")
+        .select(
+          "id, teacher_profile_id, status, joined_on, employee_code, designation, is_hod, department_id, school_persona, employment_type, teacher_profiles(person_id, persons(full_name, phone, email, aadhaar_last4)), employment_subjects(subject_id, subjects(name))",
+        )
+        .eq("school_id", schoolId)
+        .in("status", ["active", "invited"]),
+    ]);
+
+  const departmentIdByName = new Map(
+    (existingDepartments ?? []).map((row) => [row.name.toLowerCase(), row.id]),
+  );
+  const departmentById = new Map(
+    (existingDepartments ?? []).map((row) => [row.id, row.name]),
+  );
+
+  const existingTeacherRows = (existingEmployments ?? []).map((employment) =>
+    mapEmploymentToStaffRow(employment, departmentById),
+  );
+
+  if (staffListsEquivalent(trimmed, existingTeacherRows)) {
     return {
       success: true,
       message: "Staff unchanged — nothing to save.",
@@ -347,217 +309,309 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
   }
 
   const existingByIdentity = new Map(
-    existingSnapshot.success && !existingSnapshot.blocked
-      ? existingSnapshot.teachers.map((row) => [
-          staffRowIdentityKey(row),
-          row,
-        ] as const)
-      : [],
+    existingTeacherRows.map((row) => [staffRowIdentityKey(row), row] as const),
   );
 
-  const departmentNames = Array.from(
+  const missingDepartments = Array.from(
     new Set(trimmed.map((row) => row.departmentName).filter(Boolean)),
-  );
+  ).filter((name) => !departmentIdByName.has(name.toLowerCase()));
 
-  const { data: existingDepartments } = await supabase
-    .from("departments")
-    .select("id, name")
-    .eq("school_id", schoolId);
-
-  const departmentIdByName = new Map(
-    (existingDepartments ?? []).map((row) => [row.name.toLowerCase(), row.id]),
-  );
-
-  for (const name of departmentNames) {
-    if (!departmentIdByName.has(name.toLowerCase())) {
-      const { data: inserted, error } = await supabase
-        .from("departments")
-        .insert({ school_id: schoolId, name })
-        .select("id, name")
-        .single();
-      if (error || !inserted) {
-        return {
-          success: false,
-          error: error?.message ?? "Could not create department.",
-        };
-      }
-      departmentIdByName.set(inserted.name.toLowerCase(), inserted.id);
+  if (missingDepartments.length > 0) {
+    const { data: inserted, error } = await supabase
+      .from("departments")
+      .insert(
+        missingDepartments.map((name) => ({ school_id: schoolId, name })),
+      )
+      .select("id, name");
+    if (error || !inserted) {
+      return {
+        success: false,
+        error: error?.message ?? "Could not create department.",
+      };
+    }
+    for (const row of inserted) {
+      departmentIdByName.set(row.name.toLowerCase(), row.id);
     }
   }
 
-  // Soft-end employments removed from the list; upsert the rest in place.
-  const { data: existingEmployments } = await supabase
-    .from("teacher_employments")
-    .select("id, teacher_profile_id, status")
-    .eq("school_id", schoolId)
-    .in("status", ["active", "invited"]);
+  const employmentByProfileId = new Map(
+    (existingEmployments ?? []).map((row) => [row.teacher_profile_id, row]),
+  );
+  const personIdByProfile = new Map<string, string>();
+  for (const employment of existingEmployments ?? []) {
+    const profile = employment.teacher_profiles as
+      | { person_id?: string }
+      | { person_id?: string }[]
+      | null;
+    const resolved = Array.isArray(profile) ? profile[0] : profile;
+    if (resolved?.person_id) {
+      personIdByProfile.set(employment.teacher_profile_id, resolved.person_id);
+    }
+  }
 
   const keepEmploymentIds = new Set<string>();
-  const invitesToSend: Array<{
-    email: string;
-    personId: string;
-    employmentId: string;
-    isHod: boolean;
-    isNew: boolean;
-  }> = [];
-
+  const dirty: StaffFormRow[] = [];
   for (const row of trimmed) {
     const prior = existingByIdentity.get(staffRowIdentityKey(row));
     if (prior && staffListsEquivalent([row], [prior])) {
       keepEmploymentIds.add(prior.id);
       continue;
     }
+    dirty.push(row);
+  }
 
-    const resolved = await resolvePersonAndTeacherProfile(supabase, row);
-    if ("error" in resolved) {
-      return { success: false, error: resolved.error };
-    }
+  type ResolvedStaff = {
+    row: StaffFormRow;
+    personId: string;
+    teacherProfileId: string;
+  };
 
-    const existing = (existingEmployments ?? []).find(
-      (rowEmployment) =>
-        rowEmployment.teacher_profile_id === resolved.teacherProfileId,
+  const resolvedRows = await mapPool(
+    dirty,
+    ONBOARDING_ROW_CONCURRENCY,
+    async (row): Promise<ResolvedStaff | { ok: false; error: string }> => {
+      const resolved = await resolvePersonAndTeacherProfile(supabase, row);
+      if ("error" in resolved) {
+        return { ok: false, error: resolved.error };
+      }
+      return { ...resolved, row };
+    },
+  );
+
+  const failedResolve = resolvedRows.find(
+    (item): item is { ok: false; error: string } => "ok" in item && !item.ok,
+  );
+  if (failedResolve) {
+    return { success: false, error: failedResolve.error };
+  }
+  const ready = resolvedRows.filter(
+    (item): item is ResolvedStaff => !("ok" in item),
+  );
+
+  const newRows = ready.filter(
+    (item) => !employmentByProfileId.has(item.teacherProfileId),
+  );
+  const blockedProfiles = await findProfilesWithOtherActiveEmployment(
+    supabase,
+    newRows.map((item) => item.teacherProfileId),
+    schoolId,
+  );
+  if (blockedProfiles.size > 0) {
+    const blocked = newRows.find((item) =>
+      blockedProfiles.has(item.teacherProfileId),
     );
+    return {
+      success: false,
+      error: `${blocked?.row.fullName ?? "A teacher"}: ${D15_ACTIVE_EMPLOYMENT_MESSAGE}`,
+    };
+  }
 
-    let employmentId = existing?.id;
-    let isNewEmployment = false;
-    const schoolPersona = row.isHod ? "hod" : "teacher";
+  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date().toISOString();
+  const memberships: ReturnType<typeof staffMembershipPayload>[] = [];
+  const subjectEmploymentIdsToReset: string[] = [];
+  const subjectLinks: Array<{ employment_id: string; subject_id: string }> = [];
+  const invitesToSend: Array<{
+    email: string;
+    personId: string;
+    employmentId: string;
+    isHod: boolean;
+  }> = [];
 
-    if (employmentId) {
+  const updateWave = ready.filter((item) =>
+    employmentByProfileId.has(item.teacherProfileId),
+  );
+  const updateResults = await mapPool(
+    updateWave,
+    ONBOARDING_ROW_CONCURRENCY,
+    async (item) => {
+      const existing = employmentByProfileId.get(item.teacherProfileId)!;
+      const schoolPersona = item.row.isHod ? "hod" : "teacher";
       const { error: updateError } = await supabase
         .from("teacher_employments")
         .update({
-          employee_code: row.employeeCode || null,
-          designation: row.designation || null,
-          department_id: row.departmentName
-            ? (departmentIdByName.get(row.departmentName.toLowerCase()) ?? null)
+          employee_code: item.row.employeeCode || null,
+          designation: item.row.designation || null,
+          department_id: item.row.departmentName
+            ? (departmentIdByName.get(item.row.departmentName.toLowerCase()) ??
+              null)
             : null,
-          is_hod: row.isHod,
+          is_hod: item.row.isHod,
           school_persona: schoolPersona,
-          status: existing?.status === "invited" ? "invited" : "active",
+          status: existing.status === "invited" ? "invited" : "active",
           left_on: null,
-          updated_at: new Date().toISOString(),
+          updated_at: now,
         })
-        .eq("id", employmentId);
+        .eq("id", existing.id);
       if (updateError) {
-        return { success: false, error: updateError.message };
+        return { ok: false as const, error: updateError.message };
       }
+      return { ok: true as const, item, employmentId: existing.id, existing };
+    },
+  );
+  const failedUpdate = updateResults.find((item) => !item.ok);
+  if (failedUpdate && !failedUpdate.ok) {
+    return { success: false, error: failedUpdate.error };
+  }
 
-      await supabase
-        .from("employment_subjects")
-        .delete()
-        .eq("employment_id", employmentId);
-    } else {
-      isNewEmployment = true;
-      const { assertNoOtherActiveEmployment } = await import(
-        "@/lib/workforce/employment-guards"
-      );
-      const d15 = await assertNoOtherActiveEmployment(
-        supabase,
-        resolved.teacherProfileId,
+  for (const result of updateResults) {
+    if (!result.ok) continue;
+    keepEmploymentIds.add(result.employmentId);
+    subjectEmploymentIdsToReset.push(result.employmentId);
+    memberships.push(
+      staffMembershipPayload({
+        personId: result.item.personId,
         schoolId,
-      );
-      if (!d15.ok) {
-        return {
-          success: false,
-          error: `${row.fullName}: ${d15.error}`,
-        };
-      }
-      const { data: employment, error: employmentError } = await supabase
-        .from("teacher_employments")
-        .insert({
-          teacher_profile_id: resolved.teacherProfileId,
+        employmentId: result.employmentId,
+        status:
+          result.existing.status === "invited" ? "invited" : "active",
+        joinedOn: result.existing.joined_on,
+        leftOn: null,
+        schoolPersona: result.item.row.isHod ? "hod" : "teacher",
+        isHod: result.item.row.isHod,
+      }),
+    );
+    pushSubjectLinks(
+      result.item.row,
+      result.employmentId,
+      subjectByName,
+      subjectLinks,
+    );
+  }
+
+  if (newRows.length > 0) {
+    const { data: inserted, error: employmentError } = await supabase
+      .from("teacher_employments")
+      .insert(
+        newRows.map((item) => ({
+          teacher_profile_id: item.teacherProfileId,
           school_id: schoolId,
-          employee_code: row.employeeCode || null,
-          designation: row.designation || null,
-          department_id: row.departmentName
-            ? (departmentIdByName.get(row.departmentName.toLowerCase()) ?? null)
+          employee_code: item.row.employeeCode || null,
+          designation: item.row.designation || null,
+          department_id: item.row.departmentName
+            ? (departmentIdByName.get(item.row.departmentName.toLowerCase()) ??
+              null)
             : null,
-          is_hod: row.isHod,
-          school_persona: schoolPersona,
-          status: row.email ? "invited" : "active",
-          joined_on: new Date().toISOString().slice(0, 10),
-        })
-        .select("id")
-        .single();
+          is_hod: item.row.isHod,
+          school_persona: item.row.isHod ? "hod" : "teacher",
+          status: item.row.email ? "invited" : "active",
+          joined_on: today,
+        })),
+      )
+      .select("id, teacher_profile_id");
 
-      if (employmentError || !employment) {
-        return {
-          success: false,
-          error: employmentError?.message ?? "Could not save employment.",
-        };
-      }
-      employmentId = employment.id;
+    if (employmentError || !inserted) {
+      return {
+        success: false,
+        error: employmentError?.message ?? "Could not save employment.",
+      };
     }
 
-    keepEmploymentIds.add(employmentId);
-
-    await syncStaffMembership(supabase, employmentId);
-
-    if (row.subjectNames.length > 0) {
-      const links = row.subjectNames
-        .map((name) => subjectByName.get(name.toLowerCase()))
-        .filter((id): id is string => Boolean(id))
-        .map((subjectId) => ({
-          employment_id: employmentId!,
-          subject_id: subjectId,
-        }));
-
-      if (links.length > 0) {
-        const { error: linkError } = await supabase
-          .from("employment_subjects")
-          .insert(links);
-        if (linkError) {
-          return { success: false, error: linkError.message };
-        }
+    const employmentIdByProfile = new Map(
+      inserted.map((row) => [row.teacher_profile_id, row.id]),
+    );
+    for (const item of newRows) {
+      const employmentId = employmentIdByProfile.get(item.teacherProfileId);
+      if (!employmentId) {
+        return { success: false, error: "Could not save employment." };
       }
-    }
-
-    if (row.email && isNewEmployment) {
-      invitesToSend.push({
-        email: row.email,
-        personId: resolved.personId,
-        employmentId,
-        isHod: row.isHod,
-        isNew: true,
-      });
+      keepEmploymentIds.add(employmentId);
+      memberships.push(
+        staffMembershipPayload({
+          personId: item.personId,
+          schoolId,
+          employmentId,
+          status: item.row.email ? "invited" : "active",
+          joinedOn: today,
+          leftOn: null,
+          schoolPersona: item.row.isHod ? "hod" : "teacher",
+          isHod: item.row.isHod,
+        }),
+      );
+      pushSubjectLinks(item.row, employmentId, subjectByName, subjectLinks);
+      if (item.row.email) {
+        invitesToSend.push({
+          email: item.row.email,
+          personId: item.personId,
+          employmentId,
+          isHod: item.row.isHod,
+        });
+      }
     }
   }
 
-  const toEnd = (existingEmployments ?? [])
-    .map((row) => row.id)
-    .filter((id) => !keepEmploymentIds.has(id));
+  if (subjectEmploymentIdsToReset.length > 0) {
+    await supabase
+      .from("employment_subjects")
+      .delete()
+      .in("employment_id", subjectEmploymentIdsToReset);
+  }
+  if (subjectLinks.length > 0) {
+    const { error: linkError } = await supabase
+      .from("employment_subjects")
+      .insert(subjectLinks);
+    if (linkError) {
+      return { success: false, error: linkError.message };
+    }
+  }
 
+  const toEnd = (existingEmployments ?? []).filter(
+    (row) => !keepEmploymentIds.has(row.id),
+  );
   if (toEnd.length > 0) {
     await supabase
       .from("teacher_employments")
       .update({
         status: "ended",
-        left_on: new Date().toISOString().slice(0, 10),
-        updated_at: new Date().toISOString(),
+        left_on: today,
+        updated_at: now,
       })
-      .in("id", toEnd);
+      .in(
+        "id",
+        toEnd.map((row) => row.id),
+      );
 
-    for (const endedId of toEnd) {
-      await syncStaffMembership(supabase, endedId);
+    for (const ended of toEnd) {
+      const personId = personIdByProfile.get(ended.teacher_profile_id);
+      if (!personId) continue;
+      memberships.push(
+        staffMembershipPayload({
+          personId,
+          schoolId,
+          employmentId: ended.id,
+          status: "ended",
+          joinedOn: ended.joined_on,
+          leftOn: today,
+          schoolPersona: ended.school_persona,
+          isHod: ended.is_hod,
+          employmentType: ended.employment_type,
+        }),
+      );
     }
   }
 
-  const inviteWarnings: string[] = [];
-  if (invitesToSend.length > 0) {
-    const { createInviteAction } = await import("@/lib/auth/invites-actions");
-    for (const invite of invitesToSend) {
-      const result = await createInviteAction({
+  const membershipResult = await upsertMemberships(supabase, memberships);
+  if (!membershipResult.ok) {
+    return { success: false, error: membershipResult.error };
+  }
+
+  const actorId = context.actor?.authUserId;
+  let inviteWarnings: string[] = [];
+  if (invitesToSend.length > 0 && actorId) {
+    const outcome = await createInvitesForSchoolBulk({
+      supabase,
+      schoolId,
+      actorId,
+      drafts: invitesToSend.map((invite) => ({
         email: invite.email,
         personId: invite.personId,
         targetPersona: invite.isHod ? "hod" : "teacher",
         employmentId: invite.employmentId,
-      });
-      if (!result.success) {
-        inviteWarnings.push(`${invite.email}: ${result.error}`);
-      } else if (result.warning) {
-        inviteWarnings.push(`${invite.email}: ${result.warning}`);
-      }
-    }
+      })),
+    });
+    inviteWarnings = outcome.warnings;
+  } else if (invitesToSend.length > 0) {
+    inviteWarnings.push("Could not send invites — missing actor id.");
   }
 
   revalidatePath("/onboarding", "layout");
@@ -569,5 +623,100 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
           ? `Staff saved. Invites processed with notes: ${inviteWarnings.join("; ")}`
           : "Staff saved. Auth invites were sent for new staff with email."
         : "Staff saved successfully.",
+  };
+}
+
+function pushSubjectLinks(
+  row: StaffFormRow,
+  employmentId: string,
+  subjectByName: Map<string, string>,
+  subjectLinks: Array<{ employment_id: string; subject_id: string }>,
+) {
+  for (const name of row.subjectNames) {
+    const subjectId = subjectByName.get(name.toLowerCase());
+    if (subjectId) {
+      subjectLinks.push({ employment_id: employmentId, subject_id: subjectId });
+    }
+  }
+}
+
+function mapEmploymentToStaffRow(
+  employment: {
+    id: string;
+    is_hod: boolean;
+    employee_code: string | null;
+    designation: string | null;
+    department_id: string | null;
+    teacher_profiles: unknown;
+    employment_subjects: unknown;
+  },
+  departmentById: Map<string, string>,
+): StaffFormRow & { id: string } {
+  const profile = employment.teacher_profiles as
+    | {
+        persons:
+          | {
+              full_name: string;
+              phone: string | null;
+              email: string | null;
+              aadhaar_last4: string | null;
+            }
+          | {
+              full_name: string;
+              phone: string | null;
+              email: string | null;
+              aadhaar_last4: string | null;
+            }[]
+          | null;
+      }
+    | {
+        persons:
+          | {
+              full_name: string;
+              phone: string | null;
+              email: string | null;
+              aadhaar_last4: string | null;
+            }
+          | {
+              full_name: string;
+              phone: string | null;
+              email: string | null;
+              aadhaar_last4: string | null;
+            }[]
+          | null;
+      }[]
+    | null;
+
+  const resolvedProfile = Array.isArray(profile) ? profile[0] : profile;
+  const personRaw = resolvedProfile?.persons;
+  const person = Array.isArray(personRaw) ? personRaw[0] : personRaw;
+  const subjectLinks = Array.isArray(employment.employment_subjects)
+    ? employment.employment_subjects
+    : [];
+
+  return {
+    id: employment.id,
+    fullName: person?.full_name ?? "",
+    phone: person?.phone ?? "",
+    email: person?.email ?? "",
+    aadhaar: person?.aadhaar_last4 ? `********${person.aadhaar_last4}` : "",
+    employeeCode: employment.employee_code ?? "",
+    designation: employment.designation ?? "",
+    departmentName: employment.department_id
+      ? (departmentById.get(employment.department_id) ?? "")
+      : "",
+    subjectNames: subjectLinks
+      .map((link) => {
+        const typed = link as {
+          subjects: { name: string } | { name: string }[] | null;
+        };
+        const subject = typed.subjects;
+        if (Array.isArray(subject)) {
+          return subject[0]?.name ?? "";
+        }
+        return subject?.name ?? "";
+      })
+      .filter(Boolean),
+    isHod: employment.is_hod,
   };
 }

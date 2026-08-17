@@ -315,3 +315,44 @@ export function validateStudentRows(
 
   return errors;
 }
+
+function normalizeAadhaarForCompare(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.includes("*")) return "";
+  return trimmed.replace(/\D/g, "");
+}
+
+export function studentRowIdentityKey(row: StudentFormRow): string {
+  return row.admissionNumber.trim().toLowerCase();
+}
+
+/** Stable fingerprint for dirty-checking student lists (order-independent). */
+export function studentListFingerprint(rows: StudentFormRow[]): string {
+  const normalized = trimStudentRows(rows)
+    .map((row) => ({
+      key: studentRowIdentityKey(row),
+      fullName: row.fullName,
+      dateOfBirth: row.dateOfBirth,
+      gender: row.gender,
+      email: row.email.toLowerCase(),
+      aadhaar: normalizeAadhaarForCompare(row.aadhaar),
+      className: normalizeClassToken(row.className),
+      sectionName: normalizeSectionToken(row.sectionName),
+      guardians: row.guardians.map((guardian) => ({
+        fullName: guardian.fullName,
+        relationship: guardian.relationship.toLowerCase(),
+        phone: guardian.phone,
+        email: guardian.email.toLowerCase(),
+      })),
+    }))
+    .sort((a, b) => a.key.localeCompare(b.key));
+
+  return JSON.stringify(normalized);
+}
+
+export function studentListsEquivalent(
+  left: StudentFormRow[],
+  right: StudentFormRow[],
+): boolean {
+  return studentListFingerprint(left) === studentListFingerprint(right);
+}

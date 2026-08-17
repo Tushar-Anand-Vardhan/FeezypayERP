@@ -40,3 +40,29 @@ export async function assertNoOtherActiveAdmission(
   }
   return { ok: true };
 }
+
+/** Profiles that already have an active admission at another school. */
+export async function findProfilesWithOtherActiveAdmission(
+  supabase: Supabase,
+  studentProfileIds: string[],
+  exceptSchoolId: string,
+): Promise<Set<string>> {
+  const hits = new Set<string>();
+  const unique = Array.from(new Set(studentProfileIds.filter(Boolean)));
+  const chunkSize = 80;
+  for (let i = 0; i < unique.length; i += chunkSize) {
+    const slice = unique.slice(i, i + chunkSize);
+    const { data } = await supabase
+      .from("student_admissions")
+      .select("student_profile_id")
+      .in("student_profile_id", slice)
+      .eq("status", "active")
+      .neq("school_id", exceptSchoolId);
+    for (const row of data ?? []) {
+      if (row.student_profile_id) {
+        hits.add(row.student_profile_id);
+      }
+    }
+  }
+  return hits;
+}

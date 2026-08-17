@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-17 (Dashboard perf: skip middleware gate on nav + auth cache)  
+> **Last updated:** 2026-08-17 (Onboarding staff/student save: parallel identity + batched writes + deferred invites)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
@@ -755,7 +755,8 @@ Timetable also exposes **Skip for now**. Review has its own finish control → `
 - Upsert employment by `teacher_profile_id` for this school.
 - Soft-end employments removed from the list (`status=ended`).
 - Replace `employment_subjects` for kept employments.
-- Attempt password reset emails for listed emails.
+- New emailed staff get `auth_invites` (Auth email sent after the employment batch, not per row).
+- Unchanged lists skip the rewrite. Dirty rows resolve identity with bounded concurrency (8); employments, subjects, and memberships are batched.
 
 ### 10.4 Student save semantics (intended / fixed)
 
@@ -765,6 +766,8 @@ Timetable also exposes **Skip for now**. Review has its own finish control → `
 - Soft-withdraw admissions removed from list.
 - Never delete `persons`.
 - Link primary guardian via parent person/profile + `student_parent_links`.
+- Parent Auth invites are best-effort, deduped by email, and sent after the admission batch (not inside the per-student loop).
+- Unchanged lists skip the rewrite. Dirty rows run with bounded concurrency; D14 is one query; memberships upsert in bulk.
 
 > **Bug fixed in working tree (2026-08-06):** prior implementation withdrew-all then re-inserted, which collided with unique `(school_id, lower(admission_number))`. See §17.
 
@@ -1547,6 +1550,17 @@ Also: `npx tsc --noEmit` after calendar module land.
 | `/dashboard` is not a prefix of other dashboard routes | PASS |
 | Groups with no permitted items are hidden | PASS |
 
+### 15.52 Onboarding staff/student bulk save
+
+**Date:** 2026-08-17 · `npx tsx scripts/smoke-staff-dirty-check.ts` · `npx tsx scripts/smoke-student-dirty-check.ts` · `npx tsc --noEmit`
+
+| Check | Result |
+|-------|--------|
+| Staff unchanged list skips rewrite | PASS |
+| Student unchanged list skips rewrite (class alias `6` ≡ `Class 6`) | PASS |
+| Identity RPCs stay the writer; saves use concurrency 8 + batched memberships/invites | PASS |
+| `npx tsc --noEmit` | PASS |
+
 ---
 
 ## 16. Key file index
@@ -1564,8 +1578,9 @@ Also: `npx tsc --noEmit` after calendar module land.
 ### Onboarding
 
 - `lib/onboarding/steps.ts`, `progress.ts`, `server-context.ts`, `csv.ts`
-- `lib/onboarding/*-actions.ts`, `staff.ts`, `students.ts`, `timetable.ts`, `timetable-csv.ts`, `exams.ts`
-- `scripts/smoke-exams-validation.ts`
+- `lib/onboarding/*-actions.ts`, `staff.ts`, `students.ts`, `timetable.ts`, `timetable-csv.ts`, `exams.ts`, `parallel.ts`
+- `lib/auth/create-invite.ts`
+- `scripts/smoke-exams-validation.ts` · `scripts/smoke-staff-dirty-check.ts` · `scripts/smoke-student-dirty-check.ts`
 - `components/onboarding/**`
 - `app/onboarding/**`
 
