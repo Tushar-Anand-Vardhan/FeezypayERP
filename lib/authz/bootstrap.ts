@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getAuthBootstrapAction } from "@/lib/auth/session-context";
 import { resolveActor } from "@/lib/authz/resolve-actor";
 import type {
@@ -11,9 +12,9 @@ export type {
 } from "@/lib/authz/bootstrap-shared";
 export { canInBootstrap, canAnyInBootstrap } from "@/lib/authz/bootstrap-shared";
 
-export async function getAuthzBootstrap(): Promise<
+export const getAuthzBootstrap = cache(async (): Promise<
   { success: true; data: AuthzBootstrap } | { success: false; error: string }
-> {
+> => {
   const resolved = await resolveActor();
   if (!resolved.ok) {
     return { success: false, error: resolved.error };
@@ -27,10 +28,10 @@ export async function getAuthzBootstrap(): Promise<
       isSchoolAdmin: resolved.actor.isSchoolAdmin,
     },
   };
-}
+});
 
-/** Membership + permission bootstrap for AppHeader on dashboard pages. */
-export async function getAppHeaderAuth(): Promise<AppHeaderAuthProps> {
+/** Membership + permission bootstrap — memoized once per request. */
+export const getAppHeaderAuth = cache(async (): Promise<AppHeaderAuthProps> => {
   const [authBoot, authzBoot] = await Promise.all([
     getAuthBootstrapAction(),
     getAuthzBootstrap(),
@@ -46,4 +47,4 @@ export async function getAppHeaderAuth(): Promise<AppHeaderAuthProps> {
       : null,
     authz: authzBoot.success ? authzBoot.data : null,
   };
-}
+});

@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-14 (Collapsible grouped dashboard sidebar)  
+> **Last updated:** 2026-08-17 (Dashboard perf: skip middleware gate on nav + auth cache)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
@@ -849,6 +849,8 @@ Staff list and student list plans used index scans on `teacher_employments_activ
 ## 13. Dashboard & routing
 
 Dashboard chrome is a **left sidebar** (`AppShell` + `lib/dashboard/nav.ts`), not a top wrap of every link. Groups collapse independently; the rail itself collapses on desktop and becomes a drawer on small screens. Each link still requires its permission key — empty groups are hidden. Onboarding keeps a slim top bar with no app nav.
+
+**Perf (2026-08-17):** Middleware skips the full auth gate on `/dashboard/*` (only runs on auth/onboarding/activate). Profile-completion is checked in the dashboard layout. `createClient`, `resolveActor`, `getAuthBootstrapAction`, and `getAppHeaderAuth` are React `cache()`’d per request. `resolveActor` batches grants/subjects and parallelizes lookups. Auth bootstrap parallelizes reads and skips ensure-admin when an admin membership already exists. Notifications inbox no longer flushes outbox workers on every open.
 
 | Route | Behavior |
 |-------|----------|

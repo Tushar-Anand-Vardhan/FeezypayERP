@@ -20,9 +20,9 @@ export async function requirePermission(
     return { error: `Unknown permission key: ${key}` };
   }
 
-  const resolved = await resolveActor({
-    schoolId: attrs?.schoolId,
-  });
+  const resolved = await resolveActor(
+    attrs?.schoolId ? { schoolId: attrs.schoolId } : undefined,
+  );
   if (!resolved.ok) {
     return { error: resolved.error };
   }
@@ -77,7 +77,9 @@ export async function requireApproval(
   key: PermissionKey,
   attrs?: AuthzAttrs,
 ): Promise<RequirePermissionResult> {
-  const resolved = await resolveActor({ schoolId: attrs?.schoolId });
+  const resolved = await resolveActor(
+    attrs?.schoolId ? { schoolId: attrs.schoolId } : undefined,
+  );
   if (!resolved.ok) {
     return { error: resolved.error };
   }

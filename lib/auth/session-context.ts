@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import {
   listMembershipsForUser,
@@ -17,9 +18,9 @@ function isPersona(value: string): value is AuthPersona {
   return (AUTH_PERSONAS as readonly string[]).includes(value);
 }
 
-export async function getAuthBootstrapAction(): Promise<
+const getAuthBootstrapCached = cache(async (): Promise<
   { success: true; data: AuthBootstrap } | { success: false; error: string }
-> {
+> => {
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   const authUserId = claimsData?.claims?.sub;
@@ -32,48 +33,64 @@ export async function getAuthBootstrapAction(): Promise<
       ? claimsData.claims.email
       : null;
 
-  await ensureAdminMembershipIndexed(supabase, authUserId);
+  // Parallel core reads. Only run ensure-admin when the RPC list has no admin
+  // membership yet (rare after first login).
+  const [personRes, memberships, ctxRes] = await Promise.all([
+    supabase
+      .from("persons")
+      .select("id, profile_completed_at, email")
+      .eq("auth_user_id", authUserId)
+      .maybeSingle(),
+    listMembershipsForUser(supabase, authUserId),
+    supabase
+      .from("user_active_context")
+      .select("school_id, persona")
+      .eq("auth_user_id", authUserId)
+      .maybeSingle(),
+  ]);
 
-  const { data: person } = await supabase
-    .from("persons")
-    .select("id, profile_completed_at, email")
-    .eq("auth_user_id", authUserId)
-    .maybeSingle();
+  const person = personRes.data;
+  let nextMemberships = memberships;
 
-  const memberships = await listMembershipsForUser(supabase, authUserId);
-
-  const schoolIds = [...new Set(memberships.map((m) => m.schoolId))];
-  if (schoolIds.length > 0) {
-    const { data: schools } = await supabase
-      .from("schools")
-      .select("id, name")
-      .in("id", schoolIds);
-    const nameById = new Map((schools ?? []).map((s) => [s.id, s.name]));
-    for (const m of memberships) {
-      m.schoolName = nameById.get(m.schoolId) ?? null;
-    }
+  if (!nextMemberships.some((m) => m.persona === "school_admin")) {
+    await ensureAdminMembershipIndexed(supabase, authUserId);
+    nextMemberships = await listMembershipsForUser(supabase, authUserId);
   }
 
-  // Attach E29 membership ids when present
+  const schoolIds = [...new Set(nextMemberships.map((m) => m.schoolId))];
+  const schoolNamesPromise =
+    schoolIds.length > 0
+      ? supabase.from("schools").select("id, name").in("id", schoolIds)
+      : Promise.resolve({ data: [] as Array<{ id: string; name: string }> });
+
+  const indexedPromise = person?.id
+    ? supabase
+        .from("school_memberships")
+        .select("id, source_type, source_id")
+        .eq("person_id", person.id)
+        .is("archived_at", null)
+    : Promise.resolve({ data: [] as Array<{ id: string; source_type: string; source_id: string }> });
+
+  const [schoolsRes, indexedRes] = await Promise.all([
+    schoolNamesPromise,
+    indexedPromise,
+  ]);
+
+  const nameById = new Map((schoolsRes.data ?? []).map((s) => [s.id, s.name]));
+  for (const m of nextMemberships) {
+    m.schoolName = nameById.get(m.schoolId) ?? null;
+  }
+
   if (person?.id) {
-    const { data: indexed } = await supabase
-      .from("school_memberships")
-      .select("id, source_type, source_id")
-      .eq("person_id", person.id)
-      .is("archived_at", null);
     const bySource = new Map(
-      (indexed ?? []).map((r) => [`${r.source_type}:${r.source_id}`, r.id]),
+      (indexedRes.data ?? []).map((r) => [`${r.source_type}:${r.source_id}`, r.id]),
     );
-    for (const m of memberships) {
+    for (const m of nextMemberships) {
       m.membershipId = bySource.get(`${m.source}:${m.sourceId}`) ?? null;
     }
   }
 
-  const { data: ctx } = await supabase
-    .from("user_active_context")
-    .select("school_id, persona")
-    .eq("auth_user_id", authUserId)
-    .maybeSingle();
+  const ctx = ctxRes.data;
 
   let activeContext = ctx
     ? { schoolId: ctx.school_id as string, persona: ctx.persona as AuthPersona }
@@ -81,19 +98,19 @@ export async function getAuthBootstrapAction(): Promise<
 
   if (
     activeContext &&
-    !memberships.some((m) => m.schoolId === activeContext!.schoolId)
+    !nextMemberships.some((m) => m.schoolId === activeContext!.schoolId)
   ) {
     activeContext = null;
   }
 
   if (!activeContext) {
-    const def = pickDefaultMembership(memberships);
+    const def = pickDefaultMembership(nextMemberships);
     if (def) {
       activeContext = { schoolId: def.schoolId, persona: def.persona };
     }
   }
 
-  const isSchoolAdmin = memberships.some((m) => m.persona === "school_admin");
+  const isSchoolAdmin = nextMemberships.some((m) => m.persona === "school_admin");
   const needsProfileCompletion = Boolean(
     person && person.profile_completed_at == null && !isSchoolAdmin,
   );
@@ -105,12 +122,18 @@ export async function getAuthBootstrapAction(): Promise<
       personId: person?.id ?? null,
       profileCompletedAt: person?.profile_completed_at ?? null,
       email: person?.email ?? email,
-      memberships,
+      memberships: nextMemberships,
       activeContext,
       needsProfileCompletion,
       isSchoolAdmin,
     },
   };
+});
+
+export async function getAuthBootstrapAction(): Promise<
+  { success: true; data: AuthBootstrap } | { success: false; error: string }
+> {
+  return getAuthBootstrapCached();
 }
 
 export async function listMyMembershipsAction() {

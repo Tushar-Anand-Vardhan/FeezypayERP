@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import {
   listMembershipsForUser,
@@ -22,7 +23,7 @@ function asSystemRole(persona: string): SystemRoleCode | null {
   return null;
 }
 
-export async function resolveActor(options?: {
+async function resolveActorUncached(options?: {
   schoolId?: string;
   persona?: string;
 }): Promise<
@@ -36,13 +37,40 @@ export async function resolveActor(options?: {
     return { ok: false, error: "You must be signed in." };
   }
 
-  const memberships = await listMembershipsForUser(supabase, authUserId);
+  // Parallel: memberships, active context, person, profile
+  const [memberships, activeCtxRes, personRes, profileRes] = await Promise.all([
+    listMembershipsForUser(supabase, authUserId),
+    supabase
+      .from("user_active_context")
+      .select("school_id, persona")
+      .eq("auth_user_id", authUserId)
+      .maybeSingle(),
+    supabase
+      .from("persons")
+      .select("id")
+      .eq("auth_user_id", authUserId)
+      .maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("school_id, role")
+      .eq("id", authUserId)
+      .maybeSingle(),
+  ]);
 
-  const { data: activeCtx } = await supabase
-    .from("user_active_context")
-    .select("school_id, persona")
-    .eq("auth_user_id", authUserId)
-    .maybeSingle();
+  const activeCtx = activeCtxRes.data;
+  const personId = personRes.data?.id ?? null;
+  const profile = profileRes.data;
+
+  let preferenceSchoolId: string | null = null;
+  if (personId) {
+    const { data: prefs } = await supabase
+      .from("user_school_preferences")
+      .select("active_school_id, default_school_id")
+      .eq("person_id", personId)
+      .maybeSingle();
+    preferenceSchoolId =
+      prefs?.active_school_id ?? prefs?.default_school_id ?? null;
+  }
 
   const preferredSchoolMembership =
     options?.schoolId != null
@@ -58,30 +86,6 @@ export async function resolveActor(options?: {
     preferredSchoolMembership ??
     activeSchoolMembership ??
     pickDefaultMembership(memberships);
-
-  // Prefer E29 preferences when present
-  const { data: personRow } = await supabase
-    .from("persons")
-    .select("id")
-    .eq("auth_user_id", authUserId)
-    .maybeSingle();
-
-  let preferenceSchoolId: string | null = null;
-  if (personRow?.id) {
-    const { data: prefs } = await supabase
-      .from("user_school_preferences")
-      .select("active_school_id, default_school_id")
-      .eq("person_id", personRow.id)
-      .maybeSingle();
-    preferenceSchoolId =
-      prefs?.active_school_id ?? prefs?.default_school_id ?? null;
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("school_id, role")
-    .eq("id", authUserId)
-    .maybeSingle();
 
   const schoolId =
     options?.schoolId ??
@@ -122,15 +126,6 @@ export async function resolveActor(options?: {
     systemRoles.add(activeRole);
   }
 
-  const { data: person } = await supabase
-    .from("persons")
-    .select("id")
-    .eq("auth_user_id", authUserId)
-    .maybeSingle();
-
-  const personId = person?.id ?? null;
-
-  // Custom role grants
   const permissionKeys = new Set<PermissionKey>();
   for (const role of systemRoles) {
     for (const key of SYSTEM_ROLE_BUNDLES[role]) {
@@ -138,65 +133,75 @@ export async function resolveActor(options?: {
     }
   }
 
-  if (personId) {
-    const { data: grants } = await supabase
-      .from("authz_member_role_grants")
-      .select("role_id, expires_at, authz_roles(code, is_system)")
-      .eq("person_id", personId)
-      .eq("school_id", schoolId)
-      .is("revoked_at", null);
-
-    for (const grant of grants ?? []) {
-      if (
-        grant.expires_at &&
-        new Date(grant.expires_at as string) < new Date()
-      ) {
-        continue;
-      }
-      const { data: rolePerms } = await supabase
-        .from("authz_role_permissions")
-        .select("permission_key")
-        .eq("role_id", grant.role_id);
-      for (const rp of rolePerms ?? []) {
-        permissionKeys.add(rp.permission_key as PermissionKey);
-      }
-    }
-
-    // Wave 6: platform operators get cross-tenant keys outside school bundles
-    const { data: platformOp } = await supabase
-      .from("platform_operators")
-      .select("can_impersonate")
-      .eq("person_id", personId)
-      .is("archived_at", null)
-      .maybeSingle();
-    if (platformOp) {
-      permissionKeys.add("platform.tenant.read");
-      if (platformOp.can_impersonate) {
-        permissionKeys.add("platform.impersonate");
-      }
-    }
-  }
-
-  // Invited staff: strip to identity self-edit until active
   let employmentStatus: string | null = null;
   const departmentIds: string[] = [];
   const subjectIds: string[] = [];
   const linkedStudentProfileIds: string[] = [];
 
   if (personId) {
-    const { data: tp } = await supabase
-      .from("teacher_profiles")
-      .select("id")
-      .eq("person_id", personId)
-      .maybeSingle();
+    const [grantsRes, platformOpRes, tpRes, ppRes] = await Promise.all([
+      supabase
+        .from("authz_member_role_grants")
+        .select("role_id, expires_at")
+        .eq("person_id", personId)
+        .eq("school_id", schoolId)
+        .is("revoked_at", null),
+      supabase
+        .from("platform_operators")
+        .select("can_impersonate")
+        .eq("person_id", personId)
+        .is("archived_at", null)
+        .maybeSingle(),
+      supabase
+        .from("teacher_profiles")
+        .select("id")
+        .eq("person_id", personId)
+        .maybeSingle(),
+      supabase
+        .from("parent_profiles")
+        .select("id")
+        .eq("person_id", personId)
+        .maybeSingle(),
+    ]);
 
-    if (tp) {
+    const now = Date.now();
+    const roleIds = [
+      ...new Set(
+        (grantsRes.data ?? [])
+          .filter(
+            (grant) =>
+              !grant.expires_at ||
+              new Date(grant.expires_at as string).getTime() >= now,
+          )
+          .map((grant) => grant.role_id as string),
+      ),
+    ];
+
+    if (roleIds.length > 0) {
+      const { data: rolePerms } = await supabase
+        .from("authz_role_permissions")
+        .select("permission_key")
+        .in("role_id", roleIds);
+      for (const rp of rolePerms ?? []) {
+        permissionKeys.add(rp.permission_key as PermissionKey);
+      }
+    }
+
+    if (platformOpRes.data) {
+      permissionKeys.add("platform.tenant.read");
+      if (platformOpRes.data.can_impersonate) {
+        permissionKeys.add("platform.impersonate");
+      }
+    }
+
+    if (tpRes.data) {
       const { data: emps } = await supabase
         .from("teacher_employments")
-        .select("id, status, department_id, is_hod")
-        .eq("teacher_profile_id", tp.id)
+        .select("id, status, department_id")
+        .eq("teacher_profile_id", tpRes.data.id)
         .eq("school_id", schoolId);
 
+      const employmentIds: string[] = [];
       for (const e of emps ?? []) {
         employmentStatus = e.status as string;
         if (e.department_id) {
@@ -209,33 +214,31 @@ export async function resolveActor(options?: {
           permissionKeys.add("identity.person.read");
           permissionKeys.add("identity.person.edit");
         }
+        employmentIds.push(e.id as string);
+      }
+
+      if (employmentIds.length > 0) {
         const { data: subjects } = await supabase
           .from("employment_subjects")
           .select("subject_id")
-          .eq("employment_id", e.id);
+          .in("employment_id", employmentIds);
         for (const s of subjects ?? []) {
           subjectIds.push(s.subject_id as string);
         }
       }
     }
 
-    const { data: pp } = await supabase
-      .from("parent_profiles")
-      .select("id")
-      .eq("person_id", personId)
-      .maybeSingle();
-    if (pp) {
+    if (ppRes.data) {
       const { data: links } = await supabase
         .from("student_parent_links")
         .select("student_profile_id")
-        .eq("parent_profile_id", pp.id);
+        .eq("parent_profile_id", ppRes.data.id);
       for (const l of links ?? []) {
         linkedStudentProfileIds.push(l.student_profile_id as string);
       }
     }
   }
 
-  // Ensure school_admin always has full bundle even if memberships empty of persona
   if (isSchoolAdmin) {
     for (const key of SYSTEM_ROLE_BUNDLES.school_admin) {
       permissionKeys.add(key);
@@ -260,3 +263,29 @@ export async function resolveActor(options?: {
     },
   };
 }
+
+/**
+ * Per-request memoized actor resolution. Layout + page + requirePermission
+ * share one DB walk instead of repeating it on every nested call.
+ * Cache keys are primitives so `{ schoolId: undefined }` does not miss.
+ */
+export async function resolveActor(options?: {
+  schoolId?: string;
+  persona?: string;
+}): Promise<
+  | { ok: true; supabase: Awaited<ReturnType<typeof createClient>>; actor: AuthzActor }
+  | { ok: false; error: string }
+> {
+  return resolveActorCached(
+    options?.schoolId ?? "",
+    options?.persona ?? "",
+  );
+}
+
+const resolveActorCached = cache(
+  async (schoolId: string, persona: string) =>
+    resolveActorUncached({
+      schoolId: schoolId || undefined,
+      persona: persona || undefined,
+    }),
+);

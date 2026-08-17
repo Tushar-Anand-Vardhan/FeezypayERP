@@ -30,3 +30,17 @@ export function canAnyInBootstrap(
   const keys = Array.isArray(key) ? key : [key];
   return keys.some((item) => canInBootstrap(bootstrap, item));
 }
+
+export function authzBootstrapFromActor(actor: {
+  schoolId: string;
+  activePersona: string;
+  permissionKeys: Iterable<PermissionKey>;
+  isSchoolAdmin: boolean;
+}): AuthzBootstrap {
+  return {
+    schoolId: actor.schoolId,
+    persona: String(actor.activePersona),
+    permissions: [...actor.permissionKeys],
+    isSchoolAdmin: actor.isSchoolAdmin,
+  };
+}

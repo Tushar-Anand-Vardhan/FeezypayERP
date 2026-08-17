@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/dashboard/app-shell";
+import { getAuthBootstrapAction } from "@/lib/auth/session-context";
 import { getAppHeaderAuth } from "@/lib/authz/bootstrap";
 import { createClient } from "@/lib/supabase/server";
 
@@ -12,6 +13,12 @@ export default async function DashboardLayout({
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) {
     redirect("/login");
+  }
+
+  // Profile-completion gate used to live in middleware on every click.
+  const boot = await getAuthBootstrapAction();
+  if (boot.success && boot.data.needsProfileCompletion) {
+    redirect("/activate/profile");
   }
 
   const headerAuth = await getAppHeaderAuth();
