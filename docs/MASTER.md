@@ -757,6 +757,7 @@ Timetable also exposes **Skip for now**. Review has its own finish control → `
 - Replace `employment_subjects` for kept employments.
 - New emailed staff get `auth_invites` (Auth email sent after the employment batch, not per row).
 - Unchanged lists skip the rewrite. Dirty rows resolve identity with bounded concurrency (8); employments, subjects, and memberships are batched.
+- **TEMP (revert at invite-first ship):** onboarding staff employments are written as `active` even when emailed (normally `invited`). Flag: `STAFF_ONBOARDING_EMPLOYMENT_STATUS` in `lib/onboarding/staff-actions.ts`.
 
 ### 10.4 Student save semantics (intended / fixed)
 

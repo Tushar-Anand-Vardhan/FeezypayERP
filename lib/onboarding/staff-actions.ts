@@ -30,6 +30,13 @@ type Result =
   | { success: true; message: string }
   | { success: false; error: string; fieldErrors?: Record<string, string> };
 
+/**
+ * TEMP until invite-first staff ship: new/updated onboarding staff are
+ * `active` even when they have an email (normally `invited`). Revert to
+ * `row.email ? "invited" : "active"` and preserve existing `invited` on update.
+ */
+const STAFF_ONBOARDING_EMPLOYMENT_STATUS = "active" as const;
+
 export type StaffStepData =
   | {
       success: true;
@@ -438,7 +445,7 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
             : null,
           is_hod: item.row.isHod,
           school_persona: schoolPersona,
-          status: existing.status === "invited" ? "invited" : "active",
+          status: STAFF_ONBOARDING_EMPLOYMENT_STATUS,
           left_on: null,
           updated_at: now,
         })
@@ -463,8 +470,7 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
         personId: result.item.personId,
         schoolId,
         employmentId: result.employmentId,
-        status:
-          result.existing.status === "invited" ? "invited" : "active",
+        status: STAFF_ONBOARDING_EMPLOYMENT_STATUS,
         joinedOn: result.existing.joined_on,
         leftOn: null,
         schoolPersona: result.item.row.isHod ? "hod" : "teacher",
@@ -494,7 +500,7 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
             : null,
           is_hod: item.row.isHod,
           school_persona: item.row.isHod ? "hod" : "teacher",
-          status: item.row.email ? "invited" : "active",
+          status: STAFF_ONBOARDING_EMPLOYMENT_STATUS,
           joined_on: today,
         })),
       )
@@ -521,7 +527,7 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
           personId: item.personId,
           schoolId,
           employmentId,
-          status: item.row.email ? "invited" : "active",
+          status: STAFF_ONBOARDING_EMPLOYMENT_STATUS,
           joinedOn: today,
           leftOn: null,
           schoolPersona: item.row.isHod ? "hod" : "teacher",
