@@ -264,6 +264,28 @@ if (good.ok) {
   assert.equal(good.slots[1].teacherId, "emp-2");
 }
 
+const aliasCatalog = {
+  ...catalog,
+  section: { ...catalog.section, className: "Class 6", name: "Rose" },
+};
+const classAlias = applyTimetableCsv({
+  csvText: `${TIMETABLE_CSV_HEADERS.join(",")}\n6,ROSE,Mon,1,Mathematics,Priya Sharma`,
+  catalog: aliasCatalog,
+});
+assert.equal(classAlias.ok, true);
+if (classAlias.ok) {
+  assert.equal(classAlias.filledCount, 1);
+}
+
+const wrongClass = applyTimetableCsv({
+  csvText: `${TIMETABLE_CSV_HEADERS.join(",")}\n7,A,Mon,1,Mathematics,Priya Sharma`,
+  catalog,
+});
+assert.equal(wrongClass.ok, false);
+if (!wrongClass.ok) {
+  assert.ok(wrongClass.errors[0]?.includes("class"));
+}
+
 const blocked = applyTimetableCsv({
   csvText: `${TIMETABLE_CSV_HEADERS.join(",")}\n6,B,Mon,1,Mathematics,Priya Sharma`,
   catalog,

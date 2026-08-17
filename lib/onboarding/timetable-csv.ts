@@ -7,6 +7,10 @@ import {
   type PeriodFormRow,
   type TimetableSlotFormRow,
 } from "@/lib/onboarding/timetable";
+import {
+  normalizeClassToken,
+  normalizeSectionToken,
+} from "@/lib/onboarding/students";
 
 export const TIMETABLE_CSV_HEADERS = [
   "class",
@@ -66,6 +70,24 @@ const DAY_ALIASES: Record<string, number> = {
 
 function normalizeKey(value: string) {
   return value.trim().toLowerCase().replace(/\./g, "").replace(/\s+/g, " ");
+}
+
+function classMatchesCatalog(csvValue: string, catalogValue: string): boolean {
+  if (normalizeKey(csvValue) === normalizeKey(catalogValue)) {
+    return true;
+  }
+  const csvToken = normalizeClassToken(csvValue);
+  const catalogToken = normalizeClassToken(catalogValue);
+  return Boolean(csvToken) && csvToken === catalogToken;
+}
+
+function sectionMatchesCatalog(csvValue: string, catalogValue: string): boolean {
+  if (normalizeKey(csvValue) === normalizeKey(catalogValue)) {
+    return true;
+  }
+  const csvToken = normalizeSectionToken(csvValue);
+  const catalogToken = normalizeSectionToken(catalogValue);
+  return Boolean(csvToken) && csvToken === catalogToken;
 }
 
 export function parseTimetableDay(value: string): number | null {
@@ -152,8 +174,6 @@ export function applyTimetableCsv(input: {
     teacherByName.set(nameKey, ids);
   }
 
-  const expectedClass = normalizeKey(input.catalog.section.className);
-  const expectedSection = normalizeKey(input.catalog.section.name);
   const errors: string[] = [];
   const byCell = new Map<string, TimetableSlotFormRow>();
   const tokens = input.catalog.periods
@@ -169,13 +189,13 @@ export function applyTimetableCsv(input: {
     const subjectName = (row.subject ?? "").trim();
     const teacherValue = (row.teacher ?? "").trim();
 
-    if (normalizeKey(className) !== expectedClass) {
+    if (!classMatchesCatalog(className, input.catalog.section.className)) {
       errors.push(
-        `Row ${line}: class "${className || "(blank)"}" does not match ${input.catalog.section.className}.`,
+        `Row ${line}: class "${className || "(blank)"}" does not match ${input.catalog.section.className}. Short forms like "6" for "Class 6" are OK.`,
       );
       return;
     }
-    if (normalizeKey(sectionName) !== expectedSection) {
+    if (!sectionMatchesCatalog(sectionName, input.catalog.section.name)) {
       errors.push(
         `Row ${line}: section "${sectionName || "(blank)"}" does not match ${input.catalog.section.name}.`,
       );

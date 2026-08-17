@@ -793,7 +793,7 @@ Empty Aadhaar allowed. Invalid row → entire import blocked.
 - `sections.class_teacher_id` and `timetable_slots.teacher_id` reference **employment IDs**.
 - Skip stores `schools.timetable_skipped = true`.
 - Day structure is custom: each bell has a **name**, start/end, and **educational** flag. Non-educational (lunch/assembly) may leave teacher empty; educational slots take optional subject + teacher. `period_number` may be **0**.
-- Per class-section CSV import (D13): required headers `class,section,day,period,subject,teacher`. The **sample CSV is generated from the current day structure** (exact period names, start, end, educational yes/no, then Mon–Sat rows). `period` matches the custom name (numbers still accepted). Subject must match catalog name; teacher is full name or `employee_code` and may be blank. Invalid row → **entire import blocked**. Upload previews into the grid; wizard Save persists all sections.
+- Per class-section CSV import (D13): required headers `class,section,day,period,subject,teacher`. The **sample CSV is generated from the current day structure** (exact period names, start, end, educational yes/no, then Mon–Sat rows). `period` matches the custom name (numbers still accepted). Class accepts aliases (`6` ↔ `Class 6`); section is case-insensitive. Subject must match catalog name; teacher is full name or `employee_code` and may be blank. Invalid row → **entire import blocked**. Upload previews into the grid; wizard Save persists all sections.
 
 ### 11.4 Exams & review
 
@@ -1526,6 +1526,7 @@ Also: `npx tsc --noEmit` after calendar module land.
 | CSV period matches custom name or number | PASS |
 | Subject on a non-educational row blocked | PASS |
 | Break teacher optional / empty allowed | PASS |
+| Class alias `6` ≡ `Class 6`; section case (`ROSE` ≡ `Rose`) | PASS |
 
 ### 15.50 Onboarding per-class exams
 
