@@ -2,7 +2,7 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-17 (Onboarding staff/student save: parallel identity + batched writes + deferred invites)  
+> **Last updated:** 2026-08-17 (Settings: reset-onboarding for school admin)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
@@ -520,6 +520,7 @@ See §55 and authentication-platform.md. Staff save wires invites.
 | `20260807510000_exam_schedule_marking_window.sql` | `exam_subject_schedules.marking_opens_at` / `marking_closes_at` (Wave 1) |
 | `20260814090000_period_kind_and_zero.sql` | `period_kind` teaching/class_teacher/break; `period_number >= 0` |
 | `20260814100000_exam_definitions_class_id.sql` | `exam_definitions.class_id` — per-class exam patterns; unique name per class |
+| `20260817120000_reset_school_onboarding.sql` | `reset_school_onboarding(school_id)` — school-admin wipe + restart wizard |
 
 **Dropped legacy tables (must stay gone):** `teachers`, `teacher_subjects`, `students`, `guardians`, `student_guardians`, `student_section_enrollments` (+ `*_legacy` intermediates).
 
@@ -728,6 +729,12 @@ Timetable also exposes **Skip for now**. Review has its own finish control → `
 - counts: classes, sections, subjects, teachers, students, exams ≥ 1  
 - timetable configured **or** skipped  
 - then sets `schools.onboarding_status = 'completed'`
+
+### 9.5 Reset onboarding (school admin)
+
+`/dashboard/settings` (navbar **Settings**, `tenant.school.edit`, available during setup). Type `RESET` → `resetOnboardingAction` → RPC `reset_school_onboarding(school_id)`.
+
+Wipes school-scoped operational rows, restores the admin membership/login, sets `onboarding_status = in_progress`, and sends the admin back to the wizard. Keeps school **id** and **name**.
 
 ---
 
@@ -1563,6 +1570,16 @@ Also: `npx tsc --noEmit` after calendar module land.
 | Identity RPCs stay the writer; saves use concurrency 8 + batched memberships/invites | PASS |
 | `npx tsc --noEmit` | PASS |
 
+### 15.53 Settings — reset onboarding
+
+**Date:** 2026-08-17 · `npx tsx scripts/smoke-dashboard-nav-validation.ts`
+
+| Check | Result |
+|-------|--------|
+| Settings nav href is `/dashboard/settings` (not `#`) | PASS |
+| Settings is not locked behind onboarding complete | PASS |
+| School-admin only (`tenant.school.edit`) | PASS |
+
 ---
 
 ## 16. Key file index
@@ -1576,6 +1593,7 @@ Also: `npx tsc --noEmit` after calendar module land.
 - `app/page.tsx`, `app/dashboard/page.tsx`
 - `app/dashboard/layout.tsx` · `components/dashboard/app-shell.tsx` · `app-sidebar.tsx` · `app-header.tsx`
 - `lib/dashboard/nav.ts` · `scripts/smoke-dashboard-nav-validation.ts`
+- `/dashboard/settings` · `lib/onboarding/reset-actions.ts` · `reset_school_onboarding` RPC
 
 ### Onboarding
 

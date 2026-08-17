@@ -167,9 +167,8 @@ export const DASHBOARD_NAV_GROUPS: DashboardNavGroup[] = [
       {
         id: "settings",
         label: "Settings",
-        href: "#",
+        href: "/dashboard/settings",
         permission: "tenant.school.edit",
-        lockedUntilOnboarding: true,
       },
     ],
   },

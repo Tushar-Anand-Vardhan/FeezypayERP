@@ -10,6 +10,7 @@ import {
   isDashboardNavActive,
   visibleDashboardNavGroups,
 } from "../lib/dashboard/nav";
+import { RESET_ONBOARDING_CONFIRMATION } from "../lib/onboarding/reset-actions";
 
 function section(title: string) {
   console.log(`\n=== ${title} ===`);
@@ -58,6 +59,13 @@ assert.equal(
 assert.equal(isDashboardNavActive("#", "/dashboard"), false);
 assert.equal(activeDashboardNavGroupId("/dashboard/subjects"), "configuration");
 assert.equal(activeDashboardNavGroupId("/dashboard/teacher/marks"), "portals");
+assert.equal(activeDashboardNavGroupId("/dashboard/settings"), "system");
+const settings = DASHBOARD_NAV_GROUPS.flatMap((group) => group.items).find(
+  (item) => item.id === "settings",
+);
+assert.equal(settings?.href, "/dashboard/settings");
+assert.equal(settings?.lockedUntilOnboarding, undefined);
+assert.equal(RESET_ONBOARDING_CONFIRMATION, "RESET");
 console.log("OK");
 
 section("RBAC hides groups the actor cannot use");
