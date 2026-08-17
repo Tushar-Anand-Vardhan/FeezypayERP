@@ -38,6 +38,61 @@ export function trimStaffRows(rows: StaffFormRow[]): StaffFormRow[] {
   }));
 }
 
+/** Clear masked Aadhaar placeholders so reloads do not re-hash them. */
+export function clearMaskedStaffAadhaar(rows: StaffFormRow[]): StaffFormRow[] {
+  return rows.map((row) => ({
+    ...row,
+    aadhaar: row.aadhaar.includes("*") ? "" : row.aadhaar,
+  }));
+}
+
+function staffIdentityKey(row: StaffFormRow): string {
+  const email = row.email.trim().toLowerCase();
+  if (email) return `e:${email}`;
+  const code = row.employeeCode.trim().toLowerCase();
+  if (code) return `c:${code}`;
+  return `n:${row.fullName.trim().toLowerCase()}|${row.phone.trim()}`;
+}
+
+export function staffRowIdentityKey(row: StaffFormRow): string {
+  return staffIdentityKey(row);
+}
+
+function normalizeAadhaarForCompare(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.includes("*")) return "";
+  return trimmed.replace(/\D/g, "");
+}
+
+/** Stable fingerprint for dirty-checking staff lists (order-independent). */
+export function staffListFingerprint(rows: StaffFormRow[]): string {
+  const normalized = clearMaskedStaffAadhaar(trimStaffRows(rows))
+    .map((row) => ({
+      key: staffIdentityKey(row),
+      fullName: row.fullName,
+      phone: row.phone,
+      email: row.email.toLowerCase(),
+      aadhaar: normalizeAadhaarForCompare(row.aadhaar),
+      employeeCode: row.employeeCode,
+      designation: row.designation,
+      departmentName: row.departmentName.toLowerCase(),
+      subjectNames: [...row.subjectNames]
+        .map((name) => name.toLowerCase())
+        .sort(),
+      isHod: row.isHod,
+    }))
+    .sort((a, b) => a.key.localeCompare(b.key));
+
+  return JSON.stringify(normalized);
+}
+
+export function staffListsEquivalent(
+  left: StaffFormRow[],
+  right: StaffFormRow[],
+): boolean {
+  return staffListFingerprint(left) === staffListFingerprint(right);
+}
+
 export function staffRowFromCsv(row: Record<string, string>): StaffFormRow {
   return {
     fullName: row.full_name ?? "",

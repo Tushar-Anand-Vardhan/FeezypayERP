@@ -175,7 +175,29 @@ const badBatch = validateStudentRows(
   [{ className: "Class 1", sectionName: "A" }],
 );
 assert.ok(badBatch["student-1-section"] || badBatch["student-1-guardian"]);
+assert.ok(
+  String(badBatch["student-1-section"] ?? "").includes("Class 9") ||
+    badBatch["student-1-guardian"],
+);
 console.log("OK CSV blocked on invalid row");
+
+section("Student class alias 6 ↔ Class 6 + section case");
+const aliasStudent = studentRowFromCsv({
+  full_name: "Warde Shubhra",
+  admission_number: "ADM010",
+  class: "6",
+  section: "ROSE",
+  guardian_name: "Parent",
+});
+const aliasErrors = validateStudentRows(
+  [aliasStudent],
+  [
+    { className: "Class 6", sectionName: "Rose" },
+    { className: "Class 6", sectionName: "Lotus" },
+  ],
+);
+assert.equal(Object.keys(aliasErrors).length, 0);
+console.log("OK class/section aliases");
 
 section("Student empty aadhaar allowed");
 const noAadhaar = studentRowFromCsv({

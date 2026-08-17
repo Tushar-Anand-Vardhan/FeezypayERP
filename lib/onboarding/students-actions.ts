@@ -5,6 +5,7 @@ import { hashAadhaar } from "@/lib/identity/aadhaar";
 import { getActiveYearClassesForSchool } from "@/lib/onboarding/school-classes-server";
 import { getAuthenticatedSchoolContext } from "@/lib/onboarding/server-context";
 import {
+  resolveClassSectionPair,
   trimStudentRows,
   validateStudentRows,
   type StudentFormRow,
@@ -350,20 +351,18 @@ export async function saveStudentsAction(formData: FormData): Promise<Result> {
   const classNameById = new Map(
     classesResult.classes.map((row) => [row.id, row.name]),
   );
-  const pairKey = (className: string, sectionName: string) =>
-    `${className.toLowerCase()}::${sectionName.toLowerCase()}`;
-  const sectionByPair = new Map(
-    (sections ?? []).map((section) => [
-      pairKey(classNameById.get(section.class_id) ?? "", section.name),
-      { classId: section.class_id, sectionId: section.id },
-    ]),
-  );
+  const classSectionPairs = (sections ?? []).map((section) => ({
+    className: classNameById.get(section.class_id) ?? "",
+    sectionName: section.name,
+    classId: section.class_id,
+    sectionId: section.id,
+  }));
 
   const fieldErrors = validateStudentRows(
     rows,
-    (sections ?? []).map((section) => ({
-      className: classNameById.get(section.class_id) ?? "",
-      sectionName: section.name,
+    classSectionPairs.map((pair) => ({
+      className: pair.className,
+      sectionName: pair.sectionName,
     })),
     { requireAtLeastOne: intent === "next" },
   );
@@ -409,11 +408,22 @@ export async function saveStudentsAction(formData: FormData): Promise<Result> {
   const academicYearId = classesResult.academicYear.id;
 
   for (const row of trimmed) {
-    const pair = sectionByPair.get(pairKey(row.className, row.sectionName));
+    const resolvedPair = resolveClassSectionPair(
+      row.className,
+      row.sectionName,
+      classSectionPairs,
+    );
+    const pair = resolvedPair
+      ? classSectionPairs.find(
+          (item) =>
+            item.className === resolvedPair.className &&
+            item.sectionName === resolvedPair.sectionName,
+        )
+      : undefined;
     if (!pair) {
       return {
         success: false,
-        error: `Could not resolve ${row.className} / ${row.sectionName}.`,
+        error: `Could not resolve class/section "${row.className}" / "${row.sectionName}". Use a class/section from your setup (short class forms like "6" for "Class 6" are OK).`,
       };
     }
 

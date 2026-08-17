@@ -5,6 +5,9 @@ import { hashAadhaar } from "@/lib/identity/aadhaar";
 import { getActiveYearClassesForSchool } from "@/lib/onboarding/school-classes-server";
 import { getAuthenticatedSchoolContext } from "@/lib/onboarding/server-context";
 import {
+  clearMaskedStaffAadhaar,
+  staffListsEquivalent,
+  staffRowIdentityKey,
   trimStaffRows,
   validateStaffRows,
   type StaffFormRow,
@@ -288,11 +291,7 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
     return { success: false, error: "Could not read teacher data." };
   }
 
-  // Masked aadhaar from reload should not be re-hashed; clear fake values.
-  rows = rows.map((row) => ({
-    ...row,
-    aadhaar: row.aadhaar.includes("*") ? "" : row.aadhaar,
-  }));
+  rows = clearMaskedStaffAadhaar(rows);
 
   const { data: subjects } = await supabase
     .from("subjects")
@@ -333,6 +332,28 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
       };
     }
   }
+
+  // Skip rewrite when the form matches what is already stored.
+  const existingSnapshot = await getStaffStepDataAction();
+  if (
+    existingSnapshot.success &&
+    !existingSnapshot.blocked &&
+    staffListsEquivalent(trimmed, existingSnapshot.teachers)
+  ) {
+    return {
+      success: true,
+      message: "Staff unchanged — nothing to save.",
+    };
+  }
+
+  const existingByIdentity = new Map(
+    existingSnapshot.success && !existingSnapshot.blocked
+      ? existingSnapshot.teachers.map((row) => [
+          staffRowIdentityKey(row),
+          row,
+        ] as const)
+      : [],
+  );
 
   const departmentNames = Array.from(
     new Set(trimmed.map((row) => row.departmentName).filter(Boolean)),
@@ -381,6 +402,12 @@ export async function saveStaffAction(formData: FormData): Promise<Result> {
   }> = [];
 
   for (const row of trimmed) {
+    const prior = existingByIdentity.get(staffRowIdentityKey(row));
+    if (prior && staffListsEquivalent([row], [prior])) {
+      keepEmploymentIds.add(prior.id);
+      continue;
+    }
+
     const resolved = await resolvePersonAndTeacherProfile(supabase, row);
     if ("error" in resolved) {
       return { success: false, error: resolved.error };

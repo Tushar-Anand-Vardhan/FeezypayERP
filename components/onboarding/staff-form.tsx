@@ -14,6 +14,7 @@ import {
 } from "@/lib/onboarding/staff-actions";
 import {
   STAFF_CSV_HEADERS,
+  staffListsEquivalent,
   staffRowFromCsv,
   validateStaffDraft,
   validateStaffRows,
@@ -47,6 +48,7 @@ export function StaffForm() {
     Array<{ id: string; name: string }>
   >([]);
   const [teachers, setTeachers] = useState<StaffFormRow[]>([]);
+  const [savedBaseline, setSavedBaseline] = useState<StaffFormRow[]>([]);
   const [draft, setDraft] = useState<StaffFormRow>(EMPTY_TEACHER);
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<StaffFieldErrors>({});
@@ -94,31 +96,31 @@ export function StaffForm() {
 
       setSubjects(result.subjects);
       setDepartments(result.departments);
-      setTeachers(
-        result.teachers.map(
-          ({
-            fullName,
-            phone,
-            email,
-            aadhaar,
-            employeeCode,
-            designation,
-            departmentName,
-            subjectNames: names,
-            isHod,
-          }) => ({
-            fullName,
-            phone,
-            email,
-            aadhaar,
-            employeeCode,
-            designation,
-            departmentName,
-            subjectNames: names,
-            isHod,
-          }),
-        ),
+      const loaded = result.teachers.map(
+        ({
+          fullName,
+          phone,
+          email,
+          aadhaar,
+          employeeCode,
+          designation,
+          departmentName,
+          subjectNames: names,
+          isHod,
+        }) => ({
+          fullName,
+          phone,
+          email,
+          aadhaar,
+          employeeCode,
+          designation,
+          departmentName,
+          subjectNames: names,
+          isHod,
+        }),
       );
+      setTeachers(loaded);
+      setSavedBaseline(loaded);
       setInitialLoading(false);
     }
 
@@ -203,6 +205,11 @@ export function StaffForm() {
     }
     setFieldErrors({});
 
+    if (staffListsEquivalent(teachers, savedBaseline)) {
+      setSuccessMessage("Staff unchanged — nothing to save.");
+      return true;
+    }
+
     const formData = new FormData();
     formData.set("teachers", JSON.stringify(teachers));
     formData.set("intent", intent);
@@ -214,6 +221,7 @@ export function StaffForm() {
       return false;
     }
 
+    setSavedBaseline(teachers);
     setSuccessMessage(result.message);
     return true;
   }

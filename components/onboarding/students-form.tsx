@@ -157,15 +157,32 @@ export function StudentsForm() {
     }
 
     const rows = parsed.rows.map(studentRowFromCsv);
-    const merged = [...students, ...rows];
-    const errors = validateStudentRows(merged, pairOptions, {
+    const csvErrorsMap = validateStudentRows(rows, pairOptions, {
       requireAtLeastOne: true,
     });
 
-    if (Object.keys(errors).length > 0) {
+    if (Object.keys(csvErrorsMap).length > 0) {
       setCsvErrors(
-        Object.entries(errors).map(
-          ([key, message]) => `Row validation (${key}): ${message}`,
+        Object.entries(csvErrorsMap).map(([key, message]) => {
+          const match = /^student-(\d+)-/.exec(key);
+          if (match) {
+            const rowNumber = Number(match[1]) + 2; // header is line 1
+            return `CSV row ${rowNumber}: ${message}`;
+          }
+          return message;
+        }),
+      );
+      return;
+    }
+
+    const merged = [...students, ...rows];
+    const mergedErrors = validateStudentRows(merged, pairOptions, {
+      requireAtLeastOne: true,
+    });
+    if (Object.keys(mergedErrors).length > 0) {
+      setCsvErrors(
+        Object.entries(mergedErrors).map(
+          ([, message]) => message,
         ),
       );
       return;
