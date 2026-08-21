@@ -1,10 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { RESET_ONBOARDING_CONFIRMATION } from "@/lib/onboarding/reset-constants";
 import { getAuthenticatedSchoolContext } from "@/lib/onboarding/server-context";
 import { DEFAULT_ONBOARDING_PATH } from "@/lib/onboarding/steps";
-
-export const RESET_ONBOARDING_CONFIRMATION = "RESET";
 
 type Result =
   | { success: true; redirectTo: string }

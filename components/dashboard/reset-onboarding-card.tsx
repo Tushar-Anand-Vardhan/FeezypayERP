@@ -3,10 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SubmitButton } from "@/components/auth/submit-button";
-import {
-  RESET_ONBOARDING_CONFIRMATION,
-  resetOnboardingAction,
-} from "@/lib/onboarding/reset-actions";
+import { resetOnboardingAction } from "@/lib/onboarding/reset-actions";
+import { RESET_ONBOARDING_CONFIRMATION } from "@/lib/onboarding/reset-constants";
 
 export function ResetOnboardingCard() {
   const router = useRouter();

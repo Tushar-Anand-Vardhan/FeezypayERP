@@ -10,7 +10,7 @@ import {
   isDashboardNavActive,
   visibleDashboardNavGroups,
 } from "../lib/dashboard/nav";
-import { RESET_ONBOARDING_CONFIRMATION } from "../lib/onboarding/reset-actions";
+import { RESET_ONBOARDING_CONFIRMATION } from "../lib/onboarding/reset-constants";
 
 function section(title: string) {
   console.log(`\n=== ${title} ===`);
