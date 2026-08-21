@@ -100,13 +100,18 @@ export function AppSidebar({
                 const open = Boolean(openGroups[group.id]);
                 return (
                   <div key={group.id}>
-                    {group.items.length === 1 && group.id === "home" ? (
-                      <NavLink
-                        item={group.items[0]}
-                        pathname={pathname}
-                        onboardingComplete={onboardingComplete}
-                        onNavigate={() => onMobileOpenChange(false)}
-                      />
+                    {group.id === "home" ? (
+                      <div className="mb-2 space-y-0.5">
+                        {group.items.map((item) => (
+                          <NavLink
+                            key={item.id}
+                            item={item}
+                            pathname={pathname}
+                            onboardingComplete={onboardingComplete}
+                            onNavigate={() => onMobileOpenChange(false)}
+                          />
+                        ))}
+                      </div>
                     ) : (
                       <>
                         <button
@@ -179,7 +184,11 @@ function NavLink({
   onboardingComplete: boolean;
   onNavigate: () => void;
 }) {
-  const locked = Boolean(item.lockedUntilOnboarding) && !onboardingComplete;
+  // Settings must never render as a locked placeholder (it used to, with href "#").
+  const locked =
+    item.id !== "settings" &&
+    Boolean(item.lockedUntilOnboarding) &&
+    !onboardingComplete;
   const active = isDashboardNavActive(item.href, pathname);
   const className = `flex items-center rounded-lg px-2.5 py-2 text-sm font-medium ${
     active
@@ -187,7 +196,7 @@ function NavLink({
       : "text-muted hover:bg-surface-strong hover:text-foreground"
   }`;
 
-  if (locked) {
+  if (locked || !item.href || item.href === "#") {
     return (
       <span
         title="Available after onboarding is complete"

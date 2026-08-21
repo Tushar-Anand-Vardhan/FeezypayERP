@@ -30,6 +30,17 @@ export const DASHBOARD_NAV_GROUPS: DashboardNavGroup[] = [
         href: "/dashboard",
         permission: "tenant.school.read",
       },
+      {
+        id: "settings",
+        label: "Settings",
+        href: "/dashboard/settings",
+        // Always reachable during setup (reset) and after go-live.
+        permission: [
+          "tenant.school.edit",
+          "onboarding.wizard.edit",
+          "tenant.school.read",
+        ],
+      },
     ],
   },
   {
@@ -163,13 +174,6 @@ export const DASHBOARD_NAV_GROUPS: DashboardNavGroup[] = [
         label: "Platform",
         href: "/dashboard/platform",
         permission: "platform.tenant.read",
-      },
-      {
-        id: "settings",
-        label: "Settings",
-        href: "/dashboard/settings",
-        // Reachable during onboarding (reset) and after go-live.
-        permission: ["tenant.school.edit", "onboarding.wizard.edit"],
       },
     ],
   },

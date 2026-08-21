@@ -59,7 +59,7 @@ assert.equal(
 assert.equal(isDashboardNavActive("#", "/dashboard"), false);
 assert.equal(activeDashboardNavGroupId("/dashboard/subjects"), "configuration");
 assert.equal(activeDashboardNavGroupId("/dashboard/teacher/marks"), "portals");
-assert.equal(activeDashboardNavGroupId("/dashboard/settings"), "system");
+assert.equal(activeDashboardNavGroupId("/dashboard/settings"), "home");
 const settings = DASHBOARD_NAV_GROUPS.flatMap((group) => group.items).find(
   (item) => item.id === "settings",
 );
@@ -70,6 +70,12 @@ assert.ok(
     ? settings.permission.includes("onboarding.wizard.edit")
     : settings?.permission === "onboarding.wizard.edit" ||
         settings?.permission === "tenant.school.edit",
+);
+assert.equal(
+  DASHBOARD_NAV_GROUPS.find((group) => group.id === "home")?.items.some(
+    (item) => item.id === "settings",
+  ),
+  true,
 );
 assert.equal(RESET_ONBOARDING_CONFIRMATION, "RESET");
 console.log("OK");

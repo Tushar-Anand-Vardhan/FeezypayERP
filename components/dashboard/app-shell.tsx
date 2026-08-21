@@ -52,7 +52,7 @@ export function AppShell({ children, ...headerProps }: AppShellProps) {
         <AppHeader
           {...headerProps}
           showBrand={false}
-          showSettingsLink={!(headerProps.onboardingComplete ?? false)}
+          showSettingsLink
           onOpenMobileNav={() => setMobileOpen(true)}
         />
         {children}

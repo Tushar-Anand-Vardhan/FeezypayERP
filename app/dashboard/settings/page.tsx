@@ -13,6 +13,7 @@ export default async function SettingsDashboardPage() {
   const authzCtx = await requireAnyPermission([
     "tenant.school.edit",
     "onboarding.wizard.edit",
+    "tenant.school.read",
   ]);
   if ("error" in authzCtx) {
     redirect("/dashboard");
