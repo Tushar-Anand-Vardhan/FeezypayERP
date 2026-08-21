@@ -208,7 +208,11 @@ function defaultOpenGroups(
 ): Record<string, boolean> {
   const open: Record<string, boolean> = {};
   for (const group of groups) {
-    open[group.id] = group.id === "home" || group.id === activeGroupId;
+    // Keep System open so Settings (reset onboarding) is easy to find.
+    open[group.id] =
+      group.id === "home" ||
+      group.id === "system" ||
+      group.id === activeGroupId;
   }
   return open;
 }

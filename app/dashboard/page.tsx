@@ -68,12 +68,20 @@ export default async function DashboardPage() {
               reports, and other features stay locked until school setup is
               complete.
             </p>
-            <Link
-              href={onboardingResumeHref}
-              className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-feezy-magenta px-5 text-sm font-semibold text-white transition hover:brightness-110"
-            >
-              Continue onboarding
-            </Link>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                href={onboardingResumeHref}
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-feezy-magenta px-5 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                Continue onboarding
+              </Link>
+              <Link
+                href="/dashboard/settings"
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-surface px-5 text-sm font-semibold text-foreground transition hover:bg-surface-strong"
+              >
+                Settings / reset onboarding
+              </Link>
+            </div>
           </section>
         ) : null}
 

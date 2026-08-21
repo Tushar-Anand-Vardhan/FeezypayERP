@@ -12,7 +12,7 @@ export default function OnboardingLayout({
 }) {
   return (
     <div className="flex min-h-full flex-1 flex-col bg-background">
-      <AppHeader />
+      <AppHeader showSettingsLink />
       <OnboardingProgressProvider>
         <OnboardingProgressBar />
         <OnboardingStepper />

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BrandMark } from "@/components/brand/brand-mark";
@@ -17,6 +18,7 @@ export type AppHeaderProps = {
   activePersona?: AuthPersona | null;
   authz?: AuthzBootstrap | null;
   showBrand?: boolean;
+  showSettingsLink?: boolean;
   onOpenMobileNav?: () => void;
 };
 
@@ -26,6 +28,7 @@ export function AppHeader({
   activeSchoolId = null,
   activePersona = null,
   showBrand = true,
+  showSettingsLink = false,
   onOpenMobileNav,
 }: AppHeaderProps) {
   const router = useRouter();
@@ -65,15 +68,25 @@ export function AppHeader({
             activePersona={activePersona}
           />
         </div>
-        <SubmitButton
-          type="button"
-          fullWidth={false}
-          variant="ghost"
-          loading={loading}
-          onClick={handleLogout}
-        >
-          Log out
-        </SubmitButton>
+        <div className="flex shrink-0 items-center gap-2">
+          {showSettingsLink ? (
+            <Link
+              href="/dashboard/settings"
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-surface px-3 text-sm font-semibold text-foreground transition hover:bg-surface-strong"
+            >
+              Settings
+            </Link>
+          ) : null}
+          <SubmitButton
+            type="button"
+            fullWidth={false}
+            variant="ghost"
+            loading={loading}
+            onClick={handleLogout}
+          >
+            Log out
+          </SubmitButton>
+        </div>
       </div>
     </header>
   );
