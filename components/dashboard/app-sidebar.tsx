@@ -41,12 +41,15 @@ export function AppSidebar({
 
   useEffect(() => {
     const stored = readStoredGroups();
+    const defaults = defaultOpenGroups(groups, activeGroupId);
     setOpenGroups({
-      ...defaultOpenGroups(groups, activeGroupId),
+      ...defaults,
       ...stored,
+      // While setup is incomplete, always keep System open so Settings stays visible.
+      ...(!onboardingComplete ? { system: true } : {}),
       ...(activeGroupId ? { [activeGroupId]: true } : {}),
     });
-  }, [groups, activeGroupId]);
+  }, [groups, activeGroupId, onboardingComplete]);
 
   function toggleGroup(id: string) {
     setOpenGroups((current) => {

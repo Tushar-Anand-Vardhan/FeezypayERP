@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { ResetOnboardingCard } from "@/components/dashboard/reset-onboarding-card";
-import { requirePermission } from "@/lib/authz/require";
+import { requireAnyPermission } from "@/lib/authz/require";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function SettingsDashboardPage() {
@@ -10,7 +10,10 @@ export default async function SettingsDashboardPage() {
     redirect("/login");
   }
 
-  const authzCtx = await requirePermission("tenant.school.edit");
+  const authzCtx = await requireAnyPermission([
+    "tenant.school.edit",
+    "onboarding.wizard.edit",
+  ]);
   if ("error" in authzCtx) {
     redirect("/dashboard");
   }

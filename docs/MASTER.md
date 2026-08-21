@@ -2,12 +2,12 @@
 
 > **Living document.** Update this file whenever architecture, auth, onboarding, schema, tests, or forward plans change. This is the single source of truth for planning the next phase.
 >
-> **Last updated:** 2026-08-17 (Settings: reset-onboarding for school admin)  
+> **Last updated:** 2026-08-20 (Rollup: onboarding save perf, CSV class aliases, temp staff=active, Settings reset)  
 > **Repo:** `https://github.com/Tushar-Anand-Vardhan/FeezypayERP.git`  
 > **Stack:** Next.js 16 · React 19 · Tailwind 4 · Supabase (Auth + Postgres + RLS)  
 > **Linked Supabase project:** `xjuudcnexvbtgknbfdfw`  
-> **Branch tip at last verification:** `main`  
-> **Current phase:** **Use-case Waves 0–6 shipped** (§68). Phase 3 engines through Student Achievement (§67) remain SHIPPED. Cleanup migration `20260807560000_cleanup_unused_stubs.sql`.
+> **Branch tip at last verification:** `main` @ `37a58ca`  
+> **Current phase:** **Use-case Waves 0–6 shipped** (§68). Phase 3 engines through Student Achievement (§67) remain SHIPPED. Onboarding ops (save speed, CSV aliases, Settings reset) shipped 2026-08-17.
 
 ---
 
@@ -21,8 +21,7 @@
 6. [Authentication — current (school admin only)](#6-authentication--current-school-admin-only)
 7. [Authentication — future (teachers, students, parents) + RBAC](#7-authentication--future-teachers-students-parents--rbac)
 8. [Finalized schema](#8-finalized-schema)
-9. [Onboarding wizard](#9-onboarding-wizard
-
+9. [Onboarding wizard](#9-onboarding-wizard)
 10. [Identity matching & Aadhaar](#10-identity-matching--aadhaar)
 11. [Staff, students, timetable, exams](#11-staff-students-timetable-exams)
 12. [Security, RLS, indexes, cascades](#12-security-rls-indexes-cascades)
@@ -211,14 +210,17 @@
 
 ## 2. Product snapshot
 
-**FeezypayERP** is a multi-tenant school ERP. Today the only authenticated product user is the **school administrator**, who:
+**FeezypayERP** is a multi-tenant school ERP. The **school administrator** is still the onboarding operator:
 
 1. Signs up → automatically gets a new `schools` row + `profiles` row (`role = school_admin`).
 2. Completes an 11-step onboarding wizard that configures the school year structure, people, timetable, and exams.
-3. Can **Save & exit** to `/dashboard` mid-wizard (features locked until `onboarding_status = completed`).
+3. Can **Save & exit** to `/dashboard` mid-wizard (many feature links stay locked until `onboarding_status = completed`).
 4. Confirms on **Review** → `schools.onboarding_status = 'completed'`.
+5. Can **reset onboarding** from `/dashboard/settings` (type `RESET`) — wipes school-scoped setup data, keeps admin login + school name.
 
-Teachers, students, and parents exist as **global identity rows** (`persons` + role profiles) linked to the school via **employment / admission** relationships. They do **not** yet have first-class login portals (`NOT BUILT`; schema is `SCHEMA-READY`).
+Teacher / student / parent **portals exist** (`/dashboard/teacher|student|parent`, Waves 1/6 / §§59–60) as permission-gated UI over the engines. They are not a separate Auth product: login is still AuthN membership + persona (§55–§57).
+
+People are **global identity rows** (`persons` + role profiles) linked to the school via **employment / admission**. Staff CSV onboarding currently writes employments as **`active` even when emailed** (`STAFF_ONBOARDING_EMPLOYMENT_STATUS` — revert at invite-first ship).
 
 ```text
                     ┌─────────────────────────────────────────┐
@@ -262,6 +264,27 @@ Teachers, students, and parents exist as **global identity rows** (`persons` + r
 | `e61819b` | Onboarding UX polish Steps 1–4 + mid-wizard dashboard |
 | `abc1552` | Onboarding expansion: houses → review |
 | `b7f540b` | Global Person / Teacher / Student identity |
+| `e8d451f` | Per-class exam patterns (`exam_definitions.class_id`) |
+| `afa9692` | Grouped collapsible dashboard sidebar |
+| `11b91ce` | Dashboard nav perf (skip middleware gate + auth `cache()`) |
+| `fbb617d` | Skip unchanged staff rewrites; student CSV class aliases |
+| `f99ac1f` | Parallel/batched staff + student onboarding saves |
+| `ef33d71` | TEMP: onboarding staff written `active` not `invited` |
+| `6285008` | Timetable CSV class aliases (`6` ↔ `Class 6`) |
+| `37a58ca` | Settings page + `reset_school_onboarding` RPC |
+
+### 3.1b Onboarding / dashboard ops (2026-08-14 – 2026-08-20)
+
+Shipped on `main` after Waves 0–6. Details: §9.5, §10.3–§10.4, §11.3, §13, §15.49–§15.54.
+
+| Area | What changed |
+|------|----------------|
+| **Dashboard chrome** | Left sidebar groups (`lib/dashboard/nav.ts`). Settings → `/dashboard/settings` (not `#`); available during setup. Students / Attendance nav still `#`. |
+| **Dashboard perf** | Middleware does not full-gate `/dashboard/*`. Per-request `cache()` on `createClient` / `resolveActor` / bootstrap. Notifications inbox does not flush workers on load. |
+| **CSV class/section** | Students + timetable accept `6` ↔ `Class 6`; section names case-insensitive (`ROSE` ↔ `Rose`). |
+| **Staff/student save** | Continue was serial per-row RPCs + Auth emails (minutes). Now: concurrency 8, batched memberships/links, D14/D15 in one query, invites after data save (concurrency 4, skip pending emails). Unchanged lists skip rewrite. |
+| **Staff status TEMP** | New/updated onboarding employments are `active` so timetable can list them. Revert `STAFF_ONBOARDING_EMPLOYMENT_STATUS`. Invites still sent when email present. |
+| **Reset onboarding** | School admin types `RESET` on Settings. RPC wipes school-scoped operational rows, restores admin membership, `onboarding_status = in_progress`. Script `scripts/wipe-feezy-academy.sql` is the one-off equivalent. Feezypay Academy last wiped 2026-08-17. |
 
 ### 3.2 Planning phases (CreatePlan artifacts)
 
@@ -331,7 +354,7 @@ Teachers, students, and parents exist as **global identity rows** (`persons` + r
 | 2 | `teacher_profiles` + `teacher_employments` + FK cutover | `SHIPPED` + re-verified |
 | 3 | Rewire staff onboarding to match + write employment | `SHIPPED` + re-verified |
 | 4 | Student profiles / admissions / academic years / parents | `SHIPPED` + re-verified |
-| 5 | Rewire students onboarding to global model | `SHIPPED`; **upsert-by-admission-number fix** in working tree (§17) |
+| 5 | Rewire students onboarding to global model | `SHIPPED` (upsert by admission number; bulk save §10.4 / §15.52) |
 | 6 | Progress / review / timetable cutover; drop legacy tables | `SHIPPED` + re-verified (`tsc` + `next build`) |
 | 7 | `profile_completed_at` + `person_roles` (schema only) | `SHIPPED` + re-verified; invite doc expanded |
 | 8 | Indexes, cascades, RLS audit, Aadhaar helper docs | `SHIPPED` + re-verified |
@@ -397,7 +420,7 @@ All onboarding writes must filter by this `schoolId`.
 
 ## 6. Authentication — current (school admin + AuthN platform)
 
-**Status:** School admin signup/login `SHIPPED`. Phase 2.5 AuthN (§55), Phase 2.6 AuthZ (§56), Phase 2.7 Membership (§57) `SHIPPED`. Parent/student portals still `NOT BUILT`.
+**Status:** School admin signup/login `SHIPPED`. AuthN (§55), AuthZ (§56), Membership (§57) `SHIPPED`. Teacher / student / parent portal shells `SHIPPED` (§59–§60, Wave 6 F10).
 
 Canonical: [`docs/architecture/authentication-platform.md`](architecture/authentication-platform.md)
 
@@ -405,22 +428,23 @@ Canonical: [`docs/architecture/authentication-platform.md`](architecture/authent
 
 - `/signup` with `intent=create_school` → school + `profiles.school_admin`
 - `/login`, email confirm, password reset
-- Invites via `createInviteAction` + service-role adapter (warns if key missing)
+- Invites via `createInviteAction` / `createInvitesForSchoolBulk` + service-role adapter (warns if key missing)
 - `/invite/accept` binds `persons.auth_user_id`; `/activate/profile` completes first login
 - `membership_schools(auth.uid())` tenant RLS; `user_active_context` school/persona switcher
-- Staff onboarding creates `auth_invites` for new emailed staff (replaces resetPassword hack)
+- Staff onboarding creates `auth_invites` for new emailed staff (emails sent after the employment batch)
 
 ### 6.2 Still open
 
-- E03 `requirePermission` / role bundles
-- Multi-persona portal GA (teacher/parent/student product UIs)
-- Live invite email without configuring `SUPABASE_SERVICE_ROLE_KEY`
+- Live invite email without `SUPABASE_SERVICE_ROLE_KEY`
+- Revert TEMP staff=`active` when invite-first login ships
+- Portal UX polish / teacher-first login GA
+- Students + Attendance **admin** nav items still stubs (`#`)
 
 ---
 
 ## 7. Authentication — multi-persona + RBAC roadmap
 
-**Status:** AuthN platform `SHIPPED` (§55). RBAC-2 permission matrix still design-only ([`rbac.md`](architecture/rbac.md)).
+**Status:** AuthN platform `SHIPPED` (§55). AuthZ runtime `SHIPPED` (§56). Portals shipped as permission-gated shells; polish still open.
 
 ### 7.1 Schema present
 
@@ -448,7 +472,8 @@ See §55 and authentication-platform.md. Staff save wires invites.
 | RBAC-0 | school_admin via `profiles` | SHIPPED |
 | RBAC-1 | Invite + auth bind + first login | **SHIPPED** (§55) |
 | RBAC-2 | Permission keys + server guards | **SHIPPED** (§56) |
-| RBAC-3…6 | Parent/student portals, multi-role UX polish | NOT BUILT (custom roles SHIPPED in §56) |
+| RBAC-3 | Teacher / student / parent portal shells | **SHIPPED** (§59–§60, F10) |
+| RBAC-4…6 | Multi-role UX polish, custom-role admin UX | OPEN (custom roles SHIPPED in §56) |
 
 ---
 
@@ -777,7 +802,7 @@ Wipes school-scoped operational rows, restores the admin membership/login, sets 
 - Parent Auth invites are best-effort, deduped by email, and sent after the admission batch (not inside the per-student loop).
 - Unchanged lists skip the rewrite. Dirty rows run with bounded concurrency; D14 is one query; memberships upsert in bulk.
 
-> **Bug fixed in working tree (2026-08-06):** prior implementation withdrew-all then re-inserted, which collided with unique `(school_id, lower(admission_number))`. See §17.
+> Admission-number unique collision (withdraw-all then re-insert) was **fixed on `main`** (2026-08-06+). Saves upsert by admission number within the school.
 
 ---
 
@@ -792,7 +817,8 @@ HOD (`is_hod=true`) **requires** department. Invalid row → **entire import blo
 ### 11.2 Students CSV
 
 Headers include optional `aadhaar`, class/section, guardian fields.  
-Empty Aadhaar allowed. Invalid row → entire import blocked.
+Empty Aadhaar allowed. Invalid row → entire import blocked.  
+Class/section: exact catalog names **or** aliases (`6` ↔ `Class 6`; section case-insensitive). Errors prefix `CSV row N:`.
 
 ### 11.3 Timetable
 
@@ -867,6 +893,7 @@ Dashboard chrome is a **left sidebar** (`AppShell` + `lib/dashboard/nav.ts`), no
 |-------|----------|
 | `/` | Session → `/dashboard`; else marketing |
 | `/dashboard` | Allowed during onboarding; locked feature links + continue banner when incomplete |
+| `/dashboard/settings` | School-admin Settings (reset onboarding). Not locked behind completed onboarding. |
 | `/dashboard/configuration` | School setup command centre (completion, warnings, deps, health) |
 | `/dashboard/teacher` | Teacher workspace homepage (employment picker until teacher login) |
 | `/dashboard/principal` | Principal / Admin school ops homepage (data-driven panels) |
@@ -1568,6 +1595,7 @@ Also: `npx tsc --noEmit` after calendar module land.
 | Staff unchanged list skips rewrite | PASS |
 | Student unchanged list skips rewrite (class alias `6` ≡ `Class 6`) | PASS |
 | Identity RPCs stay the writer; saves use concurrency 8 + batched memberships/invites | PASS |
+| Invites deferred + bulk (`lib/auth/create-invite.ts`); skip already-pending emails | PASS |
 | `npx tsc --noEmit` | PASS |
 
 ### 15.53 Settings — reset onboarding
@@ -1579,6 +1607,16 @@ Also: `npx tsc --noEmit` after calendar module land.
 | Settings nav href is `/dashboard/settings` (not `#`) | PASS |
 | Settings is not locked behind onboarding complete | PASS |
 | School-admin only (`tenant.school.edit`) | PASS |
+
+### 15.54 Dashboard auth / nav perf
+
+**Date:** 2026-08-17 · `11b91ce`
+
+| Check | Result |
+|-------|--------|
+| Middleware skips full auth gate on `/dashboard/*` | PASS (layout still checks session + profile completion) |
+| `createClient` / `resolveActor` / bootstrap `cache()` per request | PASS |
+| Notifications inbox does not flush outbox on page load | PASS |
 
 ---
 
@@ -1601,6 +1639,7 @@ Also: `npx tsc --noEmit` after calendar module land.
 - `lib/onboarding/*-actions.ts`, `staff.ts`, `students.ts`, `timetable.ts`, `timetable-csv.ts`, `exams.ts`, `parallel.ts`
 - `lib/auth/create-invite.ts`
 - `scripts/smoke-exams-validation.ts` · `scripts/smoke-staff-dirty-check.ts` · `scripts/smoke-student-dirty-check.ts`
+- `scripts/wipe-feezy-academy.sql` · `lib/onboarding/reset-actions.ts`
 - `components/onboarding/**`
 - `app/onboarding/**`
 
@@ -1759,192 +1798,46 @@ Also: `npx tsc --noEmit` after calendar module land.
 
 ## 17. Open deltas & maintenance notes
 
-### 17.1 Uncommitted at last update (2026-08-07)
+### 17.1 Working tree (as of 2026-08-20)
 
-| Path | Change |
+`main` @ `37a58ca` was **clean** after the Settings reset-onboarding ship. Phase 1–2 engines listed in older MASTER drafts are **on `main`**, not a pending commit list.
+
+**Open product leftovers**
+
+| Item | Status |
 |------|--------|
-| `lib/config/**` | Configuration Engine backend |
-| `supabase/migrations/20260807120000_configuration_engine.sql` | Archive, scales, club memberships, FK harden |
-| Onboarding subjects/houses/clubs/progress/staff/timetable | Rewired to archive-safe config APIs |
-| `docs/architecture/configuration-engine.md` + MASTER §28 | Phase 1 config docs |
-| `scripts/smoke-config-validation.ts` | Config validation smoke |
-| `lib/calendar/**` | Academic Calendar Engine backend |
-| `supabase/migrations/20260807130000_academic_calendar_engine.sql` | Years/terms enrich; working days; holidays; events |
-| `app/dashboard/calendar/**` + `components/calendar/**` | Minimal calendar admin UI |
-| `docs/architecture/academic-calendar-engine.md` + MASTER §29 | Calendar docs |
-| `scripts/smoke-calendar-validation.ts` | Calendar validation smoke |
-| `lib/departments/**` | Department Engine backend |
-| `supabase/migrations/20260807140000_department_engine.sql` | Memberships, subjects, assignments, announcements, resources, history |
-| `docs/architecture/department-engine.md` + MASTER §30 | Department docs |
-| `scripts/smoke-department-validation.ts` | Department validation smoke |
-| `lib/houses-clubs/**` | House & Club Engine backend |
-| `supabase/migrations/20260807150000_house_club_engine.sql` | Catalog enrich, memberships, stubs |
-| `app/dashboard/houses-clubs/**` | Minimal houses/clubs UI |
-| `docs/architecture/house-club-engine.md` + MASTER §31 | House/club docs |
-| `scripts/smoke-houses-clubs-validation.ts` | House/club validation smoke |
-| `lib/subjects/**` | Subject Configuration Engine backend |
-| `supabase/migrations/20260807160000_subject_configuration_engine.sql` | Subject groups, master enrich, dependencies |
-| `docs/architecture/subject-configuration-engine.md` + MASTER §32 | Subject docs |
-| `scripts/smoke-subject-validation.ts` | Subject validation smoke |
-| `lib/timetable/**` | Timetable Configuration Engine backend |
-| `supabase/migrations/20260807170000_timetable_configuration_engine.sql` | Grids, cycle days, availability, locks |
-| `docs/architecture/timetable-configuration-engine.md` + MASTER §33 | Timetable docs |
-| `scripts/smoke-timetable-validation.ts` | Timetable conflict smoke |
-| `lib/assessment/**` | Assessment Configuration Engine backend |
-| `supabase/migrations/20260807180000_assessment_configuration_engine.sql` | Types, categories, policies, components, publish/lock |
-| `docs/architecture/assessment-configuration-engine.md` + MASTER §34 | Assessment config docs |
-| `scripts/smoke-assessment-validation.ts` | Assessment config validation smoke |
-| `lib/onboarding/exams-review-actions.ts` + `progress.ts` | Soft-archive exams (DELETE revoked) |
-| `lib/report-cards/**` | Report Card Template Engine backend |
-| `supabase/migrations/20260807190000_report_card_template_engine.sql` | Boards, templates, scopes, blocks, assessment refs |
-| `docs/architecture/report-card-template-engine.md` + MASTER §35 | Report card template docs |
-| `scripts/smoke-report-card-validation.ts` | Report card template validation smoke |
-| `lib/policies/**` | School Policy Engine backend |
-| `supabase/migrations/20260807200000_school_policy_engine.sql` | Versioned policies by kind |
-| `docs/architecture/school-policy-engine.md` + MASTER §36 | School policy docs |
-| `scripts/smoke-policy-validation.ts` | School policy validation smoke |
-| `lib/communications/**` | Communication Configuration Engine backend |
-| `supabase/migrations/20260807210000_communication_configuration_engine.sql` | Categories, templates, rules, stubs |
-| `docs/architecture/communication-configuration-engine.md` + MASTER §37 | Communication config docs |
-| `scripts/smoke-communication-validation.ts` | Communication config validation smoke |
-| `lib/communications/` ops + `lib/notifications/**` | Communication Operations + Notification pipe |
-| `supabase/migrations/20260807300000_communication_operations_engine.sql` | Messages, deliveries, attempts, outbox |
-| `docs/architecture/communication-operations-engine.md` + MASTER §49 | Communication ops docs |
-| `scripts/smoke-communication-ops-validation.ts` | Communication ops validation smoke |
-| `lib/editing/**` | Configuration Editing Framework |
-| `supabase/migrations/20260807220000_configuration_editing_framework.sql` | Audit + config history tables |
-| `docs/architecture/configuration-editing-framework.md` + MASTER §38 | Editing framework docs |
-| `scripts/smoke-editing-validation.ts` | Editing framework smoke |
-| `lib/config/subjects-actions.ts` + `grading-scales-actions.ts` | Reference adopters of framework |
-| `lib/config-dashboard/**` | Configuration Dashboard health aggregator |
-| `app/dashboard/configuration/**` + `components/configuration/**` | Minimal command-centre UI |
-| `docs/architecture/configuration-dashboard.md` + MASTER §39 | Dashboard docs |
-| `scripts/smoke-config-dashboard-validation.ts` | Dashboard catalog smoke |
-| `components/dashboard/app-header.tsx` | Nav link → Configuration |
-| `docs/architecture/phase-1-implementation-audit.md` + MASTER §40 | Production gate audit (not COMPLETE) |
-| `docs/operations/daily-workflows.md` + MASTER §41 | Phase 2 daily ops catalogue (design only) |
-| `lib/student-profile/**` | Student Profile Engine aggregator |
-| `supabase/migrations/20260807230000_student_profile_engine.sql` | Attendance/results/conduct/medical/… stubs |
-| `docs/architecture/student-profile-engine.md` + MASTER §42 | Student profile docs |
-| `scripts/smoke-student-profile-validation.ts` | Profile catalogue smoke |
-| `lib/teacher-workspace/**` | Teacher Workspace aggregator |
-| `app/dashboard/teacher/**` + `components/teacher-workspace/**` | Teacher homepage UI |
-| `components/teacher-portal/**` + `lib/teacher-portal/**` | Teacher Portal feature clients + nav |
-| `supabase/migrations/20260807240000_teacher_workspace.sql` | homework_assignments stub |
-| `docs/architecture/teacher-workspace.md` + MASTER §43 | Teacher workspace docs |
-| `docs/architecture/teacher-portal.md` + MASTER §59 | Teacher Portal docs |
-| `scripts/smoke-teacher-workspace-validation.ts` | Workspace catalogue smoke |
-| `scripts/smoke-teacher-portal-validation.ts` | Portal nav/permission catalogue smoke |
-| `lib/student-portal/**` + `components/student-portal/**` | Student Portal binders + clients |
-| `app/dashboard/student/**` | Student Portal routes |
-| `docs/architecture/student-portal.md` + MASTER §60 | Student Portal docs |
-| `scripts/smoke-student-portal-validation.ts` | Student portal catalogue smoke |
-| `lib/curriculum/**` | Curriculum Engine (E30) backend |
-| `supabase/migrations/20260807440000_curriculum_engine.sql` | Packs, versions, structure, progress, AuthZ seeds |
-| `docs/architecture/curriculum-engine.md` + MASTER §61 | Curriculum Engine docs |
-| `scripts/smoke-curriculum-validation.ts` | Curriculum validation smoke |
-| `lib/assessment-framework/**` | Assessment Framework Engine (E31) backend |
-| `supabase/migrations/20260807450000_assessment_framework_engine.sql` | Frameworks, categories, formulas, versions, AuthZ seeds |
-| `docs/architecture/assessment-framework-engine.md` + MASTER §62 | Assessment Framework docs |
-| `scripts/smoke-assessment-framework-validation.ts` | Assessment framework validation smoke |
-| `lib/assessment-recording/**` | Assessment Recording Engine (E32) backend |
-| `supabase/migrations/20260807460000_assessment_recording_engine.sql` | Records, append-only marks, coverage, attachments, AuthZ |
-| `docs/architecture/assessment-recording-engine.md` + MASTER §63 | Assessment Recording docs |
-| `scripts/smoke-assessment-recording-validation.ts` | Assessment recording validation smoke |
-| `lib/grade-calculation/**` | Grade Calculation Engine (E33) backend |
-| `supabase/migrations/20260807470000_grade_calculation_engine.sql` | Runs, results, grace, optional, exemptions, AuthZ |
-| `docs/architecture/grade-calculation-engine.md` + MASTER §64 | Grade Calculation docs |
-| `scripts/smoke-grade-calculation-validation.ts` | Grade calculation validation smoke |
-| `lib/report-cards/field-assignments-actions.ts` · Phase 3 assemble | Report Card Engine Phase 3 |
-| `supabase/migrations/20260807480000_report_card_engine_phase3.sql` | Field assignments, lock, E33 pins |
-| `docs/architecture/report-card-engine.md` + MASTER §65 | Report Card Phase 3 docs |
-| `scripts/smoke-report-card-phase3-validation.ts` | Report card Phase 3 smoke |
-| `lib/observations/**` | Student Observation Engine (E34) backend |
-| `supabase/migrations/20260807490000_student_observation_engine.sql` | Categories, observations, AI stub, AuthZ |
-| `docs/architecture/student-observation-engine.md` + MASTER §66 | Observation docs |
-| `scripts/smoke-student-observation-validation.ts` | Observation validation smoke |
-| `lib/achievements/**` | Student Achievement Engine (E35) backend |
-| `supabase/migrations/20260807500000_student_achievement_engine.sql` | Enrich achievements, AI stub, AuthZ |
-| `docs/architecture/student-achievement-engine.md` + MASTER §67 | Achievement docs |
-| `scripts/smoke-student-achievement-validation.ts` | Achievement validation smoke |
-| `lib/attendance/**` | Attendance Engine backend |
-| `supabase/migrations/20260807250000_attendance_engine.sql` | Sessions, leave, audit; enrich records |
-| `docs/architecture/attendance-engine.md` + MASTER §44 | Attendance Engine docs |
-| `scripts/smoke-attendance-validation.ts` | Attendance validation smoke |
-| `lib/student-profile/loaders.ts` | Attendance module reads E12 live columns |
-| `lib/assessment/` ops modules | Assessment Operations (marks) backend |
-| `supabase/migrations/20260807260000_assessment_operations_engine.sql` | Mark sessions; enrich exam_results; audit |
-| `docs/architecture/assessment-operations-engine.md` + MASTER §45 | Assessment ops docs |
-| `scripts/smoke-assessment-ops-validation.ts` | Marks validation smoke |
-| `lib/report-cards/` issue modules | Report Card Engine (issue/generate) |
-| `supabase/migrations/20260807270000_report_card_engine.sql` | Issues, versions, audit |
-| `docs/architecture/report-card-engine.md` + MASTER §46 | Report card issue docs |
-| `scripts/smoke-report-card-ops-validation.ts` | Report card ops smoke |
-| `lib/events/**` | Event & Activity Engine backend |
-| `supabase/migrations/20260807280000_event_activity_engine.sql` | Staff + enriched participants |
-| `docs/architecture/event-activity-engine.md` + MASTER §47 | Event activity docs |
-| `scripts/smoke-event-activity-validation.ts` | Event activity smoke |
-| `lib/behaviour/**` | Behaviour Engine backend |
-| `supabase/migrations/20260807290000_behaviour_engine.sql` | Remarks enrich + follow-ups + audit |
-| `docs/architecture/behaviour-engine.md` + MASTER §48 | Behaviour docs |
-| `scripts/smoke-behaviour-validation.ts` | Behaviour validation smoke |
-| `lib/communications/` message/query + `lib/notifications/**` | E18 ops + E19 delivery |
-| `supabase/migrations/20260807300000_communication_operations_engine.sql` | Messages + notification pipe |
-| `docs/architecture/communication-operations-engine.md` + MASTER §49 | Communication ops docs |
-| `scripts/smoke-communication-ops-validation.ts` | Communication ops smoke |
-| `lib/homework/**` | Homework & Assignment Engine backend |
-| `supabase/migrations/20260807310000_homework_assignment_engine.sql` | Enrich homework + submissions |
-| `docs/architecture/homework-assignment-engine.md` + MASTER §50 | Homework docs |
-| `scripts/smoke-homework-validation.ts` | Homework validation smoke |
-| `lib/student-analytics/**` | Student Analytics Engine (E22 student slice) |
-| `supabase/migrations/20260807320000_student_analytics_engine.sql` | Snapshots + analytics audit |
-| `docs/architecture/student-analytics-engine.md` + MASTER §51 | Student analytics docs |
-| `scripts/smoke-student-analytics-validation.ts` | Student analytics smoke |
-| `lib/teacher-analytics/**` | Teacher Analytics Engine (E22 teacher slice) |
-| `supabase/migrations/20260807330000_teacher_analytics_engine.sql` | Teacher snapshots + audit |
-| `docs/architecture/teacher-analytics-engine.md` + MASTER §52 | Teacher analytics docs |
-| `scripts/smoke-teacher-analytics-validation.ts` | Teacher analytics smoke |
-| `lib/principal-dashboard/**` | Principal Dashboard aggregator |
-| `app/dashboard/principal/**` + `components/principal-dashboard/**` | Principal ops UI |
-| `docs/architecture/principal-dashboard.md` + MASTER §53 | Principal dashboard docs |
-| `scripts/smoke-principal-dashboard-validation.ts` | Principal dashboard smoke |
-| `components/dashboard/app-header.tsx` | Nav → Principal |
-| `docs/operations/phase2-audit.md` + MASTER §54 | Phase 2 ops production gate (**NOT PASSED**) |
+| Students / Attendance **sidebar** items | Still `href: "#"` |
+| `STAFF_ONBOARDING_EMPLOYMENT_STATUS = "active"` | TEMP — revert when invite-first ships |
+| Phase 1 / Phase 2 production gates | **NOT PASSED** (§40, §54) |
+| Live Auth invite email | Needs `SUPABASE_SERVICE_ROLE_KEY` |
 
-**Action:** Phase 2 **not COMPLETE**. Close §54 P0 (ops UIs, notify chains, F11/membership RLS) before Fee/portal GA; Phase 1 §40 still open.
+### 17.2 Feezypay Academy staging tenant
 
-### 17.2 Smoke data still in linked DB (known)
+School `6385483b-8f79-49fc-9bd4-b19d2cef684a`. Last **full onboarding wipe:** 2026-08-17 (`scripts/wipe-feezy-academy.sql` + Settings RPC). After wipe: admin login kept, `onboarding_status = in_progress`, operational counts (years/subjects/staff/students) = 0.
 
-School `6385483b-8f79-49fc-9bd4-b19d2cef684a` (“Feezypay Academy”) may still contain:
-
-- Teachers: Priya Sharma, Raj Gupta, Smoke HOD (`smoke-hod@feezy.test`)
-- Student: `SMOKE-ADM-001` / Smoke Student + Smoke Parent
-
-Safe to keep for manual QA; delete when cleaning staging.
+In-app reset: `/dashboard/settings` → type `RESET`. Same effect as the SQL wipe for the **current** school (does not delete `@feezy.demo` Auth users; the SQL script still does).
 
 ### 17.3 Known product gaps (do not treat as bugs)
 
-- Teacher/parent/student self-login portals
-- Real invite + Auth user creation (service role / Invite API)
-- `handle_new_user` always creates a school (blocks invited users)
-- Login does not honor `?next=`
-- Staff `resetPasswordForEmail` cannot create accounts
-- Employment `invited` unused by app writes
-- Form UI polish deferred
-- **Phase 1 production gate open (§40)** — same-school FK guards, DELETE revoke leftovers, editing adoption, seed-on-create, onboarding hard-delete harden, etc.
-- **Phase 2 production gate open (§54)** — ops UIs, notify chains, F11, Fee/portals; backends alone are not COMPLETE.
+- Students / Attendance **admin sidebar** still `#` (principal Students page exists)
+- TEMP onboarding staff status `active` instead of `invited` (revert at invite-first)
+- Live Auth invite email requires `SUPABASE_SERVICE_ROLE_KEY`
+- Form UI polish deferred (D11)
+- **Phase 1 production gate open (§40)**
+- **Phase 2 production gate open (§54)** — backends shipped; ops UIs / notify / Fee still open
+- Portal UX polish (shells SHIPPED: teacher / student / parent)
+- Fee / transport / PDF DigiLocker / UIDAI live verify still deferred
 
 ### 17.4 Next planning suggestions
 
-1. Commit §17.1 deltas.  
-2. **Phase 0.5 is complete** — treat §18–§27 + architecture docs as binding.  
-3. **Phase 1 engines §28–§39 SHIPPED; production gate NOT PASSED (§40)** — do not mark Phase 1 COMPLETE until P0 hardening closes.  
-4. **Phase 2 backends §41–§53 SHIPPED; production gate NOT PASSED (§54)** — do **not** mark Phase 2 COMPLETE.  
-5. Close **§54 P0** (ops UIs for attendance/marks/report cards; wire absent_alert / results_published / conduct notify; F11 + membership RLS) **or** continue admin-only with explicit risk acceptance.  
-6. Close **§40.3 P0** (FK integrity, archive purity, year lifecycle, editing adoption, seeds, audit retention) **or** continue with risk acceptance.  
-7. Continue **§26 P0**: F11, membership RLS, outbox, Fee deep-dive, year-rollover — **before** Fee UI, portals, or WhatsApp.  
-8. Spec **RBAC-1** teacher invite after F11 + membership RLS.  
-9. Implement remaining Phase 2 by **workflow ID** (spine: attendance UI → marks UI → **report card UI** → wire notify → fees → portals).  
+1. **Phase 0.5 is complete** — treat §18–§27 + architecture docs as binding.  
+2. **Phase 1 engines §28–§39 SHIPPED; production gate NOT PASSED (§40)** — do not mark Phase 1 COMPLETE until P0 hardening closes.  
+3. **Phase 2 backends §41–§53 SHIPPED; production gate NOT PASSED (§54)** — do **not** mark Phase 2 COMPLETE.  
+4. Close **§54 P0** (ops UIs for attendance/marks/report cards; wire absent_alert / results_published / conduct notify; F11 + membership RLS) **or** continue admin-only with explicit risk acceptance.  
+5. Close **§40.3 P0** (FK integrity, archive purity, year lifecycle, editing adoption, seeds, audit retention) **or** continue with risk acceptance.  
+6. Continue **§26 P0**: F11, membership RLS, outbox, Fee deep-dive, year-rollover — **before** Fee UI, portals, or WhatsApp.  
+7. Teacher invite path SHIPPED (§55); revert TEMP staff=`active` when invite-first is the default.  
+8. Implement remaining Phase 2 by **workflow ID** (spine: attendance UI → marks UI → **report card UI** → wire notify → fees → portals).  
 10. Refresh `daily-workflows.md` maturity table to match §44–§53 backends (UI/notify/auth still open).  
 11. Wire onboarding staff department creates through `lib/departments` + memberships (retire employment-only HOD flags as source of truth).  
 12. Prefer `house_memberships` over writing `admission.house_id` alone.  
@@ -1960,7 +1853,7 @@ Safe to keep for manual QA; delete when cleaning staging.
 22. Phase 3 (Fee / portals) may **design** with dependency on §54 P0; do not claim Phase 2 COMPLETE in kickoff.  
 23. Align Teacher Workspace “pending attendance” with `attendance_sessions` (Teacher Portal attendance UI §59 lands; refine session pending heuristics as needed).  
 24. Align Teacher Workspace “pending assessments” with `assessment_mark_sessions` (Teacher Portal marks UI §59 lands; refine pending heuristics as needed).  
-25. Parent portal remains open after Teacher (§59) + Student (§60) portals.  
+25. Parent portal F10 SHIPPED; polish + linked-child edge cases remain.  
 26. Assessment / lesson / report / AI must **reference** `curriculum_version_id` (E30) — do not duplicate chapter trees; bind exam definitions next.  
 27. Curriculum HOD/Teacher portal UI and `subjects.chapter_map` migration remain open after §61 backend.  
 28. E11 marks / E20 report cards should **pin `assessment_framework_version_id`** (E31); framework admin UI later; teachers never design frameworks.  
@@ -4094,7 +3987,7 @@ Use-case “master” rows = global `persons` + `teacher_profiles` / `student_pr
 ### 68.9 Wave 6 ship notes
 
 - First-login career fields on `/activate/profile` + teacher Profile career editor / experience history / self-leave (`workforce.employment.self_end`)
-- Parent F10 RO portal `/dashboard/parent/**` (linked children via `resolveStudentPortalContext`); guardian email → `createInviteAction(parent)` on student save
+- Parent F10 RO portal `/dashboard/parent/**` (linked children via `resolveStudentPortalContext`); guardian emails invited in bulk after student save (`createInvitesForSchoolBulk`)
 - Platform console `/dashboard/platform` (`platform_operators` + audit + optional impersonate)
 - Deferred: `.xlsx` importer, UIDAI live Aadhaar verify
 - Smoke: `scripts/smoke-wave6-identity-validation.ts`
@@ -4106,6 +3999,15 @@ Dropped unused DB stubs/cutover maps via `20260807560000_cleanup_unused_stubs.sq
 
 Removed orphan app code: `chip-list`, config club-membership re-export, unused workspace/config dashboard action wrappers, one-shot `inject-authz-permissions.py`.
 
+### 68.11 Post–Wave ops (2026-08-14 – 2026-08-20)
+
+Onboarding and dashboard work on `main` after Waves 0–6 (see §3.1b):
+
+- Per-class exams; grouped sidebar; dashboard auth/nav perf
+- Staff/student CSV aliases; bulk save (parallel identity + batched memberships/invites)
+- TEMP staff employments `active` for timetable
+- Settings `/dashboard/settings` + `reset_school_onboarding` (Feezypay Academy wiped 2026-08-17)
+
 ---
 
-*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§68 through use-case roadmap. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + portals + Curriculum + Assessment Framework + Recording + Grade Calculation + Report Card + Student Observation + Student Achievement shipped; **Use-case Waves 0–6 shipped 2026-08-12/13**. Remaining: production gates, Fee, xlsx/UIDAI if contracted.*
+*End of master document. Update §15 after verification; §3/§4/§8 on schema; §18–§68 through use-case roadmap. Phase 0.5 closed; Phase 1–2 backends shipped (gates open); AuthN + AuthZ + Membership + Notify + portals + Curriculum + Assessment Framework + Recording + Grade Calculation + Report Card + Student Observation + Student Achievement shipped; **Use-case Waves 0–6 shipped 2026-08-12/13**; **onboarding/dashboard ops through `37a58ca` (2026-08-17)**. Remaining: production gates, Fee, xlsx/UIDAI if contracted; revert TEMP staff=`active`; Students/Attendance admin nav.*

@@ -168,7 +168,8 @@ export const DASHBOARD_NAV_GROUPS: DashboardNavGroup[] = [
         id: "settings",
         label: "Settings",
         href: "/dashboard/settings",
-        permission: "tenant.school.edit",
+        // Reachable during onboarding (reset) and after go-live.
+        permission: ["tenant.school.edit", "onboarding.wizard.edit"],
       },
     ],
   },

@@ -13,11 +13,27 @@ type Result =
 export async function resetOnboardingAction(
   confirmation: string,
 ): Promise<Result> {
-  const context = await getAuthenticatedSchoolContext("tenant.school.edit");
+  const context = await getAuthenticatedSchoolContext("onboarding.wizard.edit");
   if ("error" in context) {
-    return { success: false, error: context.error };
+    const fallback = await getAuthenticatedSchoolContext("tenant.school.edit");
+    if ("error" in fallback) {
+      return { success: false, error: fallback.error };
+    }
+    return runReset(fallback, confirmation);
   }
+  return runReset(context, confirmation);
+}
 
+async function runReset(
+  context: {
+    supabase: Awaited<
+      ReturnType<typeof import("@/lib/supabase/server").createClient>
+    >;
+    schoolId: string;
+    actor?: import("@/lib/authz/types").AuthzActor;
+  },
+  confirmation: string,
+): Promise<Result> {
   if (!context.actor?.isSchoolAdmin) {
     return {
       success: false,

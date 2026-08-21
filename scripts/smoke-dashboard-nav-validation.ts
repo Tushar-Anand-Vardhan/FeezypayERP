@@ -65,6 +65,12 @@ const settings = DASHBOARD_NAV_GROUPS.flatMap((group) => group.items).find(
 );
 assert.equal(settings?.href, "/dashboard/settings");
 assert.equal(settings?.lockedUntilOnboarding, undefined);
+assert.ok(
+  Array.isArray(settings?.permission)
+    ? settings.permission.includes("onboarding.wizard.edit")
+    : settings?.permission === "onboarding.wizard.edit" ||
+        settings?.permission === "tenant.school.edit",
+);
 assert.equal(RESET_ONBOARDING_CONFIRMATION, "RESET");
 console.log("OK");
 
